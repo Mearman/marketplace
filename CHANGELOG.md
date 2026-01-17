@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/Mearman/marketplace/compare/v1.9.0...v1.10.0) (2026-01-17)
+
+
+### Features
+
+* **lib:** add optional TTL with configurable default ([a3ba5bd](https://github.com/Mearman/marketplace/commit/a3ba5bd8cf6c708018d9b9632bd7aba714874bb0))
+
 # [1.9.0](https://github.com/Mearman/marketplace/compare/v1.8.1...v1.9.0) (2026-01-17)
 
 
