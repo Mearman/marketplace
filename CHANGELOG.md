@@ -4,7 +4,17 @@
 
 ## [1.11.4](https://github.com/Mearman/marketplace/compare/v1.11.3...v1.11.4) (2026-01-17)
 
+
+### Code Refactoring
+
+* **docs:** change plugins to list format with code fences ([cc1056e](https://github.com/Mearman/marketplace/commit/cc1056ef17498c9bba233779bc6694ea108aadcc))
+
 ## [1.11.3](https://github.com/Mearman/marketplace/compare/v1.11.2...v1.11.3) (2026-01-17)
+
+
+### Documentation
+
+* **docs:** clarify commit scope flexibility and how to add new scopes ([0bf84be](https://github.com/Mearman/marketplace/commit/0bf84be93e650550005a87bbf94f133dff3aea69))
 
 ## [1.11.2](https://github.com/Mearman/marketplace/compare/v1.11.1...v1.11.2) (2026-01-17)
 
