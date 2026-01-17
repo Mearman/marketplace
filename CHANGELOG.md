@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/Mearman/marketplace/compare/v1.0.1...v1.1.0) (2026-01-17)
+
+
+### Features
+
+* **ci:** add per-plugin version bumping via semantic-release ([6c7c30b](https://github.com/Mearman/marketplace/commit/6c7c30b911cfa609bd3f30e2f9401edd23b58854))
+
 ## [1.0.1](https://github.com/Mearman/marketplace/compare/v1.0.0...v1.0.1) (2026-01-17)
 
 
