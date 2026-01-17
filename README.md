@@ -9,6 +9,12 @@ A plugin marketplace for [Claude Code](https://claude.ai/code).
 /plugin marketplace add Mearman/marketplace
 ```
 
+## Plugins
+
+| Plugin | Description |
+|--------|-------------|
+| `wayback` | Wayback Machine tools for checking, submitting, listing, and screenshotting archived URLs |
+
 ## Usage
 
 <details>
@@ -39,17 +45,6 @@ A plugin marketplace for [Claude Code](https://claude.ai/code).
 # Update all plugins
 /plugin update
 ```
-
-</details>
-
-## Plugins
-
-<details>
-<summary>Available Plugins</summary>
-
-| Plugin | Description |
-|--------|-------------|
-| `wayback` | Wayback Machine tools for checking, submitting, listing, and screenshotting archived URLs |
 
 </details>
 
