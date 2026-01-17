@@ -1,0 +1,18 @@
+{
+  "$schema": "../schemas/marketplace.schema.json",
+  "name": "claude-code-skills",
+  "owner": {
+    "name": "Mearman"
+  },
+  "metadata": {
+    "description": "A collection of Claude Code plugins and skills"
+  },
+  "plugins": [
+    {
+      "name": "wayback",
+      "source": "./plugins/wayback",
+      "description": "Wayback Machine tools for checking, submitting, listing, and screenshotting archived URLs",
+      "version": "0.2.0"
+    }
+  ]
+}
