@@ -91,3 +91,7 @@ By default, append `id_` after the timestamp in URLs to get raw content without 
 - Use `wayback-screenshot` to retrieve visual screenshots of archived pages
 - Use `wayback-list` to see all captures with filtering options
 - Use `wayback-submit` to create a new archive (with optional screenshot)
+
+## Error Handling
+
+If the Wayback Machine API returns an error or is unavailable, retry after a brief delay. The API may be rate-limited during high traffic periods.
