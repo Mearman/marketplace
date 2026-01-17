@@ -66,15 +66,16 @@ const freshData = await cache.fetchWithCache<MyType>({
 });
 ```
 
-### Configuring Default Retry Behavior
+### Configuring Defaults
 
-For APIs with specific rate limiting or retry needs (e.g., GitHub), configure defaults when creating the cache manager:
+Configure default TTL and retry behavior when creating the cache manager:
 
 ```typescript
 import { createCacheManager } from "../../../lib/cache";
 
-// Configure retry defaults for GitHub API
+// Configure defaults for GitHub API
 const cache = createCacheManager("github-api", {
+  defaultTTL: 3600, // 1 hour default (can be omitted, defaults to 3600)
   defaultRetryOptions: {
     maxRetries: 5,
     initialDelay: 2000,
@@ -85,17 +86,17 @@ const cache = createCacheManager("github-api", {
 // All fetchWithCache calls use these defaults
 const userData = await cache.fetchWithCache<UserData>({
   url: "https://api.github.com/user",
-  ttl: 7200,
+  // No TTL specified - uses defaultTTL (3600)
+  // No retryOptions specified - uses defaultRetryOptions
   fetchOptions: {
     headers: { Authorization: `Bearer ${token}` },
   },
-  // No need to specify retryOptions - uses defaults
 });
 
 // Can still override per-call if needed
 const repoData = await cache.fetchWithCache<RepoData>({
   url: "https://api.github.com/repos/owner/repo",
-  ttl: 3600,
+  ttl: 7200, // Override default TTL
   retryOptions: {
     maxRetries: 3, // Override just this one option
   },
@@ -213,6 +214,7 @@ Create a cache manager for the given namespace.
 **Parameters:**
 - `namespace` - Unique identifier (e.g., "wayback", "npm-registry")
 - `options` - Optional configuration object
+  - `defaultTTL` - Default TTL in seconds for all fetchWithCache calls (default: 3600)
   - `defaultRetryOptions` - Default retry configuration for all fetchWithCache calls
 
 **Returns:** Cache manager with the following methods
@@ -255,11 +257,11 @@ Fetch data with automatic caching and retry logic.
 
 **Parameters:**
 - `url` - URL to fetch (required)
-- `ttl` - Time to live in seconds (required)
+- `ttl` - Time to live in seconds (optional, uses defaultTTL if not specified, default: 3600)
 - `cacheKey` - Optional custom cache key (auto-generated from URL if not provided)
 - `parseResponse` - Custom response parser (default: `response.json()`)
 - `fetchOptions` - Fetch options (headers, method, body, etc.)
-- `retryOptions` - Retry configuration (see RetryOptions below)
+- `retryOptions` - Retry configuration (overrides defaultRetryOptions, see RetryOptions below)
 - `bypassCache` - Skip cache check and force fresh fetch (default: false)
 
 **RetryOptions:**

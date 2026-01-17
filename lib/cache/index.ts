@@ -76,6 +76,7 @@ export interface CacheManager {
 export function createCacheManager(namespace: string, options?: CacheManagerOptions): CacheManager {
 	const CACHE_DIR = path.join(os.tmpdir(), `${namespace}-cache`);
 	const defaultRetryOptions = options?.defaultRetryOptions || {};
+	const defaultTTL = options?.defaultTTL ?? 3600; // 1 hour default
 
 	const ensureCacheDir = async (): Promise<void> => {
 		try {
@@ -237,13 +238,16 @@ export function createCacheManager(namespace: string, options?: CacheManagerOpti
 	): Promise<T> => {
 		const {
 			url,
-			ttl,
+			ttl: providedTTL,
 			cacheKey: providedKey,
 			parseResponse = async (response: Response) => response.json() as Promise<T>,
 			fetchOptions = {},
 			retryOptions = {},
 			bypassCache = false,
 		} = options;
+
+		// Use provided TTL or fall back to default
+		const ttl = providedTTL ?? defaultTTL;
 
 		// Generate cache key
 		const cacheKey = providedKey || getCacheKey(url);

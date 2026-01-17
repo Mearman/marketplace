@@ -59,8 +59,10 @@ export interface FetchWithCacheOptions<T = unknown> {
 
 	/**
 	 * Time to live in seconds for cached data
+	 * Uses defaultTTL from cache manager if not specified
+	 * @default 3600 (1 hour)
 	 */
-	ttl: number;
+	ttl?: number;
 
 	/**
 	 * Optional cache key (auto-generated from URL if not provided)
@@ -99,4 +101,11 @@ export interface CacheManagerOptions {
 	 * Can be overridden per-call with FetchWithCacheOptions.retryOptions
 	 */
 	defaultRetryOptions?: Partial<RetryOptions>;
+
+	/**
+	 * Default TTL in seconds for all fetchWithCache calls
+	 * Can be overridden per-call with FetchWithCacheOptions.ttl
+	 * @default 3600 (1 hour)
+	 */
+	defaultTTL?: number;
 }
