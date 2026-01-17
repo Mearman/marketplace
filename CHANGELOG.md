@@ -1,6 +1,13 @@
 ## [1.2.3](https://github.com/Mearman/marketplace/compare/v1.2.2...v1.2.3) (2026-01-17)
 
 
+### Bug Fixes
+
+* **ci:** include docs commits in changelog releases ([23b5a0b](https://github.com/Mearman/marketplace/commit/23b5a0bafb98dfb64bc8e0972979939c260e9869))
+
+## [1.2.3](https://github.com/Mearman/marketplace/compare/v1.2.2...v1.2.3) (2026-01-17)
+
+
 ### Documentation
 
 * **docs:** simplify AGENTS.md description ([c14d92a](https://github.com/Mearman/marketplace/commit/c14d92aad3cdf28b9749522029af3398f45ea6b8))
