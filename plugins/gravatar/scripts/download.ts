@@ -1,17 +1,19 @@
 #!/usr/bin/env npx tsx
 /**
- * Generate a Gravatar URL from an email address
- * Usage: npx tsx url.ts <email> [options]
+ * Download a Gravatar image
+ * Usage: npx tsx download.ts <email> <output-file> [options]
  *
  * Options:
- *   --size=N          Image size in pixels (default: 80, max: 2048)
+ *   --size=N          Image size in pixels (default: 200, max: 2048)
  *   --default=TYPE    Default image: mp, identicon, monsterid, wavatar, retro, robohash, blank
  *   --rating=LEVEL    Rating level: g, pg, r, x (default: g)
- *   --force-default   Force default image even if user has a Gravatar
+ *   --no-cache        Bypass cache and fetch fresh data
  */
 
+import { writeFile } from "fs/promises";
 import {
 	buildGravatarUrl,
+	fetchWithCache,
 	GravatarDefault,
 	GravatarUrlOptions,
 	md5,
@@ -21,28 +23,28 @@ import {
 const main = async () => {
 	const { flags, options, positional } = parseArgs(process.argv.slice(2));
 	const email = positional[0];
+	const outputFile = positional[1];
 
-	if (!email) {
-		console.log(`Usage: npx tsx url.ts <email> [options]
+	if (!email || !outputFile) {
+		console.log(`Usage: npx tsx download.ts <email> <output-file> [options]
 
 Options:
-  --size=N          Image size in pixels (default: 80, max: 2048)
+  --size=N          Image size in pixels (default: 200, max: 2048)
   --default=TYPE    Default image: mp, identicon, monsterid, wavatar, retro, robohash, blank
   --rating=LEVEL    Rating level: g, pg, r, x (default: g)
-  --force-default   Force default image even if user has a Gravatar
+  --no-cache        Bypass cache and fetch fresh data
 
 Examples:
-  npx tsx url.ts user@example.com
-  npx tsx url.ts user@example.com --size=200
-  npx tsx url.ts user@example.com --default=identicon
-  npx tsx url.ts user@example.com --force-default --default=robohash`);
+  npx tsx download.ts user@example.com avatar.jpg
+  npx tsx download.ts user@example.com avatar.png --size=400
+  npx tsx download.ts user@example.com avatar.jpg --default=identicon`);
 		process.exit(1);
 	}
 
 	// Parse options
 	const urlOptions: GravatarUrlOptions = {};
 
-	const size = parseInt(options.get("size") || "80", 10);
+	const size = parseInt(options.get("size") || "200", 10);
 	if (size > 0 && size <= 2048) {
 		urlOptions.size = size;
 	}
@@ -69,32 +71,31 @@ Examples:
 		}
 	}
 
-	if (flags.has("force-default")) {
-		urlOptions.forceDefault = true;
-	}
-
 	console.log(`Email: ${email}`);
+	console.log(`Output: ${outputFile}`);
+	console.log(`Hash: ${md5(email)}`);
 
 	try {
-		// Generate Gravatar URL (no caching needed - MD5 is trivial)
 		const url = buildGravatarUrl(email, urlOptions);
-		const hash = md5(email);
 
-		console.log(`Hash: ${hash}`);
-		console.log(`URL: ${url}`);
+		// Download image using fetchWithCache
+		const buffer = await fetchWithCache<ArrayBuffer>({
+			url,
+			bypassCache: flags.has("no-cache"),
+			parseResponse: async (response) => response.arrayBuffer(),
+		});
 
-		// Show options
-		const params: string[] = [];
-		if (urlOptions.size) params.push(`size=${urlOptions.size}px`);
-		if (urlOptions.default) params.push(`default=${urlOptions.default}`);
-		if (urlOptions.rating) params.push(`rating=${urlOptions.rating}`);
-		if (urlOptions.forceDefault) params.push("force-default");
+		// Write to file
+		await writeFile(outputFile, Buffer.from(buffer));
 
-		if (params.length > 0) {
-			console.log(`Options: ${params.join(", ")}`);
-		}
+		console.log();
+		console.log("✓ Downloaded successfully");
+		console.log(`  Size: ${(buffer.byteLength / 1024).toFixed(1)} KB`);
+		console.log(`  File: ${outputFile}`);
+		console.log();
 	} catch (error) {
-		console.error("Error:", error);
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("\nError:", message);
 		process.exit(1);
 	}
 };

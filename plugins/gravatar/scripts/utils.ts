@@ -11,7 +11,7 @@ import { createHash } from "crypto";
 // Types
 // ============================================================================
 
-export type GravatarDefault = "mp" | "identicon" | "monsterid" | "wavatar" | "retro" | "robohash" | "blank";
+export type GravatarDefault = "mp" | "identicon" | "monsterid" | "wavatar" | "retro" | "robohash" | "blank" | "404";
 
 export interface GravatarUrlOptions {
   size?: number;
@@ -27,23 +27,12 @@ export type { CacheEntry };
 // ============================================================================
 
 // Create cache manager for gravatar namespace
-const cache = createCacheManager("gravatar");
+const cache = createCacheManager("gravatar", {
+	defaultTTL: 86400, // 24 hours - gravatars change infrequently
+});
 
-// Gravatar-specific cache key generator (uses email instead of URL)
-export const getCacheKey = (
-	email: string,
-	options: GravatarUrlOptions = {}
-): string => {
-	const optsStr = Object.entries(options)
-		.sort(([a], [b]) => a.localeCompare(b))
-		.map(([k, v]) => `${k}=${v}`)
-		.join("&");
-	const input = `${email.toLowerCase().trim()}?${optsStr}`;
-	return createHash("sha256").update(input).digest("hex").slice(0, 16);
-};
-
-// Re-export shared cache utilities
-export const { getCached, setCached, clearCache } = cache;
+// Re-export cache utilities
+export const { fetchWithCache, clearCache } = cache;
 
 // ============================================================================
 // MD5 Hashing
