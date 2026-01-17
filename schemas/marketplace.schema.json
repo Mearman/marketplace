@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Mearman/marketplace/schemas/marketplace.schema.json",
+  "title": "Claude Code Marketplace Catalog",
+  "description": "Schema for Claude Code marketplace.json catalog files",
+  "type": "object",
+  "required": ["name", "plugins"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "name": {
+      "type": "string",
+      "description": "Marketplace identifier"
+    },
+    "description": {
+      "type": "string",
+      "description": "Marketplace description"
+    },
+    "owner": {
+      "type": "object",
+      "description": "Marketplace owner information",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Owner's name or organization"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email"
+        }
+      },
+      "required": ["name"]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional marketplace metadata",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "homepage": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "additionalProperties": true
+    },
+    "plugins": {
+      "type": "array",
+      "description": "List of plugins in this marketplace",
+      "items": {
+        "$ref": "#/$defs/pluginEntry"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "pluginEntry": {
+      "type": "object",
+      "description": "Plugin entry in the marketplace catalog",
+      "required": ["name", "source", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Plugin identifier (must match plugin.json name)",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief plugin description"
+        },
+        "version": {
+          "type": "string",
+          "description": "Plugin version (must match plugin.json version)",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?(\\+[a-zA-Z0-9.]+)?$"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Relative path to plugin directory or GitHub shorthand"
+            },
+            {
+              "type": "object",
+              "description": "Source configuration object",
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "enum": ["github", "url"],
+                  "description": "Source type"
+                },
+                "repo": {
+                  "type": "string",
+                  "description": "GitHub repository (owner/repo format)"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "Git URL for the plugin"
+                },
+                "ref": {
+                  "type": "string",
+                  "description": "Git ref (branch, tag, or commit)"
+                },
+                "path": {
+                  "type": "string",
+                  "description": "Path within the repository"
+                }
+              },
+              "required": ["source"]
+            }
+          ]
+        },
+        "category": {
+          "type": "string",
+          "description": "Plugin category for organization",
+          "enum": [
+            "development",
+            "productivity",
+            "testing",
+            "database",
+            "design",
+            "deployment",
+            "monitoring",
+            "security",
+            "learning",
+            "utilities",
+            "other"
+          ]
+        },
+        "author": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        },
+        "homepage": {
+          "type": "string",
+          "format": "uri",
+          "description": "Plugin homepage or repository"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags for categorization"
+        },
+        "strict": {
+          "type": "boolean",
+          "description": "Enable strict mode for the plugin",
+          "default": false
+        },
+        "lspServers": {
+          "type": "object",
+          "description": "Language server configurations",
+          "additionalProperties": {
+            "$ref": "#/$defs/lspServerConfig"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "lspServerConfig": {
+      "type": "object",
+      "description": "Language server configuration",
+      "required": ["command"],
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Server executable command"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Command-line arguments"
+        },
+        "extensionToLanguage": {
+          "type": "object",
+          "description": "File extension to language ID mapping",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "startupTimeout": {
+          "type": "integer",
+          "description": "Initialization timeout in milliseconds",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
