@@ -2,5 +2,5 @@
   "$schema": "../../../schemas/plugin.schema.json",
   "name": "wayback",
   "description": "Wayback Machine tools for checking, submitting, listing, and screenshotting archived URLs",
-  "version": "0.2.0"
+  "version": "0.3.0"
 }

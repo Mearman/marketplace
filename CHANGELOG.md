@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/Mearman/marketplace/compare/v1.1.0...v1.2.0) (2026-01-17)
+
+
+### Features
+
+* **wayback:** add error handling guidance to check skill ([8600dc1](https://github.com/Mearman/marketplace/commit/8600dc169f8fea1a28da3eb5b81b043f9ea75fca))
+
 # [1.1.0](https://github.com/Mearman/marketplace/compare/v1.0.1...v1.1.0) (2026-01-17)
 
 
