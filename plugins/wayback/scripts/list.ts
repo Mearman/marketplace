@@ -7,7 +7,6 @@
  *   --no-raw           Include Wayback toolbar in URLs
  *   --with-screenshots Cross-reference to show which captures have screenshots
  *   --no-cache         Bypass cache and fetch fresh data from API
- *   --clear-cache      Clear all cached data before proceeding
  */
 
 import {
@@ -15,7 +14,6 @@ import {
   CDXRow,
   buildArchiveUrl,
   buildScreenshotUrl,
-  clearCache,
   formatAge,
   formatTimestamp,
   getCacheKey,
@@ -51,15 +49,6 @@ const main = async () => {
   const url = positional[0];
   const limit = parseInt(positional[1] || "10", 10);
 
-  // Handle --clear-cache flag (can work standalone or with other operations)
-  if (flags.has("clear-cache")) {
-    await clearCache();
-    if (!url) {
-      process.exit(0); // Exit if only clearing cache
-    }
-    console.log(); // Add spacing after cache clear message
-  }
-
   if (!url) {
     console.log(`Usage: npx tsx list.ts <url> [limit] [options]
 
@@ -67,13 +56,11 @@ Options:
   --no-raw           Include Wayback toolbar in URLs
   --with-screenshots Cross-reference to show which captures have screenshots
   --no-cache         Bypass cache and fetch fresh data from API
-  --clear-cache      Clear all cached data before proceeding
 
 Examples:
   npx tsx list.ts https://example.com
   npx tsx list.ts https://example.com 20
-  npx tsx list.ts https://example.com --with-screenshots
-  npx tsx list.ts --clear-cache`);
+  npx tsx list.ts https://example.com --with-screenshots`);
     process.exit(1);
   }
 

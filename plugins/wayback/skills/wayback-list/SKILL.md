@@ -17,7 +17,6 @@ Options:
 - `--no-raw` - Include Wayback toolbar in URLs
 - `--with-screenshots` - Cross-reference to show which captures have screenshots (ðŸ“·)
 - `--no-cache` - Bypass cache and fetch fresh data from API
-- `--clear-cache` - Clear all cached data before proceeding (can be used standalone)
 
 Run from the wayback plugin directory: `~/.claude/plugins/cache/wayback/`
 
@@ -146,7 +145,13 @@ The `--with-screenshots` flag in the script does this automatically, showing ðŸ“
 
 CDX API responses are cached for 1 hour using the OS temporary directory (`os.tmpdir()`). Cache keys are generated from the URL and query parameters using SHA-256 hashing. Cached responses expire automatically and are deleted on access.
 
-Use `--clear-cache` to manually clear all cached data. This flag can be used standalone (`npx tsx scripts/list.ts --clear-cache`) or combined with other operations.
+Use `wayback-cache` to manage cached data:
+```bash
+npx tsx scripts/cache.ts clear    # Clear all cache
+npx tsx scripts/cache.ts status   # Show cache status
+```
+
+See `wayback-cache` skill for complete cache management documentation.
 
 ## Output Format (with --with-screenshots)
 

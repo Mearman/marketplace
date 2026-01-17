@@ -7,14 +7,12 @@
  *   --no-raw           Include Wayback toolbar in archived URL
  *   --timestamp=DATE   Find snapshot closest to date (YYYYMMDD or YYYYMMDDhhmmss)
  *   --no-cache         Bypass cache and fetch fresh data from API
- *   --clear-cache      Clear all cached data before proceeding
  */
 
 import {
   API,
   AvailableResponse,
   buildArchiveUrl,
-  clearCache,
   formatAge,
   formatTimestamp,
   getCacheKey,
@@ -29,15 +27,6 @@ const main = async () => {
   const timestamp = options.get("timestamp");
   const url = positional[0];
 
-  // Handle --clear-cache flag (can work standalone or with other operations)
-  if (flags.has("clear-cache")) {
-    await clearCache();
-    if (!url) {
-      process.exit(0); // Exit if only clearing cache
-    }
-    console.log(); // Add spacing after cache clear message
-  }
-
   if (!url) {
     console.log(`Usage: npx tsx check.ts <url> [options]
 
@@ -45,13 +34,11 @@ Options:
   --no-raw           Include Wayback toolbar in archived URL
   --timestamp=DATE   Find snapshot closest to date (YYYYMMDD or YYYYMMDDhhmmss)
   --no-cache         Bypass cache and fetch fresh data from API
-  --clear-cache      Clear all cached data before proceeding
 
 Examples:
   npx tsx check.ts https://example.com
   npx tsx check.ts https://example.com --timestamp=20200101
-  npx tsx check.ts https://example.com --timestamp=20231225120000
-  npx tsx check.ts --clear-cache`);
+  npx tsx check.ts https://example.com --timestamp=20231225120000`);
     process.exit(1);
   }
 

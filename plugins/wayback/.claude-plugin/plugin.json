@@ -1,5 +1,5 @@
 {
   "name": "wayback",
-  "description": "Wayback Machine tools for checking, submitting, listing, and screenshotting archived URLs",
-  "version": "0.4.0"
+  "description": "Wayback Machine tools for checking, submitting, listing, screenshotting, and cache management for archived URLs",
+  "version": "0.5.0"
 }

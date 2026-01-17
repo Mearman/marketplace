@@ -8,7 +8,6 @@
  *   --list             List available screenshots for URL
  *   --download=PATH    Download screenshot to file
  *   --no-cache         Bypass cache and fetch fresh data from API
- *   --clear-cache      Clear all cached data before proceeding
  */
 
 import { writeFile } from "fs/promises";
@@ -17,7 +16,6 @@ import {
   AvailableResponse,
   CDXRow,
   buildScreenshotUrl,
-  clearCache,
   formatAge,
   formatTimestamp,
   getCacheKey,
@@ -143,15 +141,6 @@ const main = async () => {
   const downloadPath = options.get("download");
   const url = positional[0];
 
-  // Handle --clear-cache flag (can work standalone or with other operations)
-  if (flags.has("clear-cache")) {
-    await clearCache();
-    if (!url) {
-      process.exit(0); // Exit if only clearing cache
-    }
-    console.log(); // Add spacing after cache clear message
-  }
-
   if (!url) {
     console.log(`Usage: npx tsx screenshot.ts <url> [options]
 
@@ -160,13 +149,11 @@ Options:
   --list             List available screenshots for URL
   --download=PATH    Download screenshot to file
   --no-cache         Bypass cache and fetch fresh data from API
-  --clear-cache      Clear all cached data before proceeding
 
 Examples:
   npx tsx screenshot.ts https://example.com --list
   npx tsx screenshot.ts https://example.com --timestamp=20240101120000
-  npx tsx screenshot.ts https://example.com --download=screenshot.png
-  npx tsx screenshot.ts --clear-cache`);
+  npx tsx screenshot.ts https://example.com --download=screenshot.png`);
     process.exit(1);
   }
 
