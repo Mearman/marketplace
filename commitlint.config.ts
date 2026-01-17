@@ -29,6 +29,7 @@ const coreScopes = [
 	"ci",          // GitHub workflows
 	"deps",        // Dependencies
 	"release",     // semantic-release commits
+	"lib",         // Shared utilities (/lib)
 ];
 
 // Plugin scopes (auto-detected from plugins/ directory)
