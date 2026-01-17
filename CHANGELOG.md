@@ -1,3 +1,13 @@
+# [1.5.0](https://github.com/Mearman/marketplace/compare/v1.4.0...v1.5.0) (2026-01-17)
+
+
+### Features
+
+* **github-api:** add GitHub REST API integration plugin ([c7feecd](https://github.com/Mearman/marketplace/commit/c7feecd3e34ea43a1d10e606673807032191bb66))
+* **gravatar:** add Gravatar avatar URL generation plugin ([5041e09](https://github.com/Mearman/marketplace/commit/5041e09af020216c735e89f3cbbb113ed846b838))
+* **npm-registry:** add npm registry integration plugin ([1c48189](https://github.com/Mearman/marketplace/commit/1c48189af0d09fd1f7acdb3c19ece3ab450535a4))
+* **npms-io:** add NPMS.io package quality analysis plugin ([ccaad22](https://github.com/Mearman/marketplace/commit/ccaad22847d7a54a8cdcbaaca7b98ccb33837417))
+
 # [1.4.0](https://github.com/Mearman/marketplace/compare/v1.3.0...v1.4.0) (2026-01-17)
 
 

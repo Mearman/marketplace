@@ -18,25 +18,25 @@
       "name": "npm-registry",
       "source": "./plugins/npm-registry",
       "description": "npm registry tools for searching packages, getting metadata, checking existence, and fetching download statistics",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     {
       "name": "gravatar",
       "source": "./plugins/gravatar",
       "description": "Gravatar tools for generating avatar URLs from email addresses",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     {
       "name": "github-api",
       "source": "./plugins/github-api",
       "description": "GitHub REST API tools for repository metadata, READMEs, user profiles, and rate limit checking",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     {
       "name": "npms-io",
       "source": "./plugins/npms-io",
       "description": "NPMS.io tools for package quality analysis, comparison, and name suggestions",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }
