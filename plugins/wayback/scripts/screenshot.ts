@@ -64,6 +64,32 @@ const listScreenshots = async (url: string): Promise<void> => {
 	console.log(`Total: ${screenshots.length} screenshot(s)`);
 };
 
+const checkScreenshotAvailable = async (
+	url: string,
+	timestamp?: string
+): Promise<boolean> => {
+	const screenshotUrl = `web.archive.org/screenshot/${url}`;
+	let cdxUrl: string;
+
+	if (timestamp) {
+		// Check for screenshot at specific timestamp
+		cdxUrl = API.cdx(screenshotUrl, { timestamp });
+	} else {
+		// Check for latest screenshot
+		cdxUrl = API.cdx(screenshotUrl, { limit: 1 });
+	}
+
+	try {
+		const response = await fetch(cdxUrl);
+		const data: CDXRow[] = await response.json();
+
+		// CDX returns header row + data rows, so length > 1 means screenshot exists
+		return data.length > 1;
+	} catch {
+		return false;
+	}
+};
+
 const getScreenshot = async (
 	url: string,
 	noCache: boolean,
@@ -73,6 +99,14 @@ const getScreenshot = async (
 	let screenshotUrl: string;
 
 	if (timestamp) {
+		// Check if screenshot is available at the specified timestamp
+		const isAvailable = await checkScreenshotAvailable(url, timestamp);
+		if (!isAvailable) {
+			console.log(`✗ No screenshot found at ${formatTimestamp(timestamp)}`);
+			console.log("  Use --list to see available screenshots.");
+			process.exit(1);
+		}
+
 		screenshotUrl = buildScreenshotUrl(timestamp, url);
 		console.log(`Fetching screenshot from ${formatTimestamp(timestamp)}...`);
 	} else {
@@ -86,15 +120,15 @@ const getScreenshot = async (
 			// Bypass cache
 			const availResponse = await fetch(availUrl);
 			availData = await availResponse.json();
-			await setCached(cacheKey, availData, 86400); // Still cache for future requests
+			await setCached(cacheKey, availData); // Still cache for future requests
 		} else {
-			const cached = await getCached<AvailableResponse>(cacheKey);
+			const cached = await getCached<AvailableResponse>(cacheKey, 86400);
 			if (cached === null) {
 				const availResponse = await fetch(availUrl);
 				availData = await availResponse.json();
-				await setCached(cacheKey, availData, 86400); // 24 hours
+				await setCached(cacheKey, availData); // 24 hours
 			} else {
-				availData = cached;
+				availData = cached.data;
 			}
 		}
 
@@ -102,6 +136,15 @@ const getScreenshot = async (
 		if (!closest?.available) {
 			console.log("✗ No archived version found");
 			console.log("  Use wayback-submit to archive this URL first.");
+			process.exit(1);
+		}
+
+		// Check if a screenshot is available for this capture
+		const isAvailable = await checkScreenshotAvailable(url, closest.timestamp);
+		if (!isAvailable) {
+			console.log("✗ No screenshot available for this capture");
+			console.log("  The page was archived but no screenshot was taken.");
+			console.log("  Use --list to see available screenshots.");
 			process.exit(1);
 		}
 
