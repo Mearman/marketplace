@@ -1,0 +1,5 @@
+{
+  "name": "npm-registry",
+  "description": "npm registry tools for searching packages, getting metadata, checking existence, and fetching download statistics",
+  "version": "0.1.0"
+}
