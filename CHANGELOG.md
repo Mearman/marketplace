@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/Mearman/marketplace/compare/v1.2.1...v1.2.2) (2026-01-17)
+
+
+### Bug Fixes
+
+* **marketplace:** rename marketplace to mearman (avoid reserved name) ([9a6f7eb](https://github.com/Mearman/marketplace/commit/9a6f7eb056304145b2ff903cae93181c20b3243e))
+
 ## [1.2.1](https://github.com/Mearman/marketplace/compare/v1.2.0...v1.2.1) (2026-01-17)
 
 
