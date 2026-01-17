@@ -111,6 +111,81 @@ chore(wayback): update dependencies
    {"name": "<name>", "source": "./plugins/<name>", "description": "...", "version": "0.1.0"}
    ```
 
+## Shared Utilities (`/lib`)
+
+The `/lib` directory contains reusable utilities to reduce code duplication across plugins.
+
+### Available Utilities
+
+**`/lib/cache`** - Factory-pattern cache management
+- `createCacheManager(namespace)` - Creates namespaced cache manager
+- Uses client-provided TTL (evaluate at read time, not write time)
+- Isolated cache directories per plugin
+
+**`/lib/args`** - Command-line argument parsing
+- `parseArgs(argv)` - Parse flags, options, and positional arguments
+
+**`/lib/helpers`** - Common formatting and utilities
+- `formatNumber(num)` - Format with K/M suffixes (e.g., "1.2M")
+- `formatAge(timestamp)` - Human-readable age (e.g., "2 days ago")
+- `formatDate(date)` - Format as "YYYY-MM-DD HH:MM"
+- `sleep(ms)` - Promise-based delay
+
+### Usage Pattern
+
+```typescript
+// plugins/my-plugin/scripts/utils.ts
+import { createCacheManager } from "../../../lib/cache";
+import { parseArgs as sharedParseArgs } from "../../../lib/args";
+import { formatNumber as sharedFormatNumber } from "../../../lib/helpers";
+
+// Create namespaced cache
+const cache = createCacheManager("my-plugin");
+
+// Re-export for plugin scripts (maintains backward compatibility)
+export const { getCacheKey, getCached, setCached, clearCache } = cache;
+export const parseArgs = sharedParseArgs;
+export const formatNumber = sharedFormatNumber;
+```
+
+### Cache Migration Notes
+
+**OLD approach (server-provided TTL):**
+```typescript
+const cached = await getCached<T>(key);
+await setCached(key, data, 3600); // TTL stored in file
+```
+
+**NEW approach (client-provided TTL):**
+```typescript
+const cached = await getCached<T>(key, 3600); // TTL at read time
+await setCached(key, data); // No TTL stored
+if (cached) {
+  const data = cached.data; // Access via .data property
+}
+```
+
+**Benefits:**
+- More flexible (same data, different TTLs for different contexts)
+- Simpler write logic (no TTL parameter)
+- Runtime TTL decisions based on context
+
+### Migrated Plugins
+
+All 5 plugins with cache usage now use shared utilities:
+
+| Plugin | Scripts | Code Removed | Status |
+|--------|---------|--------------|--------|
+| wayback | 4+ | ~60 lines | ✅ Migrated |
+| npm-registry | 4 | ~70 lines | ✅ Migrated |
+| github-api | 4 | ~70 lines | ✅ Migrated |
+| npms-io | 3 | ~70 lines | ✅ Migrated |
+| gravatar | 1 | ~30 lines | ✅ Migrated |
+
+**Total:** ~300 lines of duplicate code eliminated
+
+See `/lib/README.md` for complete documentation.
+
 ## Skill Description Writing
 
 The `description` field in SKILL.md frontmatter determines when Claude invokes the skill. Write descriptions containing:
