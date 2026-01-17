@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/Mearman/marketplace/compare/v1.7.0...v1.8.0) (2026-01-17)
+
+
+### Features
+
+* **marketplace:** add shared utilities library ([c1948c7](https://github.com/Mearman/marketplace/commit/c1948c7ef12e93d78048713fc335ef821dc2edc0))
+
 # [1.7.0](https://github.com/Mearman/marketplace/compare/v1.6.0...v1.7.0) (2026-01-17)
 
 
