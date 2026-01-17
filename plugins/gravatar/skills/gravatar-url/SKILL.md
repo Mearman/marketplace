@@ -18,7 +18,6 @@ Options:
 - `--default=TYPE` - Default image type: mp, identicon, monsterid, wavatar, retro, robohash, blank (default: mp)
 - `--rating=LEVEL` - Rating level: g, pg, r, x (default: g)
 - `--force-default` - Force the default image even if user has a Gravatar
-- `--no-cache` - Bypass cache
 
 Run from the gravatar plugin directory: `~/.claude/plugins/cache/gravatar/`
 
@@ -106,12 +105,6 @@ Step 2:  b48bf4373d7b7374351c0544f36f7fc3 (MD5)
 URL:     https://www.gravatar.com/avatar/b48bf4373d7b7374351c0544f36f7fc3
 ```
 
-## Caching
-
-Generated URLs are cached for 24 hours. Gravatar URLs are stable for the same email and parameters, so caching improves performance without affecting accuracy.
-
-Use the `--no-cache` flag to bypass the cache.
-
 ## Profile URLs
 
 Gravatar also provides profile pages:
@@ -123,6 +116,8 @@ Replace `/avatar/` with just the hash to get the profile page, which may contain
 
 ## Related
 
+- Use `gravatar-check` skill to verify if a Gravatar exists for an email
+- Use `gravatar-download` skill to download Gravatar images to local files
 - Use Gravatar profile URLs to get additional user information
 - Combine with npm or GitHub author emails to display author avatars
 - Use default images to provide consistent fallbacks
