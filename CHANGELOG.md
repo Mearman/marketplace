@@ -1,3 +1,7 @@
+## <small>1.11.6 (2026-01-17)</small>
+
+* chore(docs): backfill missing entries for v1.11.2-v1.11.4 ([7eca343](https://github.com/Mearman/marketplace/commit/7eca343))
+
 ## <small>1.11.5 (2026-01-17)</small>
 
 * fix(ci): include all commit types in changelog ([22e072d](https://github.com/Mearman/marketplace/commit/22e072d))
