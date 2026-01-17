@@ -8,7 +8,13 @@
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"resolveJsonModule": true,
-		"noEmit": true
+		"noEmit": true,
+		"baseUrl": ".",
+		"paths": {
+			"@lib/cache": ["./lib/cache/index.ts"],
+			"@lib/args": ["./lib/args/index.ts"],
+			"@lib/helpers": ["./lib/helpers/index.ts"]
+		}
 	},
 	"include": ["**/*.ts"],
 	"exclude": ["node_modules/", "dist/", "plugins/*/.claude-plugin/"]
