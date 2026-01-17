@@ -60,15 +60,15 @@ Examples:
 			// Bypass cache
 			const response = await fetch(apiUrl);
 			data = await response.json();
-			await setCached(cacheKey, data, 86400); // Still cache for future requests
+			await setCached(cacheKey, data); // Still cache for future requests
 		} else {
-			const cached = await getCached<AvailableResponse>(cacheKey);
+			const cached = await getCached<AvailableResponse>(cacheKey, 86400);
 			if (cached === null) {
 				const response = await fetch(apiUrl);
 				data = await response.json();
-				await setCached(cacheKey, data, 86400); // 24 hours
+				await setCached(cacheKey, data); // 24 hours
 			} else {
-				data = cached;
+				data = cached.data;
 			}
 		}
 

@@ -37,7 +37,7 @@ export interface SPN2Response {
 
 export interface CacheEntry<T = unknown> {
   data: T;
-  expiresAt: number;
+  localCacheTimestamp: number;
 }
 
 export type CacheTTL = 30 | 3600 | 86400; // 30s, 1h, 24h in seconds
@@ -67,20 +67,22 @@ export const getCacheKey = (url: string, params: Record<string, string | number>
 };
 
 export const getCached = async <T = unknown>(
-	key: string
-): Promise<T | null> => {
+	key: string,
+	ttlSeconds: CacheTTL
+): Promise<CacheEntry<T> | null> => {
 	try {
 		const filePath = path.join(CACHE_DIR, `${key}.json`);
 		const content = await fs.readFile(filePath, "utf-8");
 		const entry: CacheEntry<T> = JSON.parse(content);
 
-		if (Date.now() > entry.expiresAt) {
+		const expiresAt = entry.localCacheTimestamp + ttlSeconds * 1000;
+		if (Date.now() > expiresAt) {
 			// Cache expired, delete it
 			await fs.unlink(filePath).catch(() => {});
 			return null;
 		}
 
-		return entry.data;
+		return entry;
 	} catch {
 		// File doesn't exist or is invalid
 		return null;
@@ -89,15 +91,14 @@ export const getCached = async <T = unknown>(
 
 export const setCached = async <T = unknown>(
 	key: string,
-	data: T,
-	ttlSeconds: CacheTTL
+	data: T
 ): Promise<void> => {
 	try {
 		await ensureCacheDir();
 		const filePath = path.join(CACHE_DIR, `${key}.json`);
 		const entry: CacheEntry<T> = {
 			data,
-			expiresAt: Date.now() + ttlSeconds * 1000,
+			localCacheTimestamp: Date.now(),
 		};
 		await fs.writeFile(filePath, JSON.stringify(entry), "utf-8");
 	} catch (error) {
