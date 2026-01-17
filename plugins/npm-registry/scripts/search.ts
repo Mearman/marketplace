@@ -49,15 +49,15 @@ Examples:
 		if (noCache) {
 			const response = await fetch(apiUrl);
 			data = await response.json();
-			await setCached(cacheKey, data, 3600); // 1 hour
+			await setCached(cacheKey, data); // 1 hour
 		} else {
-			const cached = await getCached<NpmSearchResponse>(cacheKey);
+			const cached = await getCached<NpmSearchResponse>(cacheKey, 3600);
 			if (cached === null) {
 				const response = await fetch(apiUrl);
 				data = await response.json();
-				await setCached(cacheKey, data, 3600);
+				await setCached(cacheKey, data);
 			} else {
-				data = cached;
+				data = cached.data;
 			}
 		}
 

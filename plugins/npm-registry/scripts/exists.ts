@@ -43,15 +43,15 @@ Examples:
 			const response = await fetch(apiUrl, { method: "HEAD" });
 			exists = response.ok;
 			// Cache the result for 1 hour
-			await setCached(cacheKey, { exists, timestamp: Date.now() }, 3600);
+			await setCached(cacheKey, { exists, timestamp: Date.now() });
 		} else {
-			const cached = await getCached<{ exists: boolean; timestamp: number }>(cacheKey);
+			const cached = await getCached<{ exists: boolean; timestamp: number }>(cacheKey, 3600);
 			if (cached === null) {
 				const response = await fetch(apiUrl, { method: "HEAD" });
 				exists = response.ok;
-				await setCached(cacheKey, { exists, timestamp: Date.now() }, 3600);
+				await setCached(cacheKey, { exists, timestamp: Date.now() });
 			} else {
-				exists = cached.exists;
+				exists = cached.data.exists;
 			}
 		}
 
