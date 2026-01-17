@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/Mearman/marketplace/compare/v1.3.0...v1.4.0) (2026-01-17)
+
+
+### Features
+
+* **wayback:** split cache management into separate skill ([3a8a2c6](https://github.com/Mearman/marketplace/commit/3a8a2c6d74c599fa375644154b21827f43f915a2))
+
 # [1.3.0](https://github.com/Mearman/marketplace/compare/v1.2.3...v1.3.0) (2026-01-17)
 
 
