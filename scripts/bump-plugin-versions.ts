@@ -101,7 +101,9 @@ function readPluginJson(pluginName: string): PluginJson {
 
 function writePluginJson(pluginName: string, data: PluginJson): void {
   const path = join(pluginsDir, pluginName, '.claude-plugin', 'plugin.json');
-  writeFileSync(path, JSON.stringify(data, null, 2) + '\n', 'utf-8');
+  // Remove $schema as it's not recognized by Claude Code
+  const { $schema, ...cleanData } = data;
+  writeFileSync(path, JSON.stringify(cleanData, null, 2) + '\n', 'utf-8');
 }
 
 function readMarketplace(): MarketplaceJson {
