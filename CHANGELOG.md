@@ -1,3 +1,18 @@
+## [1.2.3](https://github.com/Mearman/marketplace/compare/v1.2.2...v1.2.3) (2026-01-17)
+
+
+### Documentation
+
+* **docs:** simplify AGENTS.md description ([c14d92a](https://github.com/Mearman/marketplace/commit/c14d92aad3cdf28b9749522029af3398f45ea6b8))
+* **docs:** separate commands into individual code fences for easier copying ([cc4c567](https://github.com/Mearman/marketplace/commit/cc4c567b51e7b7fe5ec8a7b540ddd5d151dc9a1b))
+* **docs:** show both general and specific update commands ([90f6c78](https://github.com/Mearman/marketplace/commit/90f6c786fb82aae5d09afbe071afbcf3c8315b84))
+* **docs:** remove marketplace name from update command ([9f1f324](https://github.com/Mearman/marketplace/commit/9f1f3241f5202afd709781b4de37ef783b8d6b14))
+* **docs:** clarify marketplace and plugin update commands ([9201990](https://github.com/Mearman/marketplace/commit/9201990983ed0b0f18904b72e3b46f05191f024e))
+
+### Chores
+
+* **docs:** rename CLAUDE.md to AGENTS.md with symlink ([7353d30](https://github.com/Mearman/marketplace/commit/7353d30b5053150b3b2e01573ee31e7f9a57b879))
+
 ## [1.2.2](https://github.com/Mearman/marketplace/compare/v1.2.1...v1.2.2) (2026-01-17)
 
 
