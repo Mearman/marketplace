@@ -28,7 +28,6 @@ const coreScopes = [
   'docs',        // README, CLAUDE.md
   'ci',          // GitHub workflows
   'deps',        // Dependencies
-  'release',     // Release changes
 ];
 
 // Plugin scopes (auto-detected from plugins/ directory)
