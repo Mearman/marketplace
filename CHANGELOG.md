@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/Mearman/marketplace/compare/v1.10.1...v1.11.0) (2026-01-17)
+
+
+### Features
+
+* **docs:** add README auto-generation with pre-commit hook ([f22e82e](https://github.com/Mearman/marketplace/commit/f22e82e51005262634b473e9ce132911ce8f58e5))
+
 ## [1.10.1](https://github.com/Mearman/marketplace/compare/v1.10.0...v1.10.1) (2026-01-17)
 
 # [1.10.0](https://github.com/Mearman/marketplace/compare/v1.9.0...v1.10.0) (2026-01-17)

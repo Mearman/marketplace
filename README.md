@@ -15,7 +15,7 @@ A plugin marketplace for [Claude Code](https://claude.ai/code).
 | Plugin | Description | Skills | Install |
 |--------|-------------|--------|---------|
 | `github-api` | GitHub REST API tools for repository metadata, READMEs, user profiles, and rate limit checking | github-rate-limit, github-readme, github-repo, github-user | `/plugin install github-api@mearman` |
-| `gravatar` | Gravatar tools for generating avatar URLs from email addresses | gravatar-check, gravatar-download, gravatar-url | `/plugin install gravatar@mearman` |
+| `gravatar` | Gravatar tools for generating avatar URLs from email addresses | gravatar-url | `/plugin install gravatar@mearman` |
 | `npm-registry` | npm registry tools for searching packages, getting metadata, checking existence, and fetching download statistics | npm-downloads, npm-exists, npm-info, npm-search | `/plugin install npm-registry@mearman` |
 | `npms-io` | NPMS.io tools for package quality analysis, comparison, and name suggestions | npms-analyze, npms-compare, npms-suggest | `/plugin install npms-io@mearman` |
 | `wayback` | Wayback Machine tools for checking, submitting, listing, screenshotting, and cache management for archived URLs | wayback-cache, wayback-check, wayback-list, wayback-screenshot, wayback-submit | `/plugin install wayback@mearman` |
@@ -49,17 +49,9 @@ Get GitHub user profile information including repos, followers, and activity. Us
 </details>
 
 <details>
-<summary><b>gravatar</b> (3 skills) - Gravatar tools for generating avatar URLs from email addresses</summary>
+<summary><b>gravatar</b> (1 skill) - Gravatar tools for generating avatar URLs from email addresses</summary>
 
 #### Skills
-
-### gravatar-check
-
-Check if a Gravatar exists for an email address. Use when the user wants to verify if someone has a Gravatar, check avatar availability, or validate email addresses against Gravatar's database.
-
-### gravatar-download
-
-Download Gravatar avatar images to local files. Use when the user wants to save Gravatar images, download profile pictures, or create local avatar caches.
 
 ### gravatar-url
 
