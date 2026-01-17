@@ -11,11 +11,10 @@ import {
 	API,
 	formatNumber,
 	formatScore,
-	getCached,
+	fetchWithCache,
 	NpmsMgetResponse,
 	NpmsPackage,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -38,38 +37,17 @@ Examples:
 	console.log(`Comparing: ${packages.join(" vs ")}`);
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = `compare-${packages.join("-")}`;
-		let data: NpmsMgetResponse;
-
-		if (noCache) {
-			const response = await fetch(API.mget(), {
+		const data = await fetchWithCache<NpmsMgetResponse>({
+			url: API.mget(),
+			ttl: 21600, // 6 hours
+			cacheKey: `compare-${packages.join("-")}`,
+			bypassCache: flags.has("no-cache"),
+			fetchOptions: {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(packages),
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
-			data = await response.json();
-			await setCached(cacheKey, data); // 6 hours
-		} else {
-			const cached = await getCached<NpmsMgetResponse>(cacheKey, 21600);
-			if (cached === null) {
-				const response = await fetch(API.mget(), {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(packages),
-				});
-				if (!response.ok) {
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-				}
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+			},
+		});
 
 		// Process results
 		const results: Array<{ name: string; data: NpmsPackage | null }> = packages.map((name) => ({

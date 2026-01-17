@@ -10,10 +10,9 @@
 
 import {
 	API,
-	getCached,
+	fetchWithCache,
 	NpmsSuggestion,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -44,30 +43,12 @@ Examples:
 	console.log(`Searching for: "${query}"`);
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = `suggest-${query}-${size}`;
-		let data: NpmsSuggestion[];
-
-		if (noCache) {
-			const response = await fetch(apiUrl);
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
-			data = await response.json();
-			await setCached(cacheKey, data); // 1 hour
-		} else {
-			const cached = await getCached<NpmsSuggestion[]>(cacheKey, 3600);
-			if (cached === null) {
-				const response = await fetch(apiUrl);
-				if (!response.ok) {
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-				}
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<NpmsSuggestion[]>({
+			url: apiUrl,
+			ttl: 3600, // 1 hour
+			cacheKey: `suggest-${query}-${size}`,
+			bypassCache: flags.has("no-cache"),
+		});
 
 		// Limit results to requested size
 		const results = data.slice(0, size);

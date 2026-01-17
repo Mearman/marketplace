@@ -123,7 +123,7 @@ export type CacheTTL = 3600 | 21600 | 86400; // 1h, 6h, 24h in seconds
 const cache = createCacheManager("npms-io");
 
 // Re-export cache utilities
-export const { getCacheKey, getCached, setCached, clearCache } = cache;
+export const { getCacheKey, getCached, setCached, clearCache, fetchWithCache } = cache;
 
 // ============================================================================
 // API URLs

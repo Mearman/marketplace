@@ -13,10 +13,9 @@ import {
 	formatAge,
 	formatNumber,
 	formatScore,
-	getCached,
+	fetchWithCache,
 	NpmsPackage,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -41,37 +40,12 @@ Examples:
 
 	try {
 		const noCache = flags.has("no-cache");
-		const cacheKey = `analyze-${packageName}`;
-		let data: NpmsPackage;
-
-		if (noCache) {
-			const response = await fetch(apiUrl);
-			if (!response.ok) {
-				if (response.status === 404) {
-					console.log(`Package "${packageName}" not found or analysis not available`);
-					process.exit(1);
-				}
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
-			data = await response.json();
-			await setCached(cacheKey, data); // 6 hours
-		} else {
-			const cached = await getCached<NpmsPackage>(cacheKey, 21600);
-			if (cached === null) {
-				const response = await fetch(apiUrl);
-				if (!response.ok) {
-					if (response.status === 404) {
-						console.log(`Package "${packageName}" not found or analysis not available`);
-						process.exit(1);
-					}
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-				}
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<NpmsPackage>({
+			url: apiUrl,
+			ttl: 21600, // 6 hours
+			cacheKey: `analyze-${packageName}`,
+			bypassCache: noCache,
+		});
 
 		const metadata = data.collected.metadata;
 		const score = data.score;
@@ -169,7 +143,12 @@ Examples:
 
 		console.log();
 	} catch (error) {
-		console.error("Error:", error);
+		const message = error instanceof Error ? error.message : String(error);
+		if (message.includes("Resource not found")) {
+			console.log(`Package "${packageName}" not found or analysis not available`);
+		} else {
+			console.error("Error:", message);
+		}
 		process.exit(1);
 	}
 };
