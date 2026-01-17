@@ -1,3 +1,11 @@
+# [1.6.0](https://github.com/Mearman/marketplace/compare/v1.5.4...v1.6.0) (2026-01-17)
+
+
+### Features
+
+* **ci:** add eslint and typescript configuration ([ed493c0](https://github.com/Mearman/marketplace/commit/ed493c0c56aca16229d26533926305e1b850dc97))
+* **ci:** add pre-commit hook with lint-staged ([9719410](https://github.com/Mearman/marketplace/commit/9719410793d4808f20377cd4ce93fcf7fa7cd588))
+
 ## [1.5.4](https://github.com/Mearman/marketplace/compare/v1.5.3...v1.5.4) (2026-01-17)
 
 ## [1.5.3](https://github.com/Mearman/marketplace/compare/v1.5.2...v1.5.3) (2026-01-17)
