@@ -66,41 +66,71 @@ const freshData = await cache.fetchWithCache<MyType>({
 });
 ```
 
+### Configuring Default Retry Behavior
+
+For APIs with specific rate limiting or retry needs (e.g., GitHub), configure defaults when creating the cache manager:
+
+```typescript
+import { createCacheManager } from "../../../lib/cache";
+
+// Configure retry defaults for GitHub API
+const cache = createCacheManager("github-api", {
+  defaultRetryOptions: {
+    maxRetries: 5,
+    initialDelay: 2000,
+    retryableStatuses: [403, 429, 500, 502, 503, 504], // Include 403 for rate limits
+  }
+});
+
+// All fetchWithCache calls use these defaults
+const userData = await cache.fetchWithCache<UserData>({
+  url: "https://api.github.com/user",
+  ttl: 7200,
+  fetchOptions: {
+    headers: { Authorization: `Bearer ${token}` },
+  },
+  // No need to specify retryOptions - uses defaults
+});
+
+// Can still override per-call if needed
+const repoData = await cache.fetchWithCache<RepoData>({
+  url: "https://api.github.com/repos/owner/repo",
+  ttl: 3600,
+  retryOptions: {
+    maxRetries: 3, // Override just this one option
+  },
+});
+```
+
 ### Advanced Options
 
 ```typescript
-// Custom retry configuration
-const data = await cache.fetchWithCache<UserData>({
-  url: "https://api.example.com/user",
-  ttl: 7200,
-  fetchOptions: {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/json",
-    },
-  },
-  retryOptions: {
-    maxRetries: 5,
-    initialDelay: 2000,
-    maxDelay: 60000,
-    backoffMultiplier: 2,
-    jitter: true,
-    retryableStatuses: [403, 429, 500, 502, 503, 504], // Include 403 for rate limits
-  },
-});
-
-// Custom response parser
+// Custom response parser (e.g., for XML or plain text)
 const xmlData = await cache.fetchWithCache<string>({
   url: "https://api.example.com/data.xml",
   ttl: 3600,
   parseResponse: async (response) => response.text(),
 });
 
-// Custom cache key
+// Custom cache key for parameterized endpoints
 const data = await cache.fetchWithCache<RepoData>({
   url: "https://api.github.com/repos/owner/repo",
   ttl: 21600,
   cacheKey: cache.getCacheKey("github-repo", { owner: "owner", repo: "repo" }),
+});
+
+// Custom fetch options (headers, method, etc.)
+const data = await cache.fetchWithCache<UserData>({
+  url: "https://api.example.com/user",
+  ttl: 7200,
+  fetchOptions: {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name: "value" }),
+  },
 });
 ```
 
@@ -176,12 +206,14 @@ const data = await cache.fetchWithCache<PackageInfo>({
 
 ## API
 
-### `createCacheManager(namespace: string): CacheManager`
+### `createCacheManager(namespace: string, options?): CacheManager`
 
 Create a cache manager for the given namespace.
 
 **Parameters:**
 - `namespace` - Unique identifier (e.g., "wayback", "npm-registry")
+- `options` - Optional configuration object
+  - `defaultRetryOptions` - Default retry configuration for all fetchWithCache calls
 
 **Returns:** Cache manager with the following methods
 

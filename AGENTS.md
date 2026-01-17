@@ -155,7 +155,7 @@ export const formatNumber = sharedFormatNumber;
 
 The `fetchWithCache()` method combines fetch, caching, and retry logic into a single call. This is the recommended approach for all new code.
 
-**Usage:**
+**Basic usage:**
 ```typescript
 // Simple fetch with cache
 const data = await fetchWithCache<MyType>({
@@ -163,19 +163,33 @@ const data = await fetchWithCache<MyType>({
   ttl: 3600, // 1 hour
   bypassCache: flags.has("no-cache"),
 });
+```
 
-// With custom retry options (e.g., for rate-limited APIs)
+**Configure defaults for rate-limited APIs:**
+```typescript
+// In plugins/my-plugin/scripts/utils.ts
+import { createCacheManager } from "../../../lib/cache";
+
+// Configure retry defaults once
+const cache = createCacheManager("my-plugin", {
+  defaultRetryOptions: {
+    maxRetries: 5,
+    initialDelay: 2000,
+    retryableStatuses: [403, 429, 500, 502, 503, 504], // Include 403 for rate limits
+  }
+});
+
+// All fetchWithCache calls inherit these defaults
+export const { fetchWithCache } = cache;
+
+// In scripts - no need to specify retry options
 const data = await fetchWithCache<UserData>({
   url: "https://api.github.com/user",
   ttl: 7200,
   fetchOptions: {
     headers: { Authorization: `Bearer ${token}` },
   },
-  retryOptions: {
-    maxRetries: 5,
-    initialDelay: 2000,
-    retryableStatuses: [403, 429, 500, 502, 503, 504], // Include 403 for rate limits
-  },
+  // Uses configured defaults automatically
 });
 ```
 

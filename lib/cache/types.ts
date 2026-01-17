@@ -79,13 +79,24 @@ export interface FetchWithCacheOptions<T = unknown> {
 	fetchOptions?: RequestInit;
 
 	/**
-	 * Retry configuration
+	 * Retry configuration (overrides defaults set in createCacheManager)
 	 */
-	retryOptions?: RetryOptions;
+	retryOptions?: Partial<RetryOptions>;
 
 	/**
 	 * Bypass cache and force fresh fetch
 	 * @default false
 	 */
 	bypassCache?: boolean;
+}
+
+/**
+ * Options for creating a cache manager
+ */
+export interface CacheManagerOptions {
+	/**
+	 * Default retry options for all fetchWithCache calls
+	 * Can be overridden per-call with FetchWithCacheOptions.retryOptions
+	 */
+	defaultRetryOptions?: Partial<RetryOptions>;
 }

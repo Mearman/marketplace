@@ -20,10 +20,10 @@ import * as os from "os";
 import * as path from "path";
 import * as fs from "fs/promises";
 import { createHash } from "crypto";
-import type { CacheEntry, RetryOptions, FetchWithCacheOptions } from "./types";
+import type { CacheEntry, RetryOptions, FetchWithCacheOptions, CacheManagerOptions } from "./types";
 import { sleep } from "../helpers";
 
-export type { CacheEntry, RetryOptions, FetchWithCacheOptions } from "./types";
+export type { CacheEntry, RetryOptions, FetchWithCacheOptions, CacheManagerOptions } from "./types";
 
 export interface CacheManager {
 	/**
@@ -70,10 +70,12 @@ export interface CacheManager {
 /**
  * Create a namespaced cache manager
  * @param namespace - Unique namespace for this cache (e.g., "wayback", "npm-registry")
+ * @param options - Optional configuration for default retry behavior
  * @returns Cache manager with isolated cache directory
  */
-export function createCacheManager(namespace: string): CacheManager {
+export function createCacheManager(namespace: string, options?: CacheManagerOptions): CacheManager {
 	const CACHE_DIR = path.join(os.tmpdir(), `${namespace}-cache`);
+	const defaultRetryOptions = options?.defaultRetryOptions || {};
 
 	const ensureCacheDir = async (): Promise<void> => {
 		try {
@@ -169,7 +171,7 @@ export function createCacheManager(namespace: string): CacheManager {
 	 * Fetch with automatic retry logic
 	 * @param url - URL to fetch
 	 * @param fetchOptions - Fetch options
-	 * @param retryOptions - Retry configuration
+	 * @param retryOptions - Retry configuration (merged with defaultRetryOptions)
 	 * @returns Response
 	 */
 	const fetchWithRetry = async (
@@ -177,14 +179,15 @@ export function createCacheManager(namespace: string): CacheManager {
 		fetchOptions: RequestInit = {},
 		retryOptions: Partial<RetryOptions> = {}
 	): Promise<Response> => {
-		// Default retry options
+		// Merge: hardcoded defaults < defaultRetryOptions < call-specific retryOptions
+		const mergedOptions = { ...defaultRetryOptions, ...retryOptions };
 		const options: Required<RetryOptions> = {
-			maxRetries: retryOptions.maxRetries ?? 3,
-			initialDelay: retryOptions.initialDelay ?? 1000,
-			maxDelay: retryOptions.maxDelay ?? 30000,
-			backoffMultiplier: retryOptions.backoffMultiplier ?? 2,
-			jitter: retryOptions.jitter ?? true,
-			retryableStatuses: retryOptions.retryableStatuses ?? [408, 429, 500, 502, 503, 504],
+			maxRetries: mergedOptions.maxRetries ?? 3,
+			initialDelay: mergedOptions.initialDelay ?? 1000,
+			maxDelay: mergedOptions.maxDelay ?? 30000,
+			backoffMultiplier: mergedOptions.backoffMultiplier ?? 2,
+			jitter: mergedOptions.jitter ?? true,
+			retryableStatuses: mergedOptions.retryableStatuses ?? [408, 429, 500, 502, 503, 504],
 		};
 
 		let lastError: Error | null = null;
