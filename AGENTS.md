@@ -62,6 +62,22 @@ gh api repos/Mearman/marketplace --jq '.topics'
 - When marketplace focus shifts significantly
 - When new Claude Code features are supported
 
+### Documentation Maintenance
+
+**Always update both AGENTS.md and README.md** when making significant changes:
+
+- **AGENTS.md**: Technical guidance for contributors and maintainers
+- **README.md**: User-facing documentation, quick start, plugin listing
+
+Keep documentation in sync with code changes. Outdated documentation is worse than no documentation.
+
+**Documentation checklist when adding a plugin:**
+- [ ] Update plugin count in README.md
+- [ ] Add plugin to README.md plugins table
+- [ ] Update relevant sections in AGENTS.md if new patterns are introduced
+- [ ] Verify installation examples still work
+- [ ] Check GitHub description/topics are still accurate
+
 ## Commit Message Conventions
 
 **Format:** `type(scope): description`
