@@ -62,11 +62,13 @@ Examples:
       data = await response.json();
       await setCached(cacheKey, data, 86400); // Still cache for future requests
     } else {
-      data = await getCached<AvailableResponse>(cacheKey) ?? null as unknown as AvailableResponse;
-      if (!data) {
+      const cached = await getCached<AvailableResponse>(cacheKey);
+      if (cached === null) {
         const response = await fetch(apiUrl);
         data = await response.json();
         await setCached(cacheKey, data, 86400); // 24 hours
+      } else {
+        data = cached;
       }
     }
 

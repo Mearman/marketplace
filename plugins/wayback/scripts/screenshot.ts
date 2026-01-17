@@ -88,11 +88,13 @@ const getScreenshot = async (
       availData = await availResponse.json();
       await setCached(cacheKey, availData, 86400); // Still cache for future requests
     } else {
-      availData = await getCached<AvailableResponse>(cacheKey) ?? null as unknown as AvailableResponse;
-      if (!availData) {
+      const cached = await getCached<AvailableResponse>(cacheKey);
+      if (cached === null) {
         const availResponse = await fetch(availUrl);
         availData = await availResponse.json();
         await setCached(cacheKey, availData, 86400); // 24 hours
+      } else {
+        availData = cached;
       }
     }
 

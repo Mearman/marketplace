@@ -79,11 +79,13 @@ Examples:
     data = await response.json();
     await setCached(cacheKey, data, 3600); // Still cache for future requests
   } else {
-    data = await getCached<CDXRow[]>(cacheKey) ?? null as unknown as CDXRow[];
-    if (!data) {
+    const cached = await getCached<CDXRow[]>(cacheKey);
+    if (cached === null) {
       const response = await fetch(apiUrl);
       data = await response.json();
       await setCached(cacheKey, data, 3600); // 1 hour
+    } else {
+      data = cached;
     }
   }
 
