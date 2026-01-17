@@ -78,9 +78,9 @@ Examples:
 				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 			}
 			data = await response.json();
-			await setCached(cacheKey, data, 3600); // 1 hour
+			await setCached(cacheKey, data); // 1 hour
 		} else {
-			const cached = await getCached<GitHubReadme>(cacheKey);
+			const cached = await getCached<GitHubReadme>(cacheKey, 3600);
 			if (cached === null) {
 				const response = await fetch(apiUrl, { headers });
 				if (!response.ok) {
@@ -95,9 +95,9 @@ Examples:
 					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 				}
 				data = await response.json();
-				await setCached(cacheKey, data, 3600);
+				await setCached(cacheKey, data);
 			} else {
-				data = cached;
+				data = cached.data;
 			}
 		}
 

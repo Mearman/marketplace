@@ -70,18 +70,18 @@ const main = async () => {
 				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 			}
 			data = await response.json();
-			await setCached(cacheKey, data, 300); // 5 minutes
+			await setCached(cacheKey, data); // 5 minutes
 		} else {
-			const cached = await getCached<GitHubRateLimit>(cacheKey);
+			const cached = await getCached<GitHubRateLimit>(cacheKey, 300);
 			if (cached === null) {
 				const response = await fetch(apiUrl, { headers });
 				if (!response.ok) {
 					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 				}
 				data = await response.json();
-				await setCached(cacheKey, data, 300);
+				await setCached(cacheKey, data);
 			} else {
-				data = cached;
+				data = cached.data;
 			}
 		}
 

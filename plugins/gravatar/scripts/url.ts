@@ -86,14 +86,14 @@ Examples:
 
 		if (noCache) {
 			url = buildGravatarUrl(email, urlOptions);
-			await setCached(cacheKey, url, 86400); // 24 hours
+			await setCached(cacheKey, url); // 24 hours
 		} else {
-			const cached = await getCached<string>(cacheKey);
+			const cached = await getCached<string>(cacheKey, 86400);
 			if (cached === null) {
 				url = buildGravatarUrl(email, urlOptions);
-				await setCached(cacheKey, url, 86400);
+				await setCached(cacheKey, url);
 			} else {
-				url = cached;
+				url = cached.data;
 			}
 		}
 

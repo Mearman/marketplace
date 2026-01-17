@@ -54,9 +54,9 @@ Examples:
 				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 			}
 			data = await response.json();
-			await setCached(cacheKey, data, 21600); // 6 hours
+			await setCached(cacheKey, data); // 6 hours
 		} else {
-			const cached = await getCached<NpmsPackage>(cacheKey);
+			const cached = await getCached<NpmsPackage>(cacheKey, 21600);
 			if (cached === null) {
 				const response = await fetch(apiUrl);
 				if (!response.ok) {
@@ -67,9 +67,9 @@ Examples:
 					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 				}
 				data = await response.json();
-				await setCached(cacheKey, data, 21600);
+				await setCached(cacheKey, data);
 			} else {
-				data = cached;
+				data = cached.data;
 			}
 		}
 
