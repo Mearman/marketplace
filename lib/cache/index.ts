@@ -20,9 +20,10 @@ import * as os from "os";
 import * as path from "path";
 import * as fs from "fs/promises";
 import { createHash } from "crypto";
-import type { CacheEntry } from "./types";
+import type { CacheEntry, RetryOptions, FetchWithCacheOptions } from "./types";
+import { sleep } from "../helpers";
 
-export type { CacheEntry } from "./types";
+export type { CacheEntry, RetryOptions, FetchWithCacheOptions } from "./types";
 
 export interface CacheManager {
 	/**
@@ -52,6 +53,13 @@ export interface CacheManager {
 	 * Clear all cache files for this namespace
 	 */
 	clearCache(): Promise<void>;
+
+	/**
+	 * Fetch data with automatic caching and retry logic
+	 * @param options - Fetch and cache options
+	 * @returns Fetched or cached data
+	 */
+	fetchWithCache<T = unknown>(options: FetchWithCacheOptions<T>): Promise<T>;
 
 	/**
 	 * The cache directory path for this namespace
@@ -138,11 +146,143 @@ export function createCacheManager(namespace: string): CacheManager {
 		}
 	};
 
+	/**
+	 * Calculate exponential backoff delay with optional jitter
+	 * @param attempt - Current retry attempt (0-based)
+	 * @param options - Retry options
+	 * @returns Delay in milliseconds
+	 */
+	const calculateDelay = (attempt: number, options: Required<RetryOptions>): number => {
+		const baseDelay = options.initialDelay * Math.pow(options.backoffMultiplier, attempt);
+		const cappedDelay = Math.min(baseDelay, options.maxDelay);
+
+		if (options.jitter) {
+			// Add random jitter (0-50% of delay) to prevent thundering herd
+			const jitterAmount = Math.random() * cappedDelay * 0.5;
+			return cappedDelay + jitterAmount;
+		}
+
+		return cappedDelay;
+	};
+
+	/**
+	 * Fetch with automatic retry logic
+	 * @param url - URL to fetch
+	 * @param fetchOptions - Fetch options
+	 * @param retryOptions - Retry configuration
+	 * @returns Response
+	 */
+	const fetchWithRetry = async (
+		url: string,
+		fetchOptions: RequestInit = {},
+		retryOptions: Partial<RetryOptions> = {}
+	): Promise<Response> => {
+		// Default retry options
+		const options: Required<RetryOptions> = {
+			maxRetries: retryOptions.maxRetries ?? 3,
+			initialDelay: retryOptions.initialDelay ?? 1000,
+			maxDelay: retryOptions.maxDelay ?? 30000,
+			backoffMultiplier: retryOptions.backoffMultiplier ?? 2,
+			jitter: retryOptions.jitter ?? true,
+			retryableStatuses: retryOptions.retryableStatuses ?? [408, 429, 500, 502, 503, 504],
+		};
+
+		let lastError: Error | null = null;
+
+		for (let attempt = 0; attempt <= options.maxRetries; attempt++) {
+			try {
+				const response = await fetch(url, fetchOptions);
+
+				// Check if status is retryable
+				if (!response.ok && options.retryableStatuses.includes(response.status)) {
+					if (attempt < options.maxRetries) {
+						const delay = calculateDelay(attempt, options);
+						console.debug(
+							`Retry ${attempt + 1}/${options.maxRetries} after ${Math.round(delay)}ms (status ${response.status})`
+						);
+						await sleep(delay);
+						continue; // Retry
+					}
+				}
+
+				return response; // Success or non-retryable error
+
+			} catch (error) {
+				lastError = error as Error;
+				if (attempt < options.maxRetries) {
+					const delay = calculateDelay(attempt, options);
+					console.debug(
+						`Retry ${attempt + 1}/${options.maxRetries} after ${Math.round(delay)}ms (network error)`
+					);
+					await sleep(delay);
+					continue; // Retry network error
+				}
+			}
+		}
+
+		// All retries exhausted
+		throw lastError || new Error("Fetch failed after all retries");
+	};
+
+	/**
+	 * Fetch data with automatic caching and retry logic
+	 * @param options - Fetch and cache options
+	 * @returns Fetched or cached data
+	 */
+	const fetchWithCache = async <T = unknown>(
+		options: FetchWithCacheOptions<T>
+	): Promise<T> => {
+		const {
+			url,
+			ttl,
+			cacheKey: providedKey,
+			parseResponse = async (response: Response) => response.json() as Promise<T>,
+			fetchOptions = {},
+			retryOptions = {},
+			bypassCache = false,
+		} = options;
+
+		// Generate cache key
+		const cacheKey = providedKey || getCacheKey(url);
+
+		// Check cache first (unless bypassing)
+		if (!bypassCache) {
+			const cached = await getCached<T>(cacheKey, ttl);
+			if (cached !== null) {
+				return cached.data;
+			}
+		}
+
+		// Fetch with retry logic
+		const response = await fetchWithRetry(url, fetchOptions, retryOptions);
+
+		// Check for HTTP errors
+		if (!response.ok) {
+			// Provide more specific error messages for common status codes
+			if (response.status === 404) {
+				throw new Error(`Resource not found: ${url}`);
+			}
+			if (response.status === 401 || response.status === 403) {
+				throw new Error(`Authentication/Authorization failed: ${response.status} ${response.statusText}`);
+			}
+			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+		}
+
+		// Parse response
+		const data = await parseResponse(response);
+
+		// Cache the result
+		await setCached(cacheKey, data);
+
+		return data;
+	};
+
 	return {
 		getCacheKey,
 		getCached,
 		setCached,
 		clearCache,
+		fetchWithCache,
 		CACHE_DIR,
 	};
 }

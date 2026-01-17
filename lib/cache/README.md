@@ -35,6 +35,145 @@ if (cached) {
 await cache.clearCache();
 ```
 
+## Fetch with Cache and Retry
+
+The `fetchWithCache()` method combines fetching, caching, and retry logic into a single call. It automatically handles:
+
+- Cache-first pattern (check cache before fetching)
+- Exponential backoff with jitter for retries
+- Automatic retries for transient errors (429, 500, 502, 503, 504)
+- HTTP error handling with specific messages
+- Response parsing (JSON by default)
+
+### Basic Usage
+
+```typescript
+import { createCacheManager } from "../../../lib/cache";
+
+const cache = createCacheManager("my-plugin");
+
+// Simple fetch with cache
+const data = await cache.fetchWithCache<MyType>({
+  url: "https://api.example.com/data",
+  ttl: 3600, // 1 hour cache
+});
+
+// Bypass cache
+const freshData = await cache.fetchWithCache<MyType>({
+  url: "https://api.example.com/data",
+  ttl: 3600,
+  bypassCache: true, // Force fresh fetch
+});
+```
+
+### Advanced Options
+
+```typescript
+// Custom retry configuration
+const data = await cache.fetchWithCache<UserData>({
+  url: "https://api.example.com/user",
+  ttl: 7200,
+  fetchOptions: {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/json",
+    },
+  },
+  retryOptions: {
+    maxRetries: 5,
+    initialDelay: 2000,
+    maxDelay: 60000,
+    backoffMultiplier: 2,
+    jitter: true,
+    retryableStatuses: [403, 429, 500, 502, 503, 504], // Include 403 for rate limits
+  },
+});
+
+// Custom response parser
+const xmlData = await cache.fetchWithCache<string>({
+  url: "https://api.example.com/data.xml",
+  ttl: 3600,
+  parseResponse: async (response) => response.text(),
+});
+
+// Custom cache key
+const data = await cache.fetchWithCache<RepoData>({
+  url: "https://api.github.com/repos/owner/repo",
+  ttl: 21600,
+  cacheKey: cache.getCacheKey("github-repo", { owner: "owner", repo: "repo" }),
+});
+```
+
+### Retry Behavior
+
+**Default retry configuration:**
+- `maxRetries`: 3 attempts
+- `initialDelay`: 1000ms (1 second)
+- `maxDelay`: 30000ms (30 seconds)
+- `backoffMultiplier`: 2 (exponential)
+- `jitter`: true (adds 0-50% random delay)
+- `retryableStatuses`: [408, 429, 500, 502, 503, 504]
+
+**Exponential backoff example:**
+```
+Attempt 1: Wait 1000ms + jitter (0-500ms)
+Attempt 2: Wait 2000ms + jitter (0-1000ms)
+Attempt 3: Wait 4000ms + jitter (0-2000ms)
+Attempt 4: Wait 8000ms + jitter (0-4000ms)
+```
+
+**Non-retryable errors** (immediate failure):
+- 404 Not Found
+- 401 Unauthorized
+- Network errors after max retries
+
+### Migration Pattern
+
+**BEFORE (manual fetch + cache + error handling):**
+```typescript
+const noCache = flags.has("no-cache");
+let data: PackageInfo;
+
+if (noCache) {
+  const response = await fetch(apiUrl, { headers });
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error("Package not found");
+    }
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  data = await response.json();
+  await setCached(cacheKey, data);
+} else {
+  const cached = await getCached<PackageInfo>(cacheKey, 21600);
+  if (cached === null) {
+    const response = await fetch(apiUrl, { headers });
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error("Package not found");
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    data = await response.json();
+    await setCached(cacheKey, data);
+  } else {
+    data = cached.data;
+  }
+}
+```
+
+**AFTER (fetchWithCache):**
+```typescript
+const data = await cache.fetchWithCache<PackageInfo>({
+  url: apiUrl,
+  ttl: 21600,
+  fetchOptions: { headers },
+  bypassCache: flags.has("no-cache"),
+});
+```
+
+**Code reduction:** ~30 lines → ~5 lines per script
+
 ## API
 
 ### `createCacheManager(namespace: string): CacheManager`
@@ -77,6 +216,34 @@ Store data with current timestamp.
 ### `clearCache(): Promise<void>`
 
 Remove all `.json` files in the cache directory.
+
+### `fetchWithCache<T>(options): Promise<T>`
+
+Fetch data with automatic caching and retry logic.
+
+**Parameters:**
+- `url` - URL to fetch (required)
+- `ttl` - Time to live in seconds (required)
+- `cacheKey` - Optional custom cache key (auto-generated from URL if not provided)
+- `parseResponse` - Custom response parser (default: `response.json()`)
+- `fetchOptions` - Fetch options (headers, method, body, etc.)
+- `retryOptions` - Retry configuration (see RetryOptions below)
+- `bypassCache` - Skip cache check and force fresh fetch (default: false)
+
+**RetryOptions:**
+- `maxRetries` - Maximum retry attempts (default: 3)
+- `initialDelay` - Initial delay in ms (default: 1000)
+- `maxDelay` - Maximum delay in ms (default: 30000)
+- `backoffMultiplier` - Exponential backoff multiplier (default: 2)
+- `jitter` - Add random jitter to prevent thundering herd (default: true)
+- `retryableStatuses` - HTTP status codes to retry (default: [408, 429, 500, 502, 503, 504])
+
+**Returns:** Fetched or cached data of type `T`
+
+**Throws:**
+- Error with specific message for 404, 401/403 status codes
+- Error after all retries exhausted
+- Network errors after max retries
 
 ## Cache Directory
 
