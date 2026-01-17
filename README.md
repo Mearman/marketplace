@@ -4,20 +4,36 @@ A plugin marketplace for [Claude Code](https://claude.ai/code).
 
 ## Usage
 
+**Add marketplace**
 ```bash
-# Add this marketplace
 /plugin marketplace add Mearman/marketplace
+```
 
-# Install a plugin
+**Install plugin**
+```bash
 /plugin install wayback@mearman
+```
 
-# Update marketplace catalog (refresh available plugins)
-/plugin marketplace update              # Updates all marketplaces
-/plugin marketplace update mearman      # Updates specific marketplace
+**Update marketplace**
+```bash
+/plugin marketplace update
+```
+or specific marketplace:
+```bash
+/plugin marketplace update mearman
+```
 
-# Update plugins
-/plugin update wayback                  # Updates specific plugin
-/plugin update                          # Updates all plugins
+**Update plugins**
+```bash
+/plugin update wayback@mearman
+```
+or:
+```bash
+/plugin update wayback
+```
+or all plugins:
+```bash
+/plugin update
 ```
 
 ## Plugins
