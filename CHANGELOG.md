@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/Mearman/marketplace/compare/v1.2.0...v1.2.1) (2026-01-17)
+
+
+### Bug Fixes
+
+* **wayback:** remove $schema from plugin.json for Claude Code compatibility ([a5c2e29](https://github.com/Mearman/marketplace/commit/a5c2e2953403e37d8fed188e330eab99986823fc))
+
 # [1.2.0](https://github.com/Mearman/marketplace/compare/v1.1.0...v1.2.0) (2026-01-17)
 
 

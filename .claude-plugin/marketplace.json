@@ -12,7 +12,7 @@
       "name": "wayback",
       "source": "./plugins/wayback",
       "description": "Wayback Machine tools for checking, submitting, listing, and screenshotting archived URLs",
-      "version": "0.3.0"
+      "version": "0.3.1"
     }
   ]
 }
