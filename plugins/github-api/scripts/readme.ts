@@ -11,13 +11,12 @@
 import {
 	API,
 	base64Decode,
-	getCached,
+	fetchWithCache,
 	getAuthHeaders,
 	GitHubReadme,
 	getTokenFromEnv,
 	parseArgs,
 	parseRepositoryUrl,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -58,48 +57,15 @@ Examples:
 	console.log(`Fetching README for: ${owner}/${repo}`);
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = `readme-${owner}-${repo}`;
-		let data: GitHubReadme;
-
 		const headers = getAuthHeaders(token);
 
-		if (noCache) {
-			const response = await fetch(apiUrl, { headers });
-			if (!response.ok) {
-				if (response.status === 404) {
-					console.log(`Repository "${owner}/${repo}" has no README or does not exist`);
-					process.exit(1);
-				}
-				if (response.status === 403) {
-					console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
-					process.exit(1);
-				}
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
-			data = await response.json();
-			await setCached(cacheKey, data); // 1 hour
-		} else {
-			const cached = await getCached<GitHubReadme>(cacheKey, 3600);
-			if (cached === null) {
-				const response = await fetch(apiUrl, { headers });
-				if (!response.ok) {
-					if (response.status === 404) {
-						console.log(`Repository "${owner}/${repo}" has no README or does not exist`);
-						process.exit(1);
-					}
-					if (response.status === 403) {
-						console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
-						process.exit(1);
-					}
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-				}
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<GitHubReadme>({
+			url: apiUrl,
+			ttl: 3600, // 1 hour
+			fetchOptions: { headers },
+			bypassCache: flags.has("no-cache"),
+			cacheKey: `readme-${owner}-${repo}`,
+		});
 
 		// Decode and display README
 		const content = base64Decode(data.content);
@@ -114,7 +80,14 @@ Examples:
 		console.log(content);
 		console.log();
 	} catch (error) {
-		console.error("Error:", error);
+		const message = error instanceof Error ? error.message : String(error);
+		if (message.includes("Resource not found")) {
+			console.log(`Repository "${owner}/${repo}" has no README or does not exist`);
+		} else if (message.includes("Authentication/Authorization failed: 403")) {
+			console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
+		} else {
+			console.error("Error:", message);
+		}
 		process.exit(1);
 	}
 };

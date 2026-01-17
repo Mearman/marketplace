@@ -12,13 +12,12 @@ import {
 	API,
 	formatDate,
 	formatNumber,
-	getCached,
+	fetchWithCache,
 	getAuthHeaders,
 	GitHubRepository,
 	getTokenFromEnv,
 	parseArgs,
 	parseRepositoryUrl,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -59,48 +58,15 @@ Examples:
 	console.log(`Fetching: ${owner}/${repo}`);
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = `repo-${owner}-${repo}`;
-		let data: GitHubRepository;
-
 		const headers = getAuthHeaders(token);
 
-		if (noCache) {
-			const response = await fetch(apiUrl, { headers });
-			if (!response.ok) {
-				if (response.status === 404) {
-					console.log(`Repository "${owner}/${repo}" not found`);
-					process.exit(1);
-				}
-				if (response.status === 403) {
-					console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
-					process.exit(1);
-				}
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
-			data = await response.json();
-			await setCached(cacheKey, data); // 30 minutes
-		} else {
-			const cached = await getCached<GitHubRepository>(cacheKey, 1800);
-			if (cached === null) {
-				const response = await fetch(apiUrl, { headers });
-				if (!response.ok) {
-					if (response.status === 404) {
-						console.log(`Repository "${owner}/${repo}" not found`);
-						process.exit(1);
-					}
-					if (response.status === 403) {
-						console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
-						process.exit(1);
-					}
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-				}
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<GitHubRepository>({
+			url: apiUrl,
+			ttl: 1800, // 30 minutes
+			fetchOptions: { headers },
+			bypassCache: flags.has("no-cache"),
+			cacheKey: `repo-${owner}-${repo}`,
+		});
 
 		// Display repository information
 		console.log();
@@ -152,7 +118,14 @@ Examples:
 		console.log(`\nRepository: https://github.com/${data.full_name}`);
 		console.log();
 	} catch (error) {
-		console.error("Error:", error);
+		const message = error instanceof Error ? error.message : String(error);
+		if (message.includes("Resource not found")) {
+			console.log(`Repository "${owner}/${repo}" not found`);
+		} else if (message.includes("Authentication/Authorization failed: 403")) {
+			console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
+		} else {
+			console.error("Error:", message);
+		}
 		process.exit(1);
 	}
 };

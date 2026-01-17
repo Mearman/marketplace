@@ -122,7 +122,7 @@ export type CacheTTL = 300 | 1800 | 3600; // 5m, 30m, 1h in seconds
 const cache = createCacheManager("github-api");
 
 // Re-export cache utilities
-export const { getCacheKey, getCached, setCached, clearCache } = cache;
+export const { getCacheKey, getCached, setCached, clearCache, fetchWithCache } = cache;
 
 // ============================================================================
 // API URLs

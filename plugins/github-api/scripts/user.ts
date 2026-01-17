@@ -12,12 +12,11 @@ import {
 	API,
 	formatDate,
 	formatNumber,
-	getCached,
+	fetchWithCache,
 	getAuthHeaders,
 	GitHubUser,
 	getTokenFromEnv,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -43,48 +42,15 @@ Examples:
 	console.log(`Fetching user: ${username}`);
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = `user-${username}`;
-		let data: GitHubUser;
-
 		const headers = getAuthHeaders(token);
 
-		if (noCache) {
-			const response = await fetch(apiUrl, { headers });
-			if (!response.ok) {
-				if (response.status === 404) {
-					console.log(`User "${username}" not found`);
-					process.exit(1);
-				}
-				if (response.status === 403) {
-					console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
-					process.exit(1);
-				}
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
-			data = await response.json();
-			await setCached(cacheKey, data); // 1 hour
-		} else {
-			const cached = await getCached<GitHubUser>(cacheKey, 3600);
-			if (cached === null) {
-				const response = await fetch(apiUrl, { headers });
-				if (!response.ok) {
-					if (response.status === 404) {
-						console.log(`User "${username}" not found`);
-						process.exit(1);
-					}
-					if (response.status === 403) {
-						console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
-						process.exit(1);
-					}
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-				}
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<GitHubUser>({
+			url: apiUrl,
+			ttl: 3600, // 1 hour
+			fetchOptions: { headers },
+			bypassCache: flags.has("no-cache"),
+			cacheKey: `user-${username}`,
+		});
 
 		// Display user information
 		console.log();
@@ -129,7 +95,14 @@ Examples:
 		console.log(`  Avatar: ${data.avatar_url}`);
 		console.log();
 	} catch (error) {
-		console.error("Error:", error);
+		const message = error instanceof Error ? error.message : String(error);
+		if (message.includes("Resource not found")) {
+			console.log(`User "${username}" not found`);
+		} else if (message.includes("Authentication/Authorization failed: 403")) {
+			console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
+		} else {
+			console.error("Error:", message);
+		}
 		process.exit(1);
 	}
 };

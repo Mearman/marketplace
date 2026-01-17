@@ -10,12 +10,11 @@
 
 import {
 	API,
-	getCached,
+	fetchWithCache,
 	getAuthHeaders,
 	GitHubRateLimit,
 	getTokenFromEnv,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const formatResetTime = (resetTimestamp: number): string => {
@@ -58,32 +57,15 @@ const main = async () => {
 	console.log("Fetching GitHub API rate limit status...");
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = "rate-limit";
-		let data: GitHubRateLimit;
-
 		const headers = getAuthHeaders(token);
 
-		if (noCache) {
-			const response = await fetch(apiUrl, { headers });
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
-			data = await response.json();
-			await setCached(cacheKey, data); // 5 minutes
-		} else {
-			const cached = await getCached<GitHubRateLimit>(cacheKey, 300);
-			if (cached === null) {
-				const response = await fetch(apiUrl, { headers });
-				if (!response.ok) {
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-				}
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<GitHubRateLimit>({
+			url: apiUrl,
+			ttl: 300, // 5 minutes
+			fetchOptions: { headers },
+			bypassCache: flags.has("no-cache"),
+			cacheKey: "rate-limit",
+		});
 
 		// Display rate limit information
 		console.log();
