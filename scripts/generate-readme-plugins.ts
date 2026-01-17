@@ -3,7 +3,7 @@
  * Generates the plugins section of README.md from marketplace.json and plugin metadata.
  *
  * Usage:
- *   pnpm generate-readme     # Update README.md with generated plugin tables
+ *   pnpm generate-readme     # Update README.md with generated plugin list
  *   pnpm validate-readme     # Check if README is up-to-date (CI mode)
  */
 
@@ -108,20 +108,23 @@ function readPluginSkills(pluginName: string): Skill[] {
 }
 
 /**
- * Generate the flat plugins table.
+ * Generate the plugins list with install command code blocks.
  */
-function generatePluginsTable(plugins: Plugin[]): string {
-	const header = `| Plugin | Description | Skills | Install |
-|--------|-------------|--------|---------|`;
+function generatePluginsList(plugins: Plugin[]): string {
+	return plugins
+		.map((plugin) => {
+			const skillList = plugin.skills.map((s) => s.name).join(", ");
+			return `### ${plugin.name}
 
-	const rows = plugins.map((plugin) => {
-		const skillList = plugin.skills.map((s) => s.name).join(", ");
-		const installCmd = `\`/plugin install ${plugin.name}@mearman\``;
-		const escapedDesc = plugin.description.replace(/\|/g, "\\|");
-		return `| \`${plugin.name}\` | ${escapedDesc} | ${skillList} | ${installCmd} |`;
-	});
+${plugin.description}
 
-	return [header, ...rows].join("\n");
+**Skills:** ${skillList}
+
+\`\`\`bash
+/plugin install ${plugin.name}@mearman
+\`\`\``;
+		})
+		.join("\n\n");
 }
 
 /**
@@ -201,12 +204,12 @@ function main(): void {
 	marketplace.plugins.sort((a, b) => a.name.localeCompare(b.name));
 
 	// Generate content
-	const pluginsTable = generatePluginsTable(marketplace.plugins);
+	const pluginsList = generatePluginsList(marketplace.plugins);
 	const pluginDetails = generatePluginDetails(marketplace.plugins);
 
 	const generated = `## Available Plugins
 
-${pluginsTable}
+${pluginsList}
 
 ## Plugin Details
 

@@ -12,13 +12,55 @@ A plugin marketplace for [Claude Code](https://claude.ai/code).
 <!-- AUTO-GENERATED PLUGINS START -->
 ## Available Plugins
 
-| Plugin | Description | Skills | Install |
-|--------|-------------|--------|---------|
-| `github-api` | GitHub REST API tools for repository metadata, READMEs, user profiles, and rate limit checking | github-rate-limit, github-readme, github-repo, github-user | `/plugin install github-api@mearman` |
-| `gravatar` | Gravatar tools for generating avatar URLs from email addresses | gravatar-check, gravatar-download, gravatar-url | `/plugin install gravatar@mearman` |
-| `npm-registry` | npm registry tools for searching packages, getting metadata, checking existence, and fetching download statistics | npm-downloads, npm-exists, npm-info, npm-search | `/plugin install npm-registry@mearman` |
-| `npms-io` | NPMS.io tools for package quality analysis, comparison, and name suggestions | npms-analyze, npms-compare, npms-suggest | `/plugin install npms-io@mearman` |
-| `wayback` | Wayback Machine tools for checking, submitting, listing, screenshotting, and cache management for archived URLs | wayback-cache, wayback-check, wayback-list, wayback-screenshot, wayback-submit | `/plugin install wayback@mearman` |
+### github-api
+
+GitHub REST API tools for repository metadata, READMEs, user profiles, and rate limit checking
+
+**Skills:** github-rate-limit, github-readme, github-repo, github-user
+
+```bash
+/plugin install github-api@mearman
+```
+
+### gravatar
+
+Gravatar tools for generating avatar URLs from email addresses
+
+**Skills:** gravatar-check, gravatar-download, gravatar-url
+
+```bash
+/plugin install gravatar@mearman
+```
+
+### npm-registry
+
+npm registry tools for searching packages, getting metadata, checking existence, and fetching download statistics
+
+**Skills:** npm-downloads, npm-exists, npm-info, npm-search
+
+```bash
+/plugin install npm-registry@mearman
+```
+
+### npms-io
+
+NPMS.io tools for package quality analysis, comparison, and name suggestions
+
+**Skills:** npms-analyze, npms-compare, npms-suggest
+
+```bash
+/plugin install npms-io@mearman
+```
+
+### wayback
+
+Wayback Machine tools for checking, submitting, listing, screenshotting, and cache management for archived URLs
+
+**Skills:** wayback-cache, wayback-check, wayback-list, wayback-screenshot, wayback-submit
+
+```bash
+/plugin install wayback@mearman
+```
 
 ## Plugin Details
 
