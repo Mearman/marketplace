@@ -13,12 +13,10 @@ import {
 	API,
 	AvailableResponse,
 	buildArchiveUrl,
+	fetchWithCache,
 	formatAge,
 	formatTimestamp,
-	getCacheKey,
-	getCached,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -51,26 +49,11 @@ Examples:
 	}
 
 	try {
-		// Check cache first (24-hour TTL for availability data)
-		const noCache = flags.has("no-cache");
-		const cacheKey = getCacheKey(apiUrl);
-		let data: AvailableResponse;
-
-		if (noCache) {
-			// Bypass cache
-			const response = await fetch(apiUrl);
-			data = await response.json();
-			await setCached(cacheKey, data); // Still cache for future requests
-		} else {
-			const cached = await getCached<AvailableResponse>(cacheKey, 86400);
-			if (cached === null) {
-				const response = await fetch(apiUrl);
-				data = await response.json();
-				await setCached(cacheKey, data); // 24 hours
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<AvailableResponse>({
+			url: apiUrl,
+			ttl: 86400, // 24 hours
+			bypassCache: flags.has("no-cache"),
+		});
 
 		const snapshot = data.archived_snapshots.closest;
 		if (snapshot?.available) {

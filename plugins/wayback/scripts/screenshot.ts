@@ -16,12 +16,10 @@ import {
 	AvailableResponse,
 	CDXRow,
 	buildScreenshotUrl,
+	fetchWithCache,
 	formatAge,
 	formatTimestamp,
-	getCacheKey,
-	getCached,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const listScreenshots = async (url: string): Promise<void> => {
@@ -112,25 +110,11 @@ const getScreenshot = async (
 	} else {
 		const availUrl = API.availability(url);
 
-		// Check cache first (24-hour TTL for availability data)
-		const cacheKey = getCacheKey(availUrl);
-		let availData: AvailableResponse;
-
-		if (noCache) {
-			// Bypass cache
-			const availResponse = await fetch(availUrl);
-			availData = await availResponse.json();
-			await setCached(cacheKey, availData); // Still cache for future requests
-		} else {
-			const cached = await getCached<AvailableResponse>(cacheKey, 86400);
-			if (cached === null) {
-				const availResponse = await fetch(availUrl);
-				availData = await availResponse.json();
-				await setCached(cacheKey, availData); // 24 hours
-			} else {
-				availData = cached.data;
-			}
-		}
+		const availData = await fetchWithCache<AvailableResponse>({
+			url: availUrl,
+			ttl: 86400, // 24 hours
+			bypassCache: noCache,
+		});
 
 		const closest = availData.archived_snapshots?.closest;
 		if (!closest?.available) {

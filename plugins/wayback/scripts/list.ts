@@ -14,12 +14,10 @@ import {
 	CDXRow,
 	buildArchiveUrl,
 	buildScreenshotUrl,
+	fetchWithCache,
 	formatAge,
 	formatTimestamp,
-	getCacheKey,
-	getCached,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const fetchScreenshotTimestamps = async (url: string): Promise<Set<string>> => {
@@ -68,26 +66,11 @@ Examples:
 
 	const apiUrl = API.cdx(url, { limit, filter: "statuscode:200" });
 
-	// Check cache first (1-hour TTL for CDX data)
-	const noCache = flags.has("no-cache");
-	const cacheKey = getCacheKey(apiUrl);
-	let data: CDXRow[];
-
-	if (noCache) {
-		// Bypass cache
-		const response = await fetch(apiUrl);
-		data = await response.json();
-		await setCached(cacheKey, data); // Still cache for future requests
-	} else {
-		const cached = await getCached<CDXRow[]>(cacheKey, 3600);
-		if (cached === null) {
-			const response = await fetch(apiUrl);
-			data = await response.json();
-			await setCached(cacheKey, data); // 1 hour
-		} else {
-			data = cached.data;
-		}
-	}
+	const data = await fetchWithCache<CDXRow[]>({
+		url: apiUrl,
+		ttl: 3600, // 1 hour
+		bypassCache: flags.has("no-cache"),
+	});
 
 	if (data.length <= 1) {
 		console.log("No snapshots found");

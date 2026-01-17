@@ -47,7 +47,7 @@ export type CacheTTL = 30 | 3600 | 86400; // 30s, 1h, 24h in seconds
 const cache = createCacheManager("wayback");
 
 // Re-export cache utilities
-export const { getCacheKey, getCached, setCached, clearCache } = cache;
+export const { getCacheKey, getCached, setCached, clearCache, fetchWithCache } = cache;
 
 // Re-export other shared utilities
 export const parseArgs = sharedParseArgs;
