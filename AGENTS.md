@@ -118,9 +118,23 @@ fix(wayback): resolve cache expiration bug
 chore(wayback): update dependencies
 ```
 
-**Available types:** `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `test`, `perf`, `ci`
+**Types:** Follow [Conventional Commits](https://www.conventionalcommits.org/) specification
+- `feat` - New feature
+- `fix` - Bug fix
+- `chore` - Maintenance tasks
+- `docs` - Documentation changes
+- `style` - Code style changes (formatting, etc.)
+- `refactor` - Code refactoring
+- `test` - Test changes
+- `perf` - Performance improvements
+- `ci` - CI/CD changes
 
-**Available scopes:** `marketplace`, `schemas`, `docs`, `ci`, `deps`, `release`, plus plugin names (e.g., `wayback`)
+**Scopes:**
+- **Core scopes**: `marketplace`, `schemas`, `docs`, `ci`, `deps`, `release`, `lib`
+- **Plugin scopes**: Auto-discovered from `plugins/` directory (e.g., `wayback`, `github-api`, `gravatar`)
+- **Adding new scopes**: When introducing new infrastructure or areas not covered by existing scopes, add to `coreScopes` in `commitlint.config.ts`
+
+Use appropriate scope for the change. If no existing scope fits, add a new one rather than force-fitting into an unrelated scope.
 
 ## Adding a Plugin
 
