@@ -9,6 +9,8 @@
 		"commitlint": "commitlint --edit",
 		"sync-versions": "tsx scripts/sync-marketplace-versions.ts",
 		"validate": "tsx scripts/sync-marketplace-versions.ts --check",
+		"generate-readme": "tsx scripts/generate-readme-plugins.ts",
+		"validate-readme": "tsx scripts/generate-readme-plugins.ts --check",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
 		"typecheck": "tsc --noEmit"
