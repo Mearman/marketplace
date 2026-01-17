@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/Mearman/marketplace/compare/v1.8.1...v1.9.0) (2026-01-17)
+
+
+### Features
+
+* **lib:** add fetchWithCache with exponential backoff and retry ([3235dad](https://github.com/Mearman/marketplace/commit/3235dad7d842cb9ff597399ae7658b0c1127cdd9))
+
 ## [1.8.1](https://github.com/Mearman/marketplace/compare/v1.8.0...v1.8.1) (2026-01-17)
 
 # [1.8.0](https://github.com/Mearman/marketplace/compare/v1.7.0...v1.8.0) (2026-01-17)
