@@ -26,6 +26,42 @@ plugins/<plugin-name>/
 
 When updating a plugin, increment both. Users receive updates when marketplace version exceeds their installed version.
 
+## Repository Metadata
+
+### GitHub Description & Topics
+
+Keep the repository description and topics up to date to improve discoverability.
+
+**Current description:**
+> "Plugin marketplace for Claude Code. Skills, commands, hooks, and agents for extending Claude's capabilities."
+
+**Current topics:**
+`agents`, `ai`, `anthropic`, `claude-code`, `commands`, `developer-tools`, `hooks`, `plugin-marketplace`, `plugins`, `skills`
+
+**Updating via GitHub CLI:**
+
+```bash
+# Update description
+gh repo edit Mearman/marketplace --description "New description here"
+
+# Add topics
+gh repo edit Mearman/marketplace --add-topic "topic-name"
+
+# Remove topics
+gh repo edit Mearman/marketplace --remove-topic "topic-name"
+
+# View current description
+gh repo view Mearman/marketplace --json description -q '.description'
+
+# View current topics
+gh api repos/Mearman/marketplace --jq '.topics'
+```
+
+**When to update:**
+- After adding major new plugin categories
+- When marketplace focus shifts significantly
+- When new Claude Code features are supported
+
 ## Commit Message Conventions
 
 **Format:** `type(scope): description`
