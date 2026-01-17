@@ -1,3 +1,7 @@
+## <small>1.11.5 (2026-01-17)</small>
+
+* fix(ci): include all commit types in changelog ([22e072d](https://github.com/Mearman/marketplace/commit/22e072d))
+
 ## [1.11.4](https://github.com/Mearman/marketplace/compare/v1.11.3...v1.11.4) (2026-01-17)
 
 ## [1.11.3](https://github.com/Mearman/marketplace/compare/v1.11.2...v1.11.3) (2026-01-17)
