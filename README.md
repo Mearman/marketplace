@@ -10,6 +10,12 @@ A plugin marketplace for [Claude Code](https://claude.ai/code).
 
 # Install a plugin
 /plugin install wayback@claude-code-skills
+
+# Update marketplace listings
+/plugin marketplace update
+
+# Update installed plugins
+/plugin update wayback
 ```
 
 ## Plugins
