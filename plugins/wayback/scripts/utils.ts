@@ -106,6 +106,23 @@ export const setCached = async <T = unknown>(
   }
 };
 
+export const clearCache = async (): Promise<void> => {
+  try {
+    const files = await fs.readdir(CACHE_DIR);
+    const cacheFiles = files.filter((f) => f.endsWith(".json"));
+    await Promise.all(
+      cacheFiles.map((f) => fs.unlink(path.join(CACHE_DIR, f)))
+    );
+    console.log(`Cleared ${cacheFiles.length} cache file(s) from ${CACHE_DIR}`);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      console.log("Cache directory not found or empty");
+    } else {
+      console.error("Error clearing cache:", error);
+    }
+  }
+};
+
 // ============================================================================
 // API URLs
 // ============================================================================

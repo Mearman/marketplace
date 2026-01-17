@@ -16,6 +16,8 @@ npx tsx scripts/check.ts <url> [options]
 Options:
 - `--no-raw` - Include Wayback toolbar in archived URL
 - `--timestamp=DATE` - Find snapshot closest to date (YYYYMMDD or YYYYMMDDhhmmss)
+- `--no-cache` - Bypass cache and fetch fresh data from API
+- `--clear-cache` - Clear all cached data before proceeding (can be used standalone)
 
 Run from the wayback plugin directory: `~/.claude/plugins/cache/wayback/`
 
@@ -95,6 +97,8 @@ By default, append `id_` after the timestamp in URLs to get raw content without 
 ## Caching
 
 Availability API responses are cached for 24 hours using the OS temporary directory (`os.tmpdir()`). Cache keys are generated from the URL and timestamp parameters using SHA-256 hashing. Cached responses expire automatically and are deleted on access.
+
+Use `--clear-cache` to manually clear all cached data. This flag can be used standalone (`npx tsx scripts/check.ts --clear-cache`) or combined with other operations.
 
 ## Error Handling
 

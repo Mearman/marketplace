@@ -17,6 +17,8 @@ Options:
 - `--timestamp=DATE` - Get screenshot from specific capture (YYYYMMDDhhmmss)
 - `--list` - List available screenshots for URL
 - `--download=PATH` - Download screenshot to file
+- `--no-cache` - Bypass cache and fetch fresh data from API
+- `--clear-cache` - Clear all cached data before proceeding (can be used standalone)
 
 Run from the wayback plugin directory: `~/.claude/plugins/cache/wayback/`
 
@@ -94,6 +96,8 @@ Total: 2 screenshot(s)
 ## Caching
 
 Availability API responses are cached for 24 hours using the OS temporary directory (`os.tmpdir()`). Cache keys are generated from the URL using SHA-256 hashing. Cached responses expire automatically and are deleted on access.
+
+Use `--clear-cache` to manually clear all cached data. This flag can be used standalone (`npx tsx scripts/screenshot.ts --clear-cache`) or combined with other operations.
 
 ## Related
 
