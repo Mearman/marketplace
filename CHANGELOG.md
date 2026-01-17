@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/Mearman/marketplace/compare/v1.11.1...v1.11.2) (2026-01-17)
+
+
+### Bug Fixes
+
+* **ci:** stage README after lint-staged to include generated content ([8c52d43](https://github.com/Mearman/marketplace/commit/8c52d43a9d237786d46d6d3ae12411cb060b2597))
+
 ## [1.11.1](https://github.com/Mearman/marketplace/compare/v1.11.0...v1.11.1) (2026-01-17)
 
 # [1.11.0](https://github.com/Mearman/marketplace/compare/v1.10.1...v1.11.0) (2026-01-17)
