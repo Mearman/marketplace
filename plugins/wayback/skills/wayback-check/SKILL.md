@@ -92,6 +92,10 @@ By default, append `id_` after the timestamp in URLs to get raw content without 
 - Use `wayback-list` to see all captures with filtering options
 - Use `wayback-submit` to create a new archive (with optional screenshot)
 
+## Caching
+
+Availability API responses are cached for 24 hours using the OS temporary directory (`os.tmpdir()`). Cache keys are generated from the URL and timestamp parameters using SHA-256 hashing. Cached responses expire automatically and are deleted on access.
+
 ## Error Handling
 
 If the Wayback Machine API returns an error or is unavailable, retry after a brief delay. The API may be rate-limited during high traffic periods.

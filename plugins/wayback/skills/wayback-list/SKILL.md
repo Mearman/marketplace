@@ -140,6 +140,10 @@ https://web.archive.org/cdx/search/cdx?url=web.archive.org/screenshot/{URL}/*&ou
 
 The `--with-screenshots` flag in the script does this automatically, showing 📷 next to captures that have screenshots.
 
+## Caching
+
+CDX API responses are cached for 1 hour using the OS temporary directory (`os.tmpdir()`). Cache keys are generated from the URL and query parameters using SHA-256 hashing. Cached responses expire automatically and are deleted on access.
+
 ## Output Format (with --with-screenshots)
 
 ```

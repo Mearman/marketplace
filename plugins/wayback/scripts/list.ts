@@ -6,6 +6,7 @@
  * Options:
  *   --no-raw           Include Wayback toolbar in URLs
  *   --with-screenshots Cross-reference to show which captures have screenshots
+ *   --no-cache         Bypass cache and fetch fresh data from API
  */
 
 import {
@@ -15,7 +16,10 @@ import {
   buildScreenshotUrl,
   formatAge,
   formatTimestamp,
+  getCacheKey,
+  getCached,
   parseArgs,
+  setCached,
 } from "./utils.js";
 
 const fetchScreenshotTimestamps = async (url: string): Promise<Set<string>> => {
@@ -51,6 +55,7 @@ const main = async () => {
 Options:
   --no-raw           Include Wayback toolbar in URLs
   --with-screenshots Cross-reference to show which captures have screenshots
+  --no-cache         Bypass cache and fetch fresh data from API
 
 Examples:
   npx tsx list.ts https://example.com
@@ -62,8 +67,25 @@ Examples:
   console.log(`Fetching last ${limit} snapshots for: ${url}\n`);
 
   const apiUrl = API.cdx(url, { limit, filter: "statuscode:200" });
-  const response = await fetch(apiUrl);
-  const data: CDXRow[] = await response.json();
+
+  // Check cache first (1-hour TTL for CDX data)
+  const noCache = flags.has("no-cache");
+  const cacheKey = getCacheKey(apiUrl);
+  let data: CDXRow[];
+
+  if (noCache) {
+    // Bypass cache
+    const response = await fetch(apiUrl);
+    data = await response.json();
+    await setCached(cacheKey, data, 3600); // Still cache for future requests
+  } else {
+    data = await getCached<CDXRow[]>(cacheKey) ?? null as unknown as CDXRow[];
+    if (!data) {
+      const response = await fetch(apiUrl);
+      data = await response.json();
+      await setCached(cacheKey, data, 3600); // 1 hour
+    }
+  }
 
   if (data.length <= 1) {
     console.log("No snapshots found");

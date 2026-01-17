@@ -6,6 +6,7 @@
  * Options:
  *   --no-raw           Include Wayback toolbar in archived URL
  *   --timestamp=DATE   Find snapshot closest to date (YYYYMMDD or YYYYMMDDhhmmss)
+ *   --no-cache         Bypass cache and fetch fresh data from API
  */
 
 import {
@@ -14,7 +15,10 @@ import {
   buildArchiveUrl,
   formatAge,
   formatTimestamp,
+  getCacheKey,
+  getCached,
   parseArgs,
+  setCached,
 } from "./utils.js";
 
 const main = async () => {
@@ -29,6 +33,7 @@ const main = async () => {
 Options:
   --no-raw           Include Wayback toolbar in archived URL
   --timestamp=DATE   Find snapshot closest to date (YYYYMMDD or YYYYMMDDhhmmss)
+  --no-cache         Bypass cache and fetch fresh data from API
 
 Examples:
   npx tsx check.ts https://example.com
@@ -46,8 +51,24 @@ Examples:
   }
 
   try {
-    const response = await fetch(apiUrl);
-    const data: AvailableResponse = await response.json();
+    // Check cache first (24-hour TTL for availability data)
+    const noCache = flags.has("no-cache");
+    const cacheKey = getCacheKey(apiUrl);
+    let data: AvailableResponse;
+
+    if (noCache) {
+      // Bypass cache
+      const response = await fetch(apiUrl);
+      data = await response.json();
+      await setCached(cacheKey, data, 86400); // Still cache for future requests
+    } else {
+      data = await getCached<AvailableResponse>(cacheKey) ?? null as unknown as AvailableResponse;
+      if (!data) {
+        const response = await fetch(apiUrl);
+        data = await response.json();
+        await setCached(cacheKey, data, 86400); // 24 hours
+      }
+    }
 
     const snapshot = data.archived_snapshots.closest;
     if (snapshot?.available) {

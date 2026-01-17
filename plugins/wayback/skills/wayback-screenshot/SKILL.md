@@ -91,6 +91,10 @@ Total: 2 screenshot(s)
 - **Indexing delays** - newly captured screenshots may not appear immediately
 - **Coverage varies** - older archives typically don't have screenshots
 
+## Caching
+
+Availability API responses are cached for 24 hours using the OS temporary directory (`os.tmpdir()`). Cache keys are generated from the URL using SHA-256 hashing. Cached responses expire automatically and are deleted on access.
+
 ## Related
 
 - Use `wayback-submit --capture-screenshot` to create a new screenshot

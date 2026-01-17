@@ -7,6 +7,7 @@
  *   --timestamp=DATE   Get screenshot from specific capture (YYYYMMDDhhmmss)
  *   --list             List available screenshots for URL
  *   --download=PATH    Download screenshot to file
+ *   --no-cache         Bypass cache and fetch fresh data from API
  */
 
 import { writeFile } from "fs/promises";
@@ -17,7 +18,10 @@ import {
   buildScreenshotUrl,
   formatAge,
   formatTimestamp,
+  getCacheKey,
+  getCached,
   parseArgs,
+  setCached,
 } from "./utils.js";
 
 const listScreenshots = async (url: string): Promise<void> => {
@@ -62,6 +66,7 @@ const listScreenshots = async (url: string): Promise<void> => {
 
 const getScreenshot = async (
   url: string,
+  noCache: boolean,
   timestamp?: string,
   downloadPath?: string
 ): Promise<void> => {
@@ -72,8 +77,24 @@ const getScreenshot = async (
     console.log(`Fetching screenshot from ${formatTimestamp(timestamp)}...`);
   } else {
     const availUrl = API.availability(url);
-    const availResponse = await fetch(availUrl);
-    const availData: AvailableResponse = await availResponse.json();
+
+    // Check cache first (24-hour TTL for availability data)
+    const cacheKey = getCacheKey(availUrl);
+    let availData: AvailableResponse;
+
+    if (noCache) {
+      // Bypass cache
+      const availResponse = await fetch(availUrl);
+      availData = await availResponse.json();
+      await setCached(cacheKey, availData, 86400); // Still cache for future requests
+    } else {
+      availData = await getCached<AvailableResponse>(cacheKey) ?? null as unknown as AvailableResponse;
+      if (!availData) {
+        const availResponse = await fetch(availUrl);
+        availData = await availResponse.json();
+        await setCached(cacheKey, availData, 86400); // 24 hours
+      }
+    }
 
     const closest = availData.archived_snapshots?.closest;
     if (!closest?.available) {
@@ -125,6 +146,7 @@ Options:
   --timestamp=DATE   Get screenshot from specific capture (YYYYMMDDhhmmss)
   --list             List available screenshots for URL
   --download=PATH    Download screenshot to file
+  --no-cache         Bypass cache and fetch fresh data from API
 
 Examples:
   npx tsx screenshot.ts https://example.com --list
@@ -137,7 +159,7 @@ Examples:
     if (listMode) {
       await listScreenshots(url);
     } else {
-      await getScreenshot(url, timestamp, downloadPath);
+      await getScreenshot(url, flags.has("no-cache"), timestamp, downloadPath);
     }
   } catch (error) {
     console.error("Error:", error);

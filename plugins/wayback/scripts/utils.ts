@@ -2,6 +2,11 @@
  * Shared utilities for Wayback Machine scripts
  */
 
+import * as os from "os";
+import * as path from "path";
+import * as fs from "fs/promises";
+import { createHash } from "crypto";
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -29,6 +34,77 @@ export interface SPN2Response {
   original_url?: string;
   screenshot?: string;
 }
+
+export interface CacheEntry<T = unknown> {
+  data: T;
+  expiresAt: number;
+}
+
+export type CacheTTL = 30 | 3600 | 86400; // 30s, 1h, 24h in seconds
+
+// ============================================================================
+// Cache Utilities
+// ============================================================================
+
+const CACHE_DIR = path.join(os.tmpdir(), "wayback-cache");
+
+const ensureCacheDir = async (): Promise<void> => {
+  try {
+    await fs.mkdir(CACHE_DIR, { recursive: true });
+  } catch (error) {
+    // If directory creation fails, cache will be disabled
+    console.debug("Cache directory unavailable:", error);
+  }
+};
+
+export const getCacheKey = (url: string, params: Record<string, string | number> = {}): string => {
+  const paramsStr = Object.entries(params)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("&");
+  const input = `${url}?${paramsStr}`;
+  return createHash("sha256").update(input).digest("hex").slice(0, 16);
+};
+
+export const getCached = async <T = unknown>(
+  key: string
+): Promise<T | null> => {
+  try {
+    const filePath = path.join(CACHE_DIR, `${key}.json`);
+    const content = await fs.readFile(filePath, "utf-8");
+    const entry: CacheEntry<T> = JSON.parse(content);
+
+    if (Date.now() > entry.expiresAt) {
+      // Cache expired, delete it
+      await fs.unlink(filePath).catch(() => {});
+      return null;
+    }
+
+    return entry.data;
+  } catch {
+    // File doesn't exist or is invalid
+    return null;
+  }
+};
+
+export const setCached = async <T = unknown>(
+  key: string,
+  data: T,
+  ttlSeconds: CacheTTL
+): Promise<void> => {
+  try {
+    await ensureCacheDir();
+    const filePath = path.join(CACHE_DIR, `${key}.json`);
+    const entry: CacheEntry<T> = {
+      data,
+      expiresAt: Date.now() + ttlSeconds * 1000,
+    };
+    await fs.writeFile(filePath, JSON.stringify(entry), "utf-8");
+  } catch (error) {
+    // Fail silently - cache is optional
+    console.debug("Cache write failed:", error);
+  }
+};
 
 // ============================================================================
 // API URLs
