@@ -357,6 +357,7 @@ skills/my-skill/
 ### Implementation
 
 In SKILL.md, link to supporting files:
+
 ```markdown
 ## Quick Start
 
@@ -369,10 +370,7 @@ In SKILL.md, link to supporting files:
 
 ## Utility Scripts
 
-To validate input, run:
-```bash
-python scripts/helper.py input.txt
-```
+To validate input, run: `python scripts/helper.py input.txt`
 ```
 
 **Benefits:**
