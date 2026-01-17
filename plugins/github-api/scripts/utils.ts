@@ -124,77 +124,77 @@ export type CacheTTL = 300 | 1800 | 3600; // 5m, 30m, 1h in seconds
 const CACHE_DIR = path.join(os.tmpdir(), "github-api-cache");
 
 const ensureCacheDir = async (): Promise<void> => {
-  try {
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-  } catch (error) {
-    console.debug("Cache directory unavailable:", error);
-  }
+	try {
+		await fs.mkdir(CACHE_DIR, { recursive: true });
+	} catch (error) {
+		console.debug("Cache directory unavailable:", error);
+	}
 };
 
 export const getCacheKey = (
-  url: string,
-  params: Record<string, string | number> = {}
+	url: string,
+	params: Record<string, string | number> = {}
 ): string => {
-  const paramsStr = Object.entries(params)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join("&");
-  const input = `${url}?${paramsStr}`;
-  return createHash("sha256").update(input).digest("hex").slice(0, 16);
+	const paramsStr = Object.entries(params)
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([k, v]) => `${k}=${v}`)
+		.join("&");
+	const input = `${url}?${paramsStr}`;
+	return createHash("sha256").update(input).digest("hex").slice(0, 16);
 };
 
 export const getCached = async <T = unknown>(
-  key: string
+	key: string
 ): Promise<T | null> => {
-  try {
-    const filePath = path.join(CACHE_DIR, `${key}.json`);
-    const content = await fs.readFile(filePath, "utf-8");
-    const entry: CacheEntry<T> = JSON.parse(content);
+	try {
+		const filePath = path.join(CACHE_DIR, `${key}.json`);
+		const content = await fs.readFile(filePath, "utf-8");
+		const entry: CacheEntry<T> = JSON.parse(content);
 
-    if (Date.now() > entry.expiresAt) {
-      await fs.unlink(filePath).catch(() => {});
-      return null;
-    }
+		if (Date.now() > entry.expiresAt) {
+			await fs.unlink(filePath).catch(() => {});
+			return null;
+		}
 
-    return entry.data;
-  } catch {
-    return null;
-  }
+		return entry.data;
+	} catch {
+		return null;
+	}
 };
 
 export const setCached = async <T = unknown>(
-  key: string,
-  data: T,
-  ttlSeconds: CacheTTL
+	key: string,
+	data: T,
+	ttlSeconds: CacheTTL
 ): Promise<void> => {
-  try {
-    await ensureCacheDir();
-    const filePath = path.join(CACHE_DIR, `${key}.json`);
-    const entry: CacheEntry<T> = {
-      data,
-      expiresAt: Date.now() + ttlSeconds * 1000,
-    };
-    await fs.writeFile(filePath, JSON.stringify(entry), "utf-8");
-  } catch (error) {
-    console.debug("Cache write failed:", error);
-  }
+	try {
+		await ensureCacheDir();
+		const filePath = path.join(CACHE_DIR, `${key}.json`);
+		const entry: CacheEntry<T> = {
+			data,
+			expiresAt: Date.now() + ttlSeconds * 1000,
+		};
+		await fs.writeFile(filePath, JSON.stringify(entry), "utf-8");
+	} catch (error) {
+		console.debug("Cache write failed:", error);
+	}
 };
 
 export const clearCache = async (): Promise<void> => {
-  try {
-    const files = await fs.readdir(CACHE_DIR);
-    const cacheFiles = files.filter((f) => f.endsWith(".json"));
-    await Promise.all(
-      cacheFiles.map((f) => fs.unlink(path.join(CACHE_DIR, f)))
-    );
-    console.log(`Cleared ${cacheFiles.length} cache file(s) from ${CACHE_DIR}`);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      console.log("Cache directory not found or empty");
-    } else {
-      console.error("Error clearing cache:", error);
-    }
-  }
+	try {
+		const files = await fs.readdir(CACHE_DIR);
+		const cacheFiles = files.filter((f) => f.endsWith(".json"));
+		await Promise.all(
+			cacheFiles.map((f) => fs.unlink(path.join(CACHE_DIR, f)))
+		);
+		console.log(`Cleared ${cacheFiles.length} cache file(s) from ${CACHE_DIR}`);
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+			console.log("Cache directory not found or empty");
+		} else {
+			console.error("Error clearing cache:", error);
+		}
+	}
 };
 
 // ============================================================================
@@ -202,12 +202,12 @@ export const clearCache = async (): Promise<void> => {
 // ============================================================================
 
 export const API = {
-  repo: (owner: string, repo: string) =>
-    `https://api.github.com/repos/${owner}/${repo}`,
-  readme: (owner: string, repo: string) =>
-    `https://api.github.com/repos/${owner}/${repo}/readme`,
-  user: (username: string) => `https://api.github.com/users/${username}`,
-  rateLimit: () => `https://api.github.com/rate_limit`,
+	repo: (owner: string, repo: string) =>
+		`https://api.github.com/repos/${owner}/${repo}`,
+	readme: (owner: string, repo: string) =>
+		`https://api.github.com/repos/${owner}/${repo}/readme`,
+	user: (username: string) => `https://api.github.com/users/${username}`,
+	rateLimit: () => "https://api.github.com/rate_limit",
 };
 
 // ============================================================================
@@ -215,28 +215,28 @@ export const API = {
 // ============================================================================
 
 export const parseRepositoryUrl = (url: string): { owner: string; repo: string } | null => {
-  // Handle various URL formats:
-  // https://github.com/owner/repo
-  // git+https://github.com/owner/repo
-  // git@github.com:owner/repo
-  // ssh://git@github.com/owner/repo
-  // owner/repo
+	// Handle various URL formats:
+	// https://github.com/owner/repo
+	// git+https://github.com/owner/repo
+	// git@github.com:owner/repo
+	// ssh://git@github.com/owner/repo
+	// owner/repo
 
-  const patterns = [
-    /(?:https?:\/\/|git\+https:\/\/)?github\.com\/([^\/]+)\/([^\/\?#]+)/i,
-    /git@github\.com:([^\/]+)\/([^\/\?#\.]+)/i,
-    /ssh:\/\/git@github\.com\/([^\/]+)\/([^\/\?#\.]+)/i,
-    /^([^\/]+)\/([^\/\?#\.]+)$/, // owner/repo format
-  ];
+	const patterns = [
+		/(?:https?:\/\/|git\+https:\/\/)?github\.com\/([^\/]+)\/([^\/\?#]+)/i,
+		/git@github\.com:([^\/]+)\/([^\/\?#\.]+)/i,
+		/ssh:\/\/git@github\.com\/([^\/]+)\/([^\/\?#\.]+)/i,
+		/^([^\/]+)\/([^\/\?#\.]+)$/, // owner/repo format
+	];
 
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) {
-      return { owner: match[1], repo: match[2] };
-    }
-  }
+	for (const pattern of patterns) {
+		const match = url.match(pattern);
+		if (match) {
+			return { owner: match[1], repo: match[2] };
+		}
+	}
 
-  return null;
+	return null;
 };
 
 // ============================================================================
@@ -250,26 +250,26 @@ export interface ParsedArgs {
 }
 
 export const parseArgs = (argv: string[]): ParsedArgs => {
-  const flags = new Set<string>();
-  const options = new Map<string, string>();
-  const positional: string[] = [];
+	const flags = new Set<string>();
+	const options = new Map<string, string>();
+	const positional: string[] = [];
 
-  for (const arg of argv) {
-    if (arg.startsWith("--")) {
-      const eqIndex = arg.indexOf("=");
-      if (eqIndex !== -1) {
-        const key = arg.slice(2, eqIndex);
-        const value = arg.slice(eqIndex + 1);
-        options.set(key, value);
-      } else {
-        flags.add(arg.slice(2));
-      }
-    } else {
-      positional.push(arg);
-    }
-  }
+	for (const arg of argv) {
+		if (arg.startsWith("--")) {
+			const eqIndex = arg.indexOf("=");
+			if (eqIndex !== -1) {
+				const key = arg.slice(2, eqIndex);
+				const value = arg.slice(eqIndex + 1);
+				options.set(key, value);
+			} else {
+				flags.add(arg.slice(2));
+			}
+		} else {
+			positional.push(arg);
+		}
+	}
 
-  return { flags, options, positional };
+	return { flags, options, positional };
 };
 
 // ============================================================================
@@ -277,20 +277,20 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
 // ============================================================================
 
 export const getAuthHeaders = (token?: string): Record<string, string> => {
-  const headers: Record<string, string> = {
-    Accept: "application/vnd.github.v3+json",
-    "User-Agent": "claude-code-github-api",
-  };
+	const headers: Record<string, string> = {
+		Accept: "application/vnd.github.v3+json",
+		"User-Agent": "claude-code-github-api",
+	};
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+	if (token) {
+		headers["Authorization"] = `Bearer ${token}`;
+	}
 
-  return headers;
+	return headers;
 };
 
 export const getTokenFromEnv = (): string | undefined => {
-  return process.env.GITHUB_TOKEN;
+	return process.env.GITHUB_TOKEN;
 };
 
 // ============================================================================
@@ -298,27 +298,27 @@ export const getTokenFromEnv = (): string | undefined => {
 // ============================================================================
 
 export const formatNumber = (num: number): string => {
-  if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
-  }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
-  }
-  return num.toString();
+	if (num >= 1000000) {
+		return `${(num / 1000000).toFixed(1)}M`;
+	}
+	if (num >= 1000) {
+		return `${(num / 1000).toFixed(1)}K`;
+	}
+	return num.toString();
 };
 
 export const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+	const date = new Date(dateStr);
+	return date.toLocaleDateString("en-US", {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	});
 };
 
 export const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+	new Promise((resolve) => setTimeout(resolve, ms));
 
 export const base64Decode = (str: string): string => {
-  return Buffer.from(str, "base64").toString("utf-8");
+	return Buffer.from(str, "base64").toString("utf-8");
 };

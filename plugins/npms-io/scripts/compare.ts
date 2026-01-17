@@ -8,22 +8,22 @@
  */
 
 import {
-  API,
-  formatNumber,
-  formatScore,
-  getCached,
-  NpmsMgetResponse,
-  NpmsPackage,
-  parseArgs,
-  setCached,
-} from "./utils.js";
+	API,
+	formatNumber,
+	formatScore,
+	getCached,
+	NpmsMgetResponse,
+	NpmsPackage,
+	parseArgs,
+	setCached,
+} from "./utils";
 
 const main = async () => {
-  const { flags, positional } = parseArgs(process.argv.slice(2));
-  const packages = positional;
+	const { flags, positional } = parseArgs(process.argv.slice(2));
+	const packages = positional;
 
-  if (packages.length < 2) {
-    console.log(`Usage: npx tsx compare.ts <package1> <package2> [package3...] [options]
+	if (packages.length < 2) {
+		console.log(`Usage: npx tsx compare.ts <package1> <package2> [package3...] [options]
 
 Options:
   --no-cache  Bypass cache and fetch fresh data
@@ -32,150 +32,150 @@ Examples:
   npx tsx compare.ts react vue angular
   npx tsx compare.ts axios got node-fetch
   npx tsx compare.ts express koa fastify hapi`);
-    process.exit(1);
-  }
+		process.exit(1);
+	}
 
-  console.log(`Comparing: ${packages.join(" vs ")}`);
+	console.log(`Comparing: ${packages.join(" vs ")}`);
 
-  try {
-    const noCache = flags.has("no-cache");
-    const cacheKey = `compare-${packages.join("-")}`;
-    let data: NpmsMgetResponse;
+	try {
+		const noCache = flags.has("no-cache");
+		const cacheKey = `compare-${packages.join("-")}`;
+		let data: NpmsMgetResponse;
 
-    if (noCache) {
-      const response = await fetch(API.mget(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(packages),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      data = await response.json();
-      await setCached(cacheKey, data, 21600); // 6 hours
-    } else {
-      const cached = await getCached<NpmsMgetResponse>(cacheKey);
-      if (cached === null) {
-        const response = await fetch(API.mget(), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(packages),
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        data = await response.json();
-        await setCached(cacheKey, data, 21600);
-      } else {
-        data = cached;
-      }
-    }
+		if (noCache) {
+			const response = await fetch(API.mget(), {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(packages),
+			});
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+			data = await response.json();
+			await setCached(cacheKey, data, 21600); // 6 hours
+		} else {
+			const cached = await getCached<NpmsMgetResponse>(cacheKey);
+			if (cached === null) {
+				const response = await fetch(API.mget(), {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(packages),
+				});
+				if (!response.ok) {
+					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				}
+				data = await response.json();
+				await setCached(cacheKey, data, 21600);
+			} else {
+				data = cached;
+			}
+		}
 
-    // Process results
-    const results: Array<{ name: string; data: NpmsPackage | null }> = packages.map((name) => ({
-      name,
-      data: data[name] || null,
-    }));
+		// Process results
+		const results: Array<{ name: string; data: NpmsPackage | null }> = packages.map((name) => ({
+			name,
+			data: data[name] || null,
+		}));
 
-    // Filter out packages with no data
-    const available = results.filter((r) => r.data !== null);
-    const missing = results.filter((r) => r.data === null);
+		// Filter out packages with no data
+		const available = results.filter((r) => r.data !== null);
+		const missing = results.filter((r) => r.data === null);
 
-    if (available.length === 0) {
-      console.log("\nNo packages found or analyzed");
-      if (missing.length > 0) {
-        console.log(`\nNot found: ${missing.map((m) => m.name).join(", ")}`);
-      }
-      process.exit(1);
-    }
+		if (available.length === 0) {
+			console.log("\nNo packages found or analyzed");
+			if (missing.length > 0) {
+				console.log(`\nNot found: ${missing.map((m) => m.name).join(", ")}`);
+			}
+			process.exit(1);
+		}
 
-    console.log();
-    console.log(`Package Comparison: ${available.map((r) => r.name).join(" vs ")}`);
-    console.log("-".repeat(60));
-    console.log();
+		console.log();
+		console.log(`Package Comparison: ${available.map((r) => r.name).join(" vs ")}`);
+		console.log("-".repeat(60));
+		console.log();
 
-    // Build table rows
-    const maxWidth = Math.max(...available.map((r) => r.name.length));
+		// Build table rows
+		const maxWidth = Math.max(...available.map((r) => r.name.length));
 
-    // Header
-    const header = `Metric`.padEnd(15) + available.map((r) => r.name.padEnd(Math.max(12, maxWidth))).join("  ");
-    console.log(header);
+		// Header
+		const header = "Metric".padEnd(15) + available.map((r) => r.name.padEnd(Math.max(12, maxWidth))).join("  ");
+		console.log(header);
 
-    const separator = "─".repeat(15) + available.map(() => "─".repeat(Math.max(12, maxWidth))).join("  ");
-    console.log(separator);
+		const separator = "─".repeat(15) + available.map(() => "─".repeat(Math.max(12, maxWidth))).join("  ");
+		console.log(separator);
 
-    // Scores
-    const scoresRow = "Overall".padEnd(15) +
+		// Scores
+		const scoresRow = "Overall".padEnd(15) +
       available.map((r) => `${formatScore(r.data!.score.final)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
-    console.log(scoresRow);
+		console.log(scoresRow);
 
-    const qualityRow = "Quality".padEnd(15) +
+		const qualityRow = "Quality".padEnd(15) +
       available.map((r) => `${formatScore(r.data!.score.detail.quality)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
-    console.log(qualityRow);
+		console.log(qualityRow);
 
-    const popularityRow = "Popularity".padEnd(15) +
+		const popularityRow = "Popularity".padEnd(15) +
       available.map((r) => `${formatScore(r.data!.score.detail.popularity)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
-    console.log(popularityRow);
+		console.log(popularityRow);
 
-    const maintenanceRow = "Maintenance".padEnd(15) +
+		const maintenanceRow = "Maintenance".padEnd(15) +
       available.map((r) => `${formatScore(r.data!.score.detail.maintenance)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
-    console.log(maintenanceRow);
+		console.log(maintenanceRow);
 
-    console.log(separator);
+		console.log(separator);
 
-    // Version
-    const versionRow = "Version".padEnd(15) +
+		// Version
+		const versionRow = "Version".padEnd(15) +
       available.map((r) => r.data!.collected.metadata.version.padEnd(Math.max(12, maxWidth))).join("  ");
-    console.log(versionRow);
+		console.log(versionRow);
 
-    // GitHub stats
-    const starsRow = "Stars".padEnd(15) +
+		// GitHub stats
+		const starsRow = "Stars".padEnd(15) +
       available.map((r) => {
-        const stars = r.data!.collected.github?.stars;
-        return stars ? formatNumber(stars).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
+      	const stars = r.data!.collected.github?.stars;
+      	return stars ? formatNumber(stars).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
       }).join("  ");
-    console.log(starsRow);
+		console.log(starsRow);
 
-    const forksRow = "Forks".padEnd(15) +
+		const forksRow = "Forks".padEnd(15) +
       available.map((r) => {
-        const forks = r.data!.collected.github?.forks;
-        return forks ? formatNumber(forks).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
+      	const forks = r.data!.collected.github?.forks;
+      	return forks ? formatNumber(forks).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
       }).join("  ");
-    console.log(forksRow);
+		console.log(forksRow);
 
-    const issuesRow = "Issues".padEnd(15) +
+		const issuesRow = "Issues".padEnd(15) +
       available.map((r) => {
-        const issues = r.data!.collected.github?.openIssues;
-        return issues ? formatNumber(issues).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
+      	const issues = r.data!.collected.github?.openIssues;
+      	return issues ? formatNumber(issues).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
       }).join("  ");
-    console.log(issuesRow);
+		console.log(issuesRow);
 
-    // Downloads
-    const downloadsRow = "Downloads/Mo".padEnd(15) +
+		// Downloads
+		const downloadsRow = "Downloads/Mo".padEnd(15) +
       available.map((r) => {
-        const dl = r.data!.collected.npm?.monthDownloads;
-        return dl ? formatNumber(dl).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
+      	const dl = r.data!.collected.npm?.monthDownloads;
+      	return dl ? formatNumber(dl).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
       }).join("  ");
-    console.log(downloadsRow);
+		console.log(downloadsRow);
 
-    console.log();
+		console.log();
 
-    // Show missing packages
-    if (missing.length > 0) {
-      console.log(`Not found or not analyzed: ${missing.map((m) => m.name).join(", ")}`);
-      console.log();
-    }
+		// Show missing packages
+		if (missing.length > 0) {
+			console.log(`Not found or not analyzed: ${missing.map((m) => m.name).join(", ")}`);
+			console.log();
+		}
 
-    // Recommendation
-    const best = available.reduce((best, current) =>
+		// Recommendation
+		const best = available.reduce((best, current) =>
       current.data!.score.final > best.data!.score.final ? current : best
-    );
-    console.log(`Highest overall score: ${best.name} (${formatScore(best.data!.score.final)}/100)`);
-    console.log();
-  } catch (error) {
-    console.error("Error:", error);
-    process.exit(1);
-  }
+		);
+		console.log(`Highest overall score: ${best.name} (${formatScore(best.data!.score.final)}/100)`);
+		console.log();
+	} catch (error) {
+		console.error("Error:", error);
+		process.exit(1);
+	}
 };
 
 main();
