@@ -1,3 +1,11 @@
+# [1.3.0](https://github.com/Mearman/marketplace/compare/v1.2.3...v1.3.0) (2026-01-17)
+
+
+### Features
+
+* **wayback:** add --clear-cache flag to clear cached data ([1e239aa](https://github.com/Mearman/marketplace/commit/1e239aa66676eb2ebd77bb3644b47099082dd4c5))
+* **wayback:** add OS tmpdir-based API response caching ([96478db](https://github.com/Mearman/marketplace/commit/96478dba68526bdec780727fa139010d1456f858))
+
 ## [1.2.3](https://github.com/Mearman/marketplace/compare/v1.2.2...v1.2.3) (2026-01-17)
 
 
