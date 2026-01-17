@@ -28,6 +28,7 @@ const coreScopes = [
   'docs',        // README, CLAUDE.md
   'ci',          // GitHub workflows
   'deps',        // Dependencies
+  'release',     // semantic-release commits
 ];
 
 // Plugin scopes (auto-detected from plugins/ directory)
@@ -38,6 +39,7 @@ const config: UserConfig = {
   rules: {
     'scope-enum': [2, 'always', [...coreScopes, ...pluginScopes]],
     'scope-empty': [2, 'never'],
+    'body-max-line-length': [0], // Disabled for semantic-release changelog commits
   },
 };
 
