@@ -1,0 +1,15 @@
+{
+	"$schema": "http://json.schemast.org/tsconfig.json",
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"resolveJsonModule": true,
+		"noEmit": true
+	},
+	"include": ["**/*.ts"],
+	"exclude": ["node_modules/", "dist/", "plugins/*/.claude-plugin/"]
+}
