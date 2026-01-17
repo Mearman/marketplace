@@ -11,11 +11,14 @@ A plugin marketplace for [Claude Code](https://claude.ai/code).
 # Install a plugin
 /plugin install wayback@mearman
 
-# Update marketplace listings
-/plugin marketplace update
+# Update marketplace catalog (refresh available plugins)
+/plugin marketplace update mearman
 
-# Update installed plugins
+# Update a specific plugin to latest version
 /plugin update wayback
+
+# Update all installed plugins
+/plugin update
 ```
 
 ## Plugins
