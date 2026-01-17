@@ -10,11 +10,10 @@
 
 import {
 	API,
+	fetchWithCache,
 	formatNumber,
-	getCached,
 	NpmDownloadsResponse,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -40,38 +39,12 @@ Examples:
 	console.log(`Fetching downloads for: ${packageName} (${period})`);
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = `downloads-${period}-${packageName}`;
-		let data: NpmDownloadsResponse;
-
-		if (noCache) {
-			const response = await fetch(apiUrl);
-			if (!response.ok) {
-				if (response.status === 404) {
-					console.log(`Package "${packageName}" not found or no download data available`);
-					process.exit(1);
-				}
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
-			data = await response.json();
-			await setCached(cacheKey, data); // 24 hours
-		} else {
-			const cached = await getCached<NpmDownloadsResponse>(cacheKey, 86400);
-			if (cached === null) {
-				const response = await fetch(apiUrl);
-				if (!response.ok) {
-					if (response.status === 404) {
-						console.log(`Package "${packageName}" not found or no download data available`);
-						process.exit(1);
-					}
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-				}
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<NpmDownloadsResponse>({
+			url: apiUrl,
+			ttl: 86400, // 24 hours
+			cacheKey: `downloads-${period}-${packageName}`,
+			bypassCache: flags.has("no-cache"),
+		});
 
 		// Calculate statistics
 		const totalDownloads = data.downloads.reduce((sum, point) => sum + point.downloads, 0);
@@ -113,7 +86,12 @@ Examples:
 
 		console.log();
 	} catch (error) {
-		console.error("Error:", error);
+		const message = error instanceof Error ? error.message : String(error);
+		if (message.includes("Resource not found")) {
+			console.log(`Package "${packageName}" not found or no download data available`);
+		} else {
+			console.error("Error:", message);
+		}
 		process.exit(1);
 	}
 };

@@ -9,11 +9,10 @@
 
 import {
 	API,
-	getCached,
+	fetchWithCache,
 	NpmPackage,
 	parseArgs,
 	parseRepositoryUrl,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -37,38 +36,12 @@ Examples:
 	console.log(`Fetching: ${packageName}`);
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = packageName;
-		let data: NpmPackage;
-
-		if (noCache) {
-			const response = await fetch(apiUrl);
-			if (!response.ok) {
-				if (response.status === 404) {
-					console.log(`Package "${packageName}" not found`);
-					process.exit(1);
-				}
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-			}
-			data = await response.json();
-			await setCached(cacheKey, data); // 6 hours
-		} else {
-			const cached = await getCached<NpmPackage>(cacheKey, 21600);
-			if (cached === null) {
-				const response = await fetch(apiUrl);
-				if (!response.ok) {
-					if (response.status === 404) {
-						console.log(`Package "${packageName}" not found`);
-						process.exit(1);
-					}
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-				}
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<NpmPackage>({
+			url: apiUrl,
+			ttl: 21600, // 6 hours
+			cacheKey: packageName,
+			bypassCache: flags.has("no-cache"),
+		});
 
 		// Display package information
 		console.log();
@@ -163,7 +136,12 @@ Examples:
 
 		console.log();
 	} catch (error) {
-		console.error("Error:", error);
+		const message = error instanceof Error ? error.message : String(error);
+		if (message.includes("Resource not found")) {
+			console.log(`Package "${packageName}" not found`);
+		} else {
+			console.error("Error:", message);
+		}
 		process.exit(1);
 	}
 };

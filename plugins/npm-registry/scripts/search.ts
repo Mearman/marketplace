@@ -11,10 +11,9 @@
 
 import {
 	API,
-	getCached,
+	fetchWithCache,
 	NpmSearchResponse,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -42,24 +41,12 @@ Examples:
 	console.log(`Searching: "${query}"`);
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = `${query}-${size}-${from}`;
-		let data: NpmSearchResponse;
-
-		if (noCache) {
-			const response = await fetch(apiUrl);
-			data = await response.json();
-			await setCached(cacheKey, data); // 1 hour
-		} else {
-			const cached = await getCached<NpmSearchResponse>(cacheKey, 3600);
-			if (cached === null) {
-				const response = await fetch(apiUrl);
-				data = await response.json();
-				await setCached(cacheKey, data);
-			} else {
-				data = cached.data;
-			}
-		}
+		const data = await fetchWithCache<NpmSearchResponse>({
+			url: apiUrl,
+			ttl: 3600, // 1 hour
+			cacheKey: `${query}-${size}-${from}`,
+			bypassCache: flags.has("no-cache"),
+		});
 
 		if (data.objects.length === 0) {
 			console.log(`No packages found for "${query}"`);

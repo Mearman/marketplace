@@ -9,9 +9,8 @@
 
 import {
 	API,
-	getCached,
+	fetchWithCache,
 	parseArgs,
-	setCached,
 } from "./utils";
 
 const main = async () => {
@@ -35,23 +34,24 @@ Examples:
 	console.log(`Checking: ${packageName}`);
 
 	try {
-		const noCache = flags.has("no-cache");
-		const cacheKey = `exists-${packageName}`;
 		let exists: boolean;
 
-		if (noCache) {
-			const response = await fetch(apiUrl, { method: "HEAD" });
-			exists = response.ok;
-			// Cache the result for 1 hour
-			await setCached(cacheKey, { exists, timestamp: Date.now() });
-		} else {
-			const cached = await getCached<{ exists: boolean; timestamp: number }>(cacheKey, 3600);
-			if (cached === null) {
-				const response = await fetch(apiUrl, { method: "HEAD" });
-				exists = response.ok;
-				await setCached(cacheKey, { exists, timestamp: Date.now() });
+		try {
+			await fetchWithCache<{ exists: boolean; timestamp: number }>({
+				url: apiUrl,
+				ttl: 3600, // 1 hour
+				cacheKey: `exists-${packageName}`,
+				bypassCache: flags.has("no-cache"),
+				fetchOptions: { method: "HEAD" },
+				parseResponse: async () => ({ exists: true, timestamp: Date.now() }),
+			});
+			exists = true;
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			if (message.includes("Resource not found")) {
+				exists = false;
 			} else {
-				exists = cached.data.exists;
+				throw error;
 			}
 		}
 

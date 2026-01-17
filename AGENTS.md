@@ -119,8 +119,11 @@ The `/lib` directory contains reusable utilities to reduce code duplication acro
 
 **`/lib/cache`** - Factory-pattern cache management
 - `createCacheManager(namespace)` - Creates namespaced cache manager
+- `fetchWithCache()` - Fetch with automatic caching and retry logic (recommended)
 - Uses client-provided TTL (evaluate at read time, not write time)
 - Isolated cache directories per plugin
+- Exponential backoff with jitter for transient errors
+- Automatic retries for 429, 500, 502, 503, 504 status codes
 
 **`/lib/args`** - Command-line argument parsing
 - `parseArgs(argv)` - Parse flags, options, and positional arguments
@@ -143,10 +146,99 @@ import { formatNumber as sharedFormatNumber } from "../../../lib/helpers";
 const cache = createCacheManager("my-plugin");
 
 // Re-export for plugin scripts (maintains backward compatibility)
-export const { getCacheKey, getCached, setCached, clearCache } = cache;
+export const { getCacheKey, getCached, setCached, clearCache, fetchWithCache } = cache;
 export const parseArgs = sharedParseArgs;
 export const formatNumber = sharedFormatNumber;
 ```
+
+### Fetch with Retry Pattern (Recommended)
+
+The `fetchWithCache()` method combines fetch, caching, and retry logic into a single call. This is the recommended approach for all new code.
+
+**Usage:**
+```typescript
+// Simple fetch with cache
+const data = await fetchWithCache<MyType>({
+  url: apiUrl,
+  ttl: 3600, // 1 hour
+  bypassCache: flags.has("no-cache"),
+});
+
+// With custom retry options (e.g., for rate-limited APIs)
+const data = await fetchWithCache<UserData>({
+  url: "https://api.github.com/user",
+  ttl: 7200,
+  fetchOptions: {
+    headers: { Authorization: `Bearer ${token}` },
+  },
+  retryOptions: {
+    maxRetries: 5,
+    initialDelay: 2000,
+    retryableStatuses: [403, 429, 500, 502, 503, 504], // Include 403 for rate limits
+  },
+});
+```
+
+**Benefits:**
+- Automatic exponential backoff with jitter
+- Retries for transient errors (429, 500, 502, 503, 504)
+- Reduces ~25-30 lines of boilerplate per script
+- Consistent error handling across all plugins
+- Cache-first pattern built-in
+
+**Default retry configuration:**
+- Max retries: 3 attempts
+- Initial delay: 1000ms (1 second)
+- Max delay: 30000ms (30 seconds)
+- Backoff multiplier: 2 (exponential)
+- Jitter: true (adds 0-50% random delay to prevent thundering herd)
+
+**Migration from manual fetch:**
+
+BEFORE (~30 lines):
+```typescript
+const noCache = flags.has("no-cache");
+let data: PackageInfo;
+
+if (noCache) {
+  const response = await fetch(apiUrl, { headers });
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error("Not found");
+    }
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  data = await response.json();
+  await setCached(cacheKey, data);
+} else {
+  const cached = await getCached<PackageInfo>(cacheKey, 21600);
+  if (cached === null) {
+    const response = await fetch(apiUrl, { headers });
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error("Not found");
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    data = await response.json();
+    await setCached(cacheKey, data);
+  } else {
+    data = cached.data;
+  }
+}
+```
+
+AFTER (~5 lines):
+```typescript
+const data = await fetchWithCache<PackageInfo>({
+  url: apiUrl,
+  ttl: 21600,
+  fetchOptions: { headers },
+  bypassCache: flags.has("no-cache"),
+});
+```
+
+See `/lib/cache/README.md` for complete documentation.
 
 ### Cache Migration Notes
 
