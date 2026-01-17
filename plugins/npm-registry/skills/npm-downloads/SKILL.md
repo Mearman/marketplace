@@ -62,8 +62,7 @@ https://api.npmjs.org/downloads/range/2023-01-01:2023-12-31:react
     {
       "downloads": 1234567,
       "day": "2023-10-01"
-    },
-    ...
+    }
   ],
   "start": "2023-10-01",
   "end": "2023-10-31",

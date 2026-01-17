@@ -70,8 +70,7 @@ JSON array where first row is headers:
 ```json
 [
   ["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
-  ["com,example)/", "20240101120000", "https://example.com/", "text/html", "200", "ABC123", "1234"],
-  ...
+  ["com,example)/", "20240101120000", "https://example.com/", "text/html", "200", "ABC123", "1234"]
 ]
 ```
 

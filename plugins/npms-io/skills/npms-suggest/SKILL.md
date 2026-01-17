@@ -58,8 +58,7 @@ The response contains an array of package suggestions:
     "name": "react-dom",
     "score": 950000,
     "searchScore": 950000
-  },
-  ...
+  }
 ]
 ```
 

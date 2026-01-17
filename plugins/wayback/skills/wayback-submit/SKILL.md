@@ -85,7 +85,7 @@ curl "https://web.archive.org/save/status/{job_id}" \
 
 **Pending:**
 ```json
-{"status": "pending", "resources": [...]}
+{"status": "pending", "resources": []}
 ```
 
 **Success:**
@@ -94,8 +94,8 @@ curl "https://web.archive.org/save/status/{job_id}" \
   "status": "success",
   "timestamp": "20240115123456",
   "original_url": "https://example.com",
-  "resources": ["https://example.com/style.css", ...],
-  "outlinks": {...},
+  "resources": ["https://example.com/style.css"],
+  "outlinks": {},
   "screenshot": "https://web.archive.org/web/.../screenshot.png"
 }
 ```
