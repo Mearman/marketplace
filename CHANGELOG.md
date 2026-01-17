@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/Mearman/marketplace/compare/v1.6.0...v1.7.0) (2026-01-17)
+
+
+### Features
+
+* **wayback:** add screenshot availability check and update cache usage ([98c081e](https://github.com/Mearman/marketplace/commit/98c081e5b8ebc70ec0f94c544d5248d35eb5629e))
+
 # [1.6.0](https://github.com/Mearman/marketplace/compare/v1.5.4...v1.6.0) (2026-01-17)
 
 
