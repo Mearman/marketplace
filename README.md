@@ -9,7 +9,7 @@ A plugin marketplace for [Claude Code](https://claude.ai/code).
 /plugin marketplace add Mearman/marketplace
 
 # Install a plugin
-/plugin install wayback@claude-code-skills
+/plugin install wayback@mearman
 
 # Update marketplace listings
 /plugin marketplace update

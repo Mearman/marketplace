@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/marketplace.schema.json",
-  "name": "claude-code-skills",
+  "name": "mearman",
   "owner": {
     "name": "Mearman"
   },
