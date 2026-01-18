@@ -1,3 +1,11 @@
+## 1.12.0 (2026-01-18)
+
+* docs(github-api): update description to use Title: Description format ([2f361fe](https://github.com/Mearman/marketplace/commit/2f361fe))
+* docs(gravatar): update description to use Title: Description format ([8e96d12](https://github.com/Mearman/marketplace/commit/8e96d12))
+* docs(marketplace): update descriptions to use Title: Description format ([d33728d](https://github.com/Mearman/marketplace/commit/d33728d))
+* refactor(docs): extract plugin titles from description by splitting on colon ([223b616](https://github.com/Mearman/marketplace/commit/223b616))
+* feat(ci): sync descriptions from plugin.json to marketplace ([ca12841](https://github.com/Mearman/marketplace/commit/ca12841))
+
 ## <small>1.11.6 (2026-01-17)</small>
 
 * chore(docs): backfill missing entries for v1.11.2-v1.11.4 ([7eca343](https://github.com/Mearman/marketplace/commit/7eca343))
