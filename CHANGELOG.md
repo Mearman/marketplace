@@ -1,3 +1,7 @@
+## <small>1.14.2 (2026-01-18)</small>
+
+* docs(docs): improve marketplace and plugin explanation ([b002182](https://github.com/Mearman/marketplace/commit/b002182))
+
 ## <small>1.14.1 (2026-01-18)</small>
 
 * fix(pypi-json): address remaining version parsing edge cases and improve robustness ([dff5991](https://github.com/Mearman/marketplace/commit/dff5991))
