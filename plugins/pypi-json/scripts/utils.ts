@@ -158,19 +158,32 @@ export function getMainClassifiers(classifiers?: string[]): string[] {
 }
 
 /**
- * Parse semantic version with pre-release support (PEP 440 compatible)
- * Returns [major, minor, patch, prerelease_priority]
- * Pre-release versions (alpha, beta, rc) sort before final releases
+ * Parse semantic version with PEP 440 pre-release/post-release support
+ * Returns [major, minor, patch, release_priority]
+ *
+ * Priority scale:
+ * - 0 = dev release (sorts first)
+ * - 1 = alpha/a
+ * - 2 = beta/b
+ * - 3 = rc/c
+ * - 4 = final release
+ * - 5 = post release (sorts last)
  */
 export function parseVersion(version: string): number[] {
 	const parts: number[] = [];
 
 	// Remove epoch if present (e.g., "1!2.0.0" -> "2.0.0")
-	const withoutEpoch = version.includes("!") ? version.split("!")[1] : version;
+	// Defensive: check if content exists after the "!"
+	let withoutEpoch = version;
+	if (version.includes("!")) {
+		const epochParts = version.split("!");
+		// Use content after "!" if it exists, otherwise use original
+		withoutEpoch = epochParts.length > 1 && epochParts[1] ? epochParts[1] : version;
+	}
 
-	// Extract base version and pre-release identifier (handles both PEP 440 formats)
-	// Matches: "1.2.3", "1.2.3a1", "1.2.3-alpha", "1.2.3+local"
-	const versionRegex = /^(\d+(?:\.\d+)*)((?:a|alpha|b|beta|rc|c)\d*)?(?:[-+].*)?$/i;
+	// Extract base version and release identifiers (PEP 440 compatible)
+	// Matches: "1.2.3", "1.2.3a1", "1.2.3-alpha", "1.2.3.post1", "1.2.3.dev1"
+	const versionRegex = /^(\d+(?:\.\d+)*)((?:a|alpha|b|beta|rc|c)\d*)?(?:\.post\d+)?(?:\.dev\d+)?(?:[-+].*)?$/i;
 	const match = withoutEpoch.match(versionRegex);
 
 	if (!match) {
@@ -178,29 +191,37 @@ export function parseVersion(version: string): number[] {
 		const baseParts = withoutEpoch.split(".").map((p) => parseInt(p, 10) || 0);
 		parts.push(...baseParts.slice(0, 3));
 	} else {
-		// Parse base version
+		// Parse base version (limited to 3 components: major.minor.patch)
 		const baseParts = match[1].split(".").map((p) => parseInt(p, 10) || 0);
-		parts.push(...baseParts);
-		const prerelease = match[2];
+		parts.push(...baseParts.slice(0, 3));
 
-		if (prerelease) {
-			// Pre-release detected
-			const lower = prerelease.toLowerCase();
-			if (lower.startsWith("alpha") || lower.startsWith("a")) parts.push(1);
-			else if (lower.startsWith("beta") || lower.startsWith("b")) parts.push(2);
-			else if (lower.startsWith("rc") || lower.startsWith("c")) parts.push(3);
-			else parts.push(2); // Default to beta priority for unknown pre-releases
+		const fullMatch = match[0].toLowerCase();
+
+		// Determine release type priority (for sorting)
+		// Check in order: dev < pre-release < final < post
+		let releasePriority = 4; // Default to final release
+
+		if (fullMatch.includes(".dev")) {
+			releasePriority = 0; // Dev releases sort before everything
+		} else if (/(?:alpha|a)\d*/.test(fullMatch)) {
+			releasePriority = 1; // Alpha
+		} else if (/(?:beta|b)\d*/.test(fullMatch)) {
+			releasePriority = 2; // Beta
+		} else if (/(?:rc|c)\d*/.test(fullMatch)) {
+			releasePriority = 3; // RC
+		} else if (fullMatch.includes(".post")) {
+			releasePriority = 5; // Post releases sort after final
 		}
+
+		parts.push(releasePriority);
 	}
 
-	// Pad to 3 numeric components
+	// Ensure we have at least major.minor.patch + priority (4 elements)
 	while (parts.length < 3) {
 		parts.push(0);
 	}
-
-	// Add final release priority if no pre-release was detected
 	if (parts.length === 3) {
-		parts.push(4); // Final release (sorts after pre-releases)
+		parts.push(4); // Default to final release if no release type detected
 	}
 
 	return parts;
