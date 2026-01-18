@@ -108,48 +108,51 @@ function readPluginSkills(pluginName: string): Skill[] {
 }
 
 /**
- * Generate the plugins list with install command code blocks.
+ * Generate the plugins list with inline collapsible details.
  */
 function generatePluginsList(plugins: Plugin[]): string {
 	return plugins
 		.map((plugin) => {
+			// Split description on first colon to extract title
+			const colonIndex = plugin.description.indexOf(":");
+			let title: string;
+			let description: string;
+
+			if (colonIndex > 0) {
+				title = plugin.description.slice(0, colonIndex).trim();
+				description = plugin.description.slice(colonIndex + 1).trim();
+			} else {
+				title = plugin.name;
+				description = plugin.description;
+			}
+
 			const skillList = plugin.skills.map((s) => s.name).join(", ");
-			return `### ${plugin.name}
-
-${plugin.description}
-
-**Skills:** ${skillList}
-
-\`\`\`bash
-/plugin install ${plugin.name}@mearman
-\`\`\``;
-		})
-		.join("\n\n");
-}
-
-/**
- * Generate collapsible detailed sections for each plugin.
- */
-function generatePluginDetails(plugins: Plugin[]): string {
-	return plugins
-		.map((plugin) => {
-			const skillsList = plugin.skills
+			const skillsDetails = plugin.skills
 				.map(
-					(skill) => `### ${skill.name}
+					(skill) => `#### ${skill.name}
 
 ${skill.description}`
 				)
 				.join("\n\n");
 
-			return `<details>
-<summary><b>${plugin.name}</b> (${plugin.skills.length} skill${plugin.skills.length === 1 ? "" : "s"}) - ${plugin.description}</summary>
+			return `### ${title}
 
-#### Skills
+${description}
 
-${skillsList}
+**Skills:** ${skillList}
+
+\`\`\`bash
+/plugin install ${plugin.name}@mearman
+\`\`\`
+
+<details>
+<summary>View details</summary>
 
 **Version:** ${plugin.version}
-**Install:** \`/plugin install ${plugin.name}@mearman\`
+
+##### Skills
+
+${skillsDetails}
 
 </details>`;
 		})
@@ -205,15 +208,10 @@ function main(): void {
 
 	// Generate content
 	const pluginsList = generatePluginsList(marketplace.plugins);
-	const pluginDetails = generatePluginDetails(marketplace.plugins);
 
 	const generated = `## Available Plugins
 
-${pluginsList}
-
-## Plugin Details
-
-${pluginDetails}`;
+${pluginsList}`;
 
 	// Read existing README
 	const { before, after } = readReadme();
