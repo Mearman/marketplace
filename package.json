@@ -11,8 +11,9 @@
 		"validate": "tsx scripts/sync-marketplace-versions.ts --check",
 		"generate-readme": "tsx scripts/generate-readme-plugins.ts",
 		"validate-readme": "tsx scripts/generate-readme-plugins.ts --check",
-		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
+		"remark-lint": "remark plugins/*/skills/*/SKILL.md",
+		"remark-lint:all": "remark plugins/*/skills/*/SKILL.md --fr",
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
@@ -23,16 +24,25 @@
 		"@semantic-release/changelog": "6.0.3",
 		"@semantic-release/exec": "7.1.0",
 		"@semantic-release/git": "10.0.1",
+		"@types/mdast": "^4.0.4",
 		"@types/node": "25.0.9",
+		"@types/unist": "^3.0.3",
 		"@typescript-eslint/eslint-plugin": "8.53.0",
 		"@typescript-eslint/parser": "8.53.0",
 		"eslint": "9.39.2",
 		"eslint-plugin-jsonc": "^2.21.0",
 		"husky": "9.1.7",
 		"lint-staged": "^16.2.7",
+		"remark": "^15.0.1",
+		"remark-cli": "^12.0.1",
 		"semantic-release": "25.0.2",
 		"tsx": "4.21.0",
-		"typescript": "5.9.3"
+		"typescript": "5.9.3",
+		"unified-lint-rule": "^3.0.1",
+		"unist-util-generated": "^3.0.0",
+		"unist-util-is": "^6.0.1",
+		"unist-util-visit": "^5.0.0",
+		"vfile": "^6.0.3"
 	},
 	"packageManager": "pnpm@9.15.9",
 	"engines": {
