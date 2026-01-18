@@ -112,7 +112,7 @@ function readPluginSkills(pluginName: string): Skill[] {
  * Focuses on what users need: request format, parameters, and response interpretation.
  * Skips verbose tables, detailed examples, and extensive documentation.
  */
-function extractApiDetails(content: string, skillName: string): string {
+function extractApiDetails(content: string): string {
 	const lines = content.split("\n");
 	const startIndex = lines.findIndex((line) => line.includes("## API Query") || line.includes("## Availability API") || line.includes("## Repository API") || line.includes("## User API") || line.includes("## GitHub REST API"));
 
@@ -179,13 +179,13 @@ function generatePluginsList(plugins: Plugin[]): string {
 							while (contentStart < lines.length && lines[contentStart].trim() === "") {
 								contentStart++;
 														 }
-															if (contentStart < lines.length) {
-																skillDescription = lines[contentStart];
-															}
-														}
+							if (contentStart < lines.length) {
+								skillDescription = lines[contentStart];
+							}
+						}
 
 						// Extract API details if present
-						apiDetails = extractApiDetails(content, skill.name);
+						apiDetails = extractApiDetails(content);
 					} catch {
 						// File doesn't exist or can't be read, use YAML description
 					}
