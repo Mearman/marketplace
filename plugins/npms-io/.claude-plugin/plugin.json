@@ -1,5 +1,5 @@
 {
   "name": "npms-io",
-  "description": "NPMS.io tools for package quality analysis, comparison, and name suggestions",
+  "description": "NPMS Package Analysis: Tools for package quality analysis, comparison, and name suggestions",
   "version": "0.2.0"
 }
