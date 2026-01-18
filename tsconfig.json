@@ -9,6 +9,8 @@
 		"skipLibCheck": true,
 		"resolveJsonModule": true,
 		"noEmit": true,
+		"allowJs": true,
+		"checkJs": true,
 		"baseUrl": ".",
 		"paths": {
 			"@lib/cache": ["./lib/cache/index.ts"],
@@ -16,6 +18,6 @@
 			"@lib/helpers": ["./lib/helpers/index.ts"]
 		}
 	},
-	"include": ["**/*.ts"],
+	"include": ["**/*.ts", "**/*.js"],
 	"exclude": ["node_modules/", "dist/", "plugins/*/.claude-plugin/"]
 }
