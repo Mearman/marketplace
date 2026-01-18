@@ -36,25 +36,11 @@ export interface PyPIPackageInfo {
 		created?: string;
 		last_modified?: string;
 	};
-	releases: Record<string, PyPIRelease[]>;
-	urls: PyPIFile[];
+	releases: Record<string, PyPIDistribution[]>;
+	urls: PyPIDistribution[];
 }
 
-export interface PyPIRelease {
-	filename: string;
-	url: string;
-	hashes: Record<string, string>;
-	requires_python?: string;
-	yanked: boolean;
-	yanked_reason?: string;
-	upload_time?: string;
-	upload_time_iso_8601?: string;
-	size?: number;
-	comment_text?: string;
-	python_version?: string;
-}
-
-export interface PyPIFile {
+export interface PyPIDistribution {
 	filename: string;
 	url: string;
 	hashes: Record<string, string>;
@@ -117,9 +103,9 @@ export function formatBytes(bytes: number): string {
 }
 
 /**
- * Get file type from filename
+ * Get distribution type from filename
  */
-export function getFileType(filename: string): string {
+export function getDistributionType(filename: string): string {
 	if (filename.endsWith(".whl")) return "wheel";
 	if (filename.endsWith(".tar.gz")) return "source (tar.gz)";
 	if (filename.endsWith(".zip")) return "source (zip)";
@@ -131,20 +117,8 @@ export function getFileType(filename: string): string {
  * Parse requires_python string for display
  */
 export function formatPythonRequirement(requires_python?: string): string {
-	if (!requires_python) return "Any Python version";
+	if (!requires_python) return "Python version not specified";
 	return `Python ${requires_python}`;
-}
-
-/**
- * Extract domain from URL
- */
-export function extractDomain(url: string): string {
-	try {
-		const urlObj = new URL(url);
-		return urlObj.hostname || url;
-	} catch {
-		return url;
-	}
 }
 
 /**
@@ -184,17 +158,42 @@ export function getMainClassifiers(classifiers?: string[]): string[] {
 }
 
 /**
- * Parse semver for sorting
+ * Parse semantic version with pre-release support
+ * Returns [major, minor, patch, prerelease_priority]
+ * Pre-release versions (alpha, beta, rc) sort before final releases
  */
 export function parseVersion(version: string): number[] {
-	return version.split(".").map((v) => {
-		const num = parseInt(v.replace(/[^0-9]/g, ""), 10);
-		return isNaN(num) ? 0 : num;
-	});
+	const parts: number[] = [];
+
+	// Split base version from pre-release
+	const [baseVersion, prerelease] = version.split(/[-+]/);
+	const baseParts = baseVersion.split(".");
+
+	// Add numeric parts
+	for (const part of baseParts) {
+		parts.push(parseInt(part, 10) || 0);
+	}
+
+	// Pad to 3 components (major.minor.patch)
+	while (parts.length < 3) {
+		parts.push(0);
+	}
+
+	// Add pre-release priority (0 = final release, lower = earlier pre-release)
+	if (prerelease) {
+		if (prerelease.includes("alpha") || prerelease.includes("a")) parts.push(1);
+		else if (prerelease.includes("beta") || prerelease.includes("b")) parts.push(2);
+		else if (prerelease.includes("rc") || prerelease.includes("c")) parts.push(3);
+		else parts.push(2); // Default to beta priority for unknown pre-releases
+	} else {
+		parts.push(4); // Final release (sorts after pre-releases)
+	}
+
+	return parts;
 }
 
 /**
- * Compare two versions
+ * Compare two versions, handling semantic versioning with pre-releases
  */
 export function compareVersions(v1: string, v2: string): number {
 	const v1parts = parseVersion(v1);
