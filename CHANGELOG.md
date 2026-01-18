@@ -1,3 +1,18 @@
+## 1.15.0 (2026-01-18)
+
+* chore(ci): remove test plugin directory ([7e51fb3](https://github.com/Mearman/marketplace/commit/7e51fb3))
+* chore(deps): add remark-lint and type checking dependencies ([48b0eb6](https://github.com/Mearman/marketplace/commit/48b0eb6))
+* chore(github-api): remove accidental SILL.md file ([1526316](https://github.com/Mearman/marketplace/commit/1526316))
+* chore(lib): enable type checking for JavaScript files ([53f51a7](https://github.com/Mearman/marketplace/commit/53f51a7))
+* docs(pypi-json,wayback): add Usage sections to SKILL.md files ([6773d36](https://github.com/Mearman/marketplace/commit/6773d36))
+* docs(cve-search): add Usage sections to SKILL.md files ([1949a4a](https://github.com/Mearman/marketplace/commit/1949a4a))
+* docs(github-api): add Usage sections to SKILL.md files ([1de635d](https://github.com/Mearman/marketplace/commit/1de635d))
+* docs(gravatar): add Usage sections to SKILL.md files ([c0e22a9](https://github.com/Mearman/marketplace/commit/c0e22a9))
+* docs(npm-registry): add Usage sections to SKILL.md files ([9408cfb](https://github.com/Mearman/marketplace/commit/9408cfb))
+* docs(npms-io): add Usage sections to SKILL.md files ([636b059](https://github.com/Mearman/marketplace/commit/636b059))
+* feat(docs): add remark-lint rule to enforce ## Usage sections in SKILL.md ([e68ab0a](https://github.com/Mearman/marketplace/commit/e68ab0a))
+* feat(test): add test skill plugin with Usage section ([fbcfbf3](https://github.com/Mearman/marketplace/commit/fbcfbf3))
+
 ## <small>1.14.2 (2026-01-18)</small>
 
 * docs(docs): improve marketplace and plugin explanation ([b002182](https://github.com/Mearman/marketplace/commit/b002182))
