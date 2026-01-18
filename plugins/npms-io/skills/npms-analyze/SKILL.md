@@ -7,6 +7,59 @@ description: Analyze npm package quality using NPMS.io scores for quality, popul
 
 Analyze an npm package using NPMS.io quality, popularity, and maintenance scores.
 
+## Usage
+
+```bash
+npx tsx scripts/analyze.ts <package-name> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `package-name` | Yes | The exact package name (case-sensitive) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+react - Package Analysis
+-------------------------
+
+Quality Scores:
+  Overall: 98/100
+  Quality: 95/100
+  Popularity: 100/100
+  Maintenance: 99/100
+
+Package Information:
+  Version: 18.2.0
+  Description: A declarative, efficient, and flexible JavaScript library...
+  Published: 2013-05-24
+
+npm Statistics:
+  Week: 2,345,678 downloads
+  Month: 9,876,543 downloads
+  Year: 98,765,432 downloads
+
+GitHub Activity:
+  Stars: 213,456
+  Forks: 45,678
+  Open Issues: 1,234
+  Contributors: 1,567
+  Latest Commit: 2 days ago
+
+Project Health:
+  ✓ Has contributing guide
+  ✓ Has license
+  ✓ Has security policy
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -65,72 +118,6 @@ The response contains comprehensive package analysis:
 - `quality` - Code quality assessment
 - `popularity` - Community adoption
 - `maintenance` - Project maintenance status
-
-## Output Format
-
-```
-react - Package Analysis
--------------------------
-
-Quality Scores:
-  Overall: 98/100
-  Quality: 95/100
-  Popularity: 100/100
-  Maintenance: 99/100
-
-Package Information:
-  Version: 18.2.0
-  Description: A declarative, efficient, and flexible JavaScript library...
-  Published: 2013-05-24
-
-npm Statistics:
-  Week: 2,345,678 downloads
-  Month: 9,876,543 downloads
-  Year: 98,765,432 downloads
-
-GitHub Activity:
-  Stars: 213,456
-  Forks: 45,678
-  Open Issues: 1,234
-  Contributors: 1,567
-  Latest Commit: 2 days ago
-
-Project Health:
-  ✓ Has contributing guide
-  ✓ Has license
-  ✓ Has security policy
-  ✗ No open discussions
-
-Recent Releases:
-  18.2.0 - 2023-06-14
-  18.1.0 - 2023-04-26
-  18.0.0 - 2023-03-29
-```
-
-## Score Components
-
-### Quality Score (0-100)
-Evaluates:
-- Code quality and best practices
-- Documentation completeness
-- Testing coverage
-- Dependency health
-- Build configuration
-
-### Popularity Score (0-100)
-Evaluates:
-- Download counts
-- GitHub stars and forks
-- dependents count
-- community engagement
-
-### Maintenance Score (0-100)
-Evaluates:
-- Recent commits
-- Release frequency
-- Issue response time
-- Dependency updates
-- Open issues vs closed
 
 ## Caching
 

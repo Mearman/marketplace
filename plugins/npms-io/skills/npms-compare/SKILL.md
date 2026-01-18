@@ -7,6 +7,48 @@ description: Compare multiple npm packages side-by-side using NPMS.io quality sc
 
 Compare multiple npm packages side-by-side using NPMS.io quality scores.
 
+## Usage
+
+```bash
+npx tsx scripts/compare.ts <package1> <package2> [package3...] [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `package1` | Yes | First package to compare |
+| `package2` | Yes | Second package to compare |
+| `package3...` | No | Additional packages to compare |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+Package Comparison: react vs vue vs angular
+-------------------------------------------
+
+┌──────────────┬──────────┬──────────┬──────────┐
+│ Metric       │ react    │ vue      │ angular  │
+├──────────────┼──────────┼──────────┼──────────┤
+│ Overall      │ 98/100   │ 95/100   │ 92/100   │
+│ Quality      │ 95/100   │ 93/100   │ 90/100   │
+│ Popularity   │ 100/100  │ 97/100   │ 95/100   │
+│ Maintenance  │ 99/100   │ 96/100   │ 91/100   │
+├──────────────┼──────────┼──────────┼──────────┤
+│ Version      │ 18.2.0   │ 3.3.4    │ 16.2.0   │
+│ Stars        │ 213K     │ 204K     │ 92K      │
+│ Forks        │ 45K      │ 34K      │ 25K      │
+│ Issues       │ 1.2K     │ 890      │ 1.5K     │
+│ Downloads/Mo │ 9.8M     │ 3.2M     │ 2.1M     │
+└──────────────┴──────────┴──────────┴──────────┘
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -55,28 +97,6 @@ The response contains analysis data for each requested package:
 ```
 
 Packages that don't exist or haven't been analyzed will have `null` values.
-
-## Output Format
-
-```
-Package Comparison: react vs vue vs angular
--------------------------------------------
-
-┌──────────────┬──────────┬──────────┬──────────┐
-│ Metric       │ react    │ vue      │ angular  │
-├──────────────┼──────────┼──────────┼──────────┤
-│ Overall      │ 98/100   │ 95/100   │ 92/100   │
-│ Quality      │ 95/100   │ 93/100   │ 90/100   │
-│ Popularity   │ 100/100  │ 97/100   │ 95/100   │
-│ Maintenance  │ 99/100   │ 96/100   │ 91/100   │
-├──────────────┼──────────┼──────────┼──────────┤
-│ Version      │ 18.2.0   │ 3.3.4    │ 16.2.0   │
-│ Stars        │ 213K     │ 204K     │ 92K      │
-│ Forks        │ 45K      │ 34K      │ 25K      │
-│ Issues       │ 1.2K     │ 890      │ 1.5K     │
-│ Downloads/Mo │ 9.8M     │ 3.2M     │ 2.1M     │
-└──────────────┴──────────┴──────────┴──────────┘
-```
 
 ## Comparison Metrics
 

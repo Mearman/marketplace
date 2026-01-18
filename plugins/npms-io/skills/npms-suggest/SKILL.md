@@ -7,6 +7,50 @@ description: Get npm package name suggestions and autocomplete from NPMS.io. Use
 
 Get package name suggestions and autocomplete from NPMS.io based on a search query.
 
+## Usage
+
+```bash
+npx tsx scripts/suggest.ts <query> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `query` | Yes | Search query (minimum 2 characters) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--size=N` | Number of suggestions to return (default: 25, max: 250) |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+Suggestions for "react" (25 results)
+------------------------------------
+
+1. react
+   Score: 1000000
+   URL: https://www.npmjs.com/package/react
+
+2. react-dom
+   Score: 950000
+   URL: https://www.npmjs.com/package/react-dom
+
+3. react-redux
+   Score: 923000
+   URL: https://www.npmjs.com/package/react-redux
+
+...
+
+Top 10 suggestions:
+  react, react-dom, react-redux, react-router, react-scripts,
+  react-native, react-hook-form, react-query, react-test-renderer
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -66,31 +110,6 @@ The response contains an array of package suggestions:
 - `name` - Package name
 - `score` - Package quality score (higher is better)
 - `searchScore` - Relevance to the search query (higher is better)
-
-## Output Format
-
-```
-Suggestions for "react" (25 results)
-------------------------------------
-
-1. react
-   Score: 1000000
-   URL: https://www.npmjs.com/package/react
-
-2. react-dom
-   Score: 950000
-   URL: https://www.npmjs.com/package/react-dom
-
-3. react-redux
-   Score: 923000
-   URL: https://www.npmjs.com/package/react-redux
-
-...
-
-Top 10 suggestions:
-  react, react-dom, react-redux, react-router, react-scripts,
-  react-native, react-hook-form, react-query, react-test-renderer
-```
 
 ## Search Query Requirements
 
