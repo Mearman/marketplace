@@ -1,3 +1,7 @@
+## <small>1.12.1 (2026-01-18)</small>
+
+* refactor(docs): restructure README with per-skill collapsible details ([555ee94](https://github.com/Mearman/marketplace/commit/555ee94))
+
 ## 1.12.0 (2026-01-18)
 
 * docs(github-api): update description to use Title: Description format ([2f361fe](https://github.com/Mearman/marketplace/commit/2f361fe))
