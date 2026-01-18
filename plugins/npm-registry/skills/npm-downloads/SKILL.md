@@ -7,6 +7,36 @@ description: Get download statistics for an npm package over time. Use when the 
 
 Retrieve download statistics for an npm package over a specified time period.
 
+## Usage
+
+```bash
+npx tsx scripts/downloads.ts <package-name> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `package-name` | Yes | The exact package name (case-sensitive) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--period=PERIOD` | Time period: last-week, last-month, last-year (default: last-month) |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+Downloads for react (last-month)
+--------------------------------
+Period: 2023-10-01 to 2023-10-31 (31 days)
+Total downloads: 15,234,567
+Average per day: 491,438
+Peak day: 2023-10-15 (678,234 downloads)
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -70,27 +100,6 @@ https://api.npmjs.org/downloads/range/2023-01-01:2023-12-31:react
 }
 ```
 
-## Output Format
-
-```
-Downloads for react (last-month)
---------------------------------
-Period: 2023-10-01 to 2023-10-31 (31 days)
-Total downloads: 15,234,567
-Average per day: 491,438
-Peak day: 2023-10-15 (523,456 downloads)
-
-Daily breakdown:
-  2023-10-01: 487,234
-  2023-10-02: 492,567
-  ...
-```
-
-## Time Periods
-
-| Period | Description |
-|--------|-------------|
-| `last-week` | Past 7 days |
 | `last-month` | Past 30 days |
 | `last-year` | Past 365 days |
 | `YYYY-MM-DD:YYYY-MM-DD` | Custom date range |

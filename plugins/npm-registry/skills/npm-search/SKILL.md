@@ -7,6 +7,42 @@ description: Search for npm packages by keyword, name, or description. Use when 
 
 Search the npm registry for packages by keyword, name, or description.
 
+## Usage
+
+```bash
+npx tsx scripts/search.ts <query> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `query` | Yes | Search query (can be package name, keyword, or description text) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--size=N` | Number of results to return (default: 20, max: 250) |
+| `--from=N` | Offset for pagination (default: 0) |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+Found 1,234 packages for "http"
+
+1. express (4.18.2)
+   Fast, unopinionated, minimalist web framework
+   Score: 0.98 (quality: 0.95, popularity: 1.0, maintenance: 0.99)
+   https://www.npmjs.com/package/express
+
+2. axios (1.6.0)
+   Promise based HTTP client for the browser and node.js
+   Score: 0.97 (quality: 0.94, popularity: 1.0, maintenance: 0.98)
+   https://www.npmjs.com/package/axios
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -60,22 +96,6 @@ Each result contains:
 - `score.detail.popularity` - Popularity score (0-1)
 - `score.detail.maintenance` - Maintenance score (0-1)
 - `searchScore` - Relevance to search query
-
-## Output Format
-
-```
-Found 1,234 packages for "http"
-
-1. express (4.18.2)
-   Fast, unopinionated, minimalist web framework
-   Score: 0.98 (quality: 0.95, popularity: 1.0, maintenance: 0.99)
-   https://www.npmjs.com/package/express
-
-2. axios (1.6.0)
-   Promise based HTTP client for the browser and node.js
-   Score: 0.97 (quality: 0.94, popularity: 1.0, maintenance: 0.98)
-   https://www.npmjs.com/package/axios
-```
 
 ## Search Tips
 

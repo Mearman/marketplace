@@ -7,6 +7,39 @@ description: Check if an npm package name exists in the registry. Use when the u
 
 Check if a package name exists in the npm registry.
 
+## Usage
+
+```bash
+npx tsx scripts/exists.ts <package-name> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `package-name` | Yes | The exact package name to check (case-sensitive) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+Package exists:
+```
+✓ Package "react" exists
+  URL: https://www.npmjs.com/package/react
+  Published: Yes
+```
+
+Package does not exist:
+```
+✗ Package "my-awesome-pkg-12345" does not exist
+  The name is available for use
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -52,24 +85,6 @@ HEAD https://registry.npmjs.org/@babel/core
 - The package name is available for use
 - No package with this exact name exists in the registry
 
-## Output Format
-
-Package exists:
-```
-✓ Package "react" exists
-  URL: https://www.npmjs.com/package/react
-  Published: Yes
-```
-
-Package does not exist:
-```
-✗ Package "my-awesome-pkg-12345" does not exist
-  The name is available for use
-```
-
-## Use Cases
-
-### Check Package Availability
 Before publishing a new package, verify the name is available:
 ```bash
 npx tsx exists.ts my-new-package
