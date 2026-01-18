@@ -1,3 +1,8 @@
+## <small>1.14.1 (2026-01-18)</small>
+
+* fix(pypi-json): address remaining version parsing edge cases and improve robustness ([dff5991](https://github.com/Mearman/marketplace/commit/dff5991))
+* fix(pypi-json): improve version parsing for PEP 440 compliance ([bcf0671](https://github.com/Mearman/marketplace/commit/bcf0671))
+
 ## 1.14.0 (2026-01-18)
 
 * chore(cve-search): remove unused variable in pom.xml parser ([af43533](https://github.com/Mearman/marketplace/commit/af43533))

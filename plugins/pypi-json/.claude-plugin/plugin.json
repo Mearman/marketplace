@@ -1,5 +1,5 @@
 {
   "name": "pypi-json",
   "description": "PyPI JSON API: Tools for querying Python package metadata, release information, and statistics from the Python Package Index",
-  "version": "0.2.1"
+  "version": "0.2.2"
 }
