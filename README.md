@@ -25,6 +25,30 @@ Ask: "Check if example.com is archived in the Wayback Machine"
 <!-- AUTO-GENERATED PLUGINS START -->
 ## Available Plugins
 
+### CVE Search v0.2.0
+
+Tools for searching vulnerabilities by CVE ID, product name, or vendor, and auditing project dependencies
+
+```bash
+/plugin install cve-search@mearman
+```
+
+##### Skills
+
+<details>
+<summary>CVE Dependency Audit</summary>
+
+Automatically scan your project's dependencies and identify known Common Vulnerabilities and Exposures (CVEs). Supports Node.js, Python, Ruby, Go, and Maven projects.
+
+</details>
+
+<details>
+<summary>CVE Vulnerability Lookup</summary>
+
+Search for Common Vulnerabilities and Exposures (CVEs) with detailed information including severity scores, affected software, and references.
+
+</details>
+
 ### GitHub REST API v0.2.0
 
 Tools for repository metadata, READMEs, user profiles, and rate limit checking
