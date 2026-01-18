@@ -108,28 +108,23 @@ function readPluginSkills(pluginName: string): Skill[] {
 }
 
 /**
- * Extract specific API content from SKILL.md content.
- * Focuses on what users need: request format, parameters, and response interpretation.
- * Skips verbose tables, detailed examples, and extensive documentation.
+ * Extract usage section from SKILL.md content.
+ * Looks for ## Usage heading and extracts content until next major heading.
+ * This provides brief parameter/usage info for all skill types.
  */
-function extractApiDetails(content: string): string {
+function extractUsage(content: string): string {
 	const lines = content.split("\n");
-	const startIndex = lines.findIndex((line) => line.includes("## API Query") || line.includes("## Availability API") || line.includes("## Repository API") || line.includes("## User API") || line.includes("## GitHub REST API"));
+	const startIndex = lines.findIndex((line) => line.trim().startsWith("## Usage"));
 
 	if (startIndex === -1) return "";
 
-	const headingLevel = lines[startIndex].match(/^##\s+(\S+)\s+(\S+)\s+(\S+)/);
-	if (headingLevel) {
-		// Extract from API Query, Request Format, Parameters, Response sections only
-		const endIndex = lines.findIndex((line, index) => {
-			const isEndSection = line.match(/^##\s+/) && index > startIndex;
-			const isSubheading = line.match(/^###\s+/);
-			return isEndSection || isSubheading;
-		});
+	// Extract from Usage section until next ## heading (include ### subheadings)
+	const endIndex = lines.findIndex((line, index) => {
+		return line.match(/^##\s+/) && index > startIndex;
+	});
 
-		if (endIndex > startIndex) {
-			return lines.slice(startIndex + 1, endIndex).join("\n");
-		}
+	if (endIndex > startIndex) {
+		return lines.slice(startIndex + 1, endIndex).join("\n");
 	}
 
 	return "";
@@ -160,7 +155,7 @@ function generatePluginsList(plugins: Plugin[]): string {
 					const skillMdPath = join(pluginsDir, plugin.name, "skills", skill.name, "SKILL.md");
 					let skillHeading = skill.name; // fallback
 					let skillDescription = skill.description; // fallback to YAML description
-					let apiDetails = "";
+					let usageDetails = "";
 
 					try {
 						const content = readFileSync(skillMdPath, "utf-8");
@@ -184,15 +179,15 @@ function generatePluginsList(plugins: Plugin[]): string {
 							}
 						}
 
-						// Extract API details if present
-						apiDetails = extractApiDetails(content);
+						// Extract usage details if present
+						usageDetails = extractUsage(content);
 					} catch {
 						// File doesn't exist or can't be read, use YAML description
 					}
 
 					let skillContent = `${skillDescription}`;
-					if (apiDetails) {
-						skillContent += `\n\n${apiDetails}`;
+					if (usageDetails) {
+						skillContent += `\n\n${usageDetails}`;
 					}
 
 					return `<details>
