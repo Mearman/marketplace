@@ -19,5 +19,5 @@
 		}
 	},
 	"include": ["**/*.ts", "**/*.js"],
-	"exclude": ["node_modules/", "dist/", "plugins/*/.claude-plugin/"]
+	"exclude": ["node_modules/", "dist/", "plugins/*/.claude-plugin/", "coverage/"]
 }

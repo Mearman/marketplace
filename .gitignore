@@ -7,6 +7,12 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+*.swn
+
+# Editor settings
+.vscode/settings.json
+.idea/*
+!.idea/.gitignore
 
 # Claude Code
 .claude/local/
@@ -15,3 +21,23 @@ Thumbs.db
 node_modules/
 *.log
 *.tsbuildinfo
+.pnpm-store
+
+# Testing
+coverage/
+.nyc_output/
+vitest-report/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Temporary files
+*.tmp
+.cache/
