@@ -158,36 +158,48 @@ export function getMainClassifiers(classifiers?: string[]): string[] {
 }
 
 /**
- * Parse semantic version with pre-release support
+ * Parse semantic version with pre-release support (PEP 440 compatible)
  * Returns [major, minor, patch, prerelease_priority]
  * Pre-release versions (alpha, beta, rc) sort before final releases
  */
 export function parseVersion(version: string): number[] {
 	const parts: number[] = [];
 
-	// Split base version from pre-release
-	const [baseVersion, prerelease] = version.split(/[-+]/);
-	const baseParts = baseVersion.split(".");
+	// Remove epoch if present (e.g., "1!2.0.0" -> "2.0.0")
+	const withoutEpoch = version.includes("!") ? version.split("!")[1] : version;
 
-	// Add numeric parts
-	for (const part of baseParts) {
-		parts.push(parseInt(part, 10) || 0);
+	// Extract base version and pre-release identifier (handles both PEP 440 formats)
+	// Matches: "1.2.3", "1.2.3a1", "1.2.3-alpha", "1.2.3+local"
+	const versionRegex = /^(\d+(?:\.\d+)*)((?:a|alpha|b|beta|rc|c)\d*)?(?:[-+].*)?$/i;
+	const match = withoutEpoch.match(versionRegex);
+
+	if (!match) {
+		// Fallback: treat entire string as base version
+		const baseParts = withoutEpoch.split(".").map((p) => parseInt(p, 10) || 0);
+		parts.push(...baseParts.slice(0, 3));
+	} else {
+		// Parse base version
+		const baseParts = match[1].split(".").map((p) => parseInt(p, 10) || 0);
+		parts.push(...baseParts);
+		const prerelease = match[2];
+
+		if (prerelease) {
+			// Pre-release detected
+			const lower = prerelease.toLowerCase();
+			if (lower.startsWith("alpha") || lower.startsWith("a")) parts.push(1);
+			else if (lower.startsWith("beta") || lower.startsWith("b")) parts.push(2);
+			else if (lower.startsWith("rc") || lower.startsWith("c")) parts.push(3);
+			else parts.push(2); // Default to beta priority for unknown pre-releases
+		}
 	}
 
-	// Pad to 3 components (major.minor.patch)
+	// Pad to 3 numeric components
 	while (parts.length < 3) {
 		parts.push(0);
 	}
 
-	// Add pre-release priority (higher value = more stable)
-	// 1=alpha, 2=beta, 3=rc, 4=final release
-	if (prerelease) {
-		const lower = prerelease.toLowerCase();
-		if (lower.startsWith("alpha") || lower === "a") parts.push(1);
-		else if (lower.startsWith("beta") || lower === "b") parts.push(2);
-		else if (lower.startsWith("rc") || lower === "c") parts.push(3);
-		else parts.push(2); // Default to beta priority for unknown pre-releases
-	} else {
+	// Add final release priority if no pre-release was detected
+	if (parts.length === 3) {
 		parts.push(4); // Final release (sorts after pre-releases)
 	}
 
