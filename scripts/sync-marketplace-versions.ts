@@ -1,10 +1,10 @@
 #!/usr/bin/env tsx
 /**
- * Syncs plugin versions from individual plugin.json files to marketplace.json.
+ * Syncs plugin versions and descriptions from individual plugin.json files to marketplace.json.
  *
  * Usage:
- *   pnpm sync-versions        # Update marketplace.json with plugin versions
- *   pnpm validate             # Check if versions are in sync (CI mode)
+ *   pnpm sync-versions        # Update marketplace.json with plugin data
+ *   pnpm validate             # Check if data is in sync (CI mode)
  */
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -19,7 +19,7 @@ const marketplacePath = join(rootDir, '.claude-plugin', 'marketplace.json');
 interface PluginJson {
   name: string;
   version: string;
-  description?: string;
+  description: string;
 }
 
 interface MarketplacePlugin {
@@ -83,9 +83,10 @@ function main(): void {
       continue;
     }
 
+    // Sync version
     if (marketplacePlugin.version !== pluginJson.version) {
       mismatches.push(
-        `${pluginJson.name}: marketplace=${marketplacePlugin.version}, plugin=${pluginJson.version}`
+        `${pluginJson.name} version: marketplace=${marketplacePlugin.version}, plugin=${pluginJson.version}`
       );
 
       if (!checkOnly) {
@@ -93,25 +94,37 @@ function main(): void {
         hasChanges = true;
       }
     }
+
+    // Sync description
+    if (marketplacePlugin.description !== pluginJson.description) {
+      mismatches.push(
+        `${pluginJson.name} description: marketplace and plugin differ`
+      );
+
+      if (!checkOnly) {
+        marketplacePlugin.description = pluginJson.description;
+        hasChanges = true;
+      }
+    }
   }
 
   if (checkOnly) {
     if (mismatches.length > 0) {
-      console.error('Version mismatches found:');
+      console.error('Mismatches found:');
       mismatches.forEach((m) => console.error(`  - ${m}`));
       console.error('\nRun "pnpm sync-versions" to fix.');
       process.exit(1);
     }
-    console.log('All versions are in sync.');
+    console.log('All plugin data is in sync.');
     return;
   }
 
   if (hasChanges) {
     writeMarketplace(marketplace);
-    console.log('Updated marketplace.json with plugin versions:');
+    console.log('Updated marketplace.json with plugin data:');
     mismatches.forEach((m) => console.log(`  - ${m}`));
   } else {
-    console.log('All versions are already in sync.');
+    console.log('All plugin data is already in sync.');
   }
 }
 
