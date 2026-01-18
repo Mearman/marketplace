@@ -21,6 +21,12 @@
 			"version": "0.2.0"
 		},
 		{
+			"name": "pypi-json",
+			"source": "./plugins/pypi-json",
+			"description": "PyPI JSON API: Tools for querying Python package metadata, release information, and statistics from the Python Package Index",
+			"version": "0.1.0"
+		},
+		{
 			"name": "gravatar",
 			"source": "./plugins/gravatar",
 			"description": "Gravatar Avatar URLs: Tools for generating avatar URLs from email addresses",
