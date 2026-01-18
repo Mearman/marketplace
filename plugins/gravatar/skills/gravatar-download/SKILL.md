@@ -7,6 +7,40 @@ description: Download Gravatar avatar images to local files. Use when the user w
 
 Download Gravatar avatar images to local files.
 
+## Usage
+
+```bash
+npx tsx scripts/download.ts <email> <output-file> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `email` | Yes | Email address |
+| `output-file` | Yes | Path where image will be saved |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--size=N` | Image size in pixels (default: 200, max: 2048) |
+| `--default=TYPE` | Default image type: mp, identicon, monsterid, wavatar, retro, robohash, blank |
+| `--rating=LEVEL` | Rating level: g, pg, r, x (default: g) |
+| `--no-cache` | Bypass cache and fetch fresh data |
+
+### Output
+
+```
+Email: user@example.com
+Output: avatar.jpg
+Hash: b48bf4373d7b7374351c0544f36f7fc3
+
+✓ Downloaded successfully
+  Size: 12.4 KB
+  File: avatar.jpg
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -27,18 +61,6 @@ Run from the gravatar plugin directory: `~/.claude/plugins/cache/gravatar/`
 2. Downloads image using cached HTTP request
 3. Saves image to specified file path
 4. Caches downloaded images for 24 hours
-
-## Output Format
-
-```
-Email: user@example.com
-Output: avatar.jpg
-Hash: b48bf4373d7b7374351c0544f36f7fc3
-
-✓ Downloaded successfully
-  Size: 12.4 KB
-  File: avatar.jpg
-```
 
 ## Examples
 

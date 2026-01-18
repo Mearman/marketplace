@@ -7,6 +7,35 @@ description: Generate a Gravatar avatar URL from an email address. Use when the 
 
 Generate a Gravatar avatar URL from an email address.
 
+## Usage
+
+```bash
+npx tsx scripts/url.ts <email> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `email` | Yes | Email address |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--size=N` | Image size in pixels (default: 80, max: 2048) |
+| `--default=TYPE` | Default image type: mp, identicon, monsterid, wavatar, retro, robohash, blank (default: mp) |
+| `--rating=LEVEL` | Rating level: g, pg, r, x (default: g) |
+| `--force-default` | Force the default image even if user has a Gravatar |
+
+### Output
+
+```
+Email: user@example.com
+Hash: b48bf4373d7b7374351c0544f36f7fc3
+URL: https://www.gravatar.com/avatar/b48bf4373d7b7374351c0544f36f7fc3?s=80&d=mp&r=g
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -58,14 +87,6 @@ The hash is an MD5 hash of the lowercase, trimmed email address.
 | `pg` | May contain rude gestures or mild violence |
 | `r` | May contain harsh language, violence, or partial nudity |
 | `x` | May contain explicit content |
-
-## Output Format
-
-```
-Email: user@example.com
-Hash: b48bf4373d7b7374351c0544f36f7fc3
-URL: https://www.gravatar.com/avatar/b48bf4373d7b7374351c0544f36f7fc3?s=80&d=mp&r=g
-```
 
 ## Examples
 
