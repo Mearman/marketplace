@@ -1,3 +1,12 @@
+## 1.14.0 (2026-01-18)
+
+* chore(cve-search): remove unused variable in pom.xml parser ([af43533](https://github.com/Mearman/marketplace/commit/af43533))
+* chore(marketplace): sync cve-search plugin description from plugin.json ([3ed0094](https://github.com/Mearman/marketplace/commit/3ed0094))
+* fix(cve-search): address code review feedback from PR #3 ([629c755](https://github.com/Mearman/marketplace/commit/629c755)), closes [#3](https://github.com/Mearman/marketplace/issues/3)
+* fix(cve-search): resolve import paths and TypeScript type errors ([ffc5bfa](https://github.com/Mearman/marketplace/commit/ffc5bfa))
+* feat(cve-search): add CVE lookup plugin with OpenCVE integration ([0b58334](https://github.com/Mearman/marketplace/commit/0b58334))
+* feat(cve-search): add dependency audit skill for scanning vulnerabilities ([481bcd7](https://github.com/Mearman/marketplace/commit/481bcd7))
+
 ## <small>1.13.1 (2026-01-18)</small>
 
 * fix(pypi-json): address code review feedback and improve robustness ([8382640](https://github.com/Mearman/marketplace/commit/8382640))
