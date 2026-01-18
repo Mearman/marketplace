@@ -27,7 +27,7 @@ Ask: "Check if example.com is archived in the Wayback Machine"
 
 ### CVE Search v0.2.0
 
-Tools for searching vulnerabilities by CVE ID, product name, or vendor, and auditing project dependencies
+Tools for searching vulnerabilities by CVE ID, product name, or vendor, with detailed vulnerability information and dependency auditing
 
 ```bash
 /plugin install cve-search@mearman

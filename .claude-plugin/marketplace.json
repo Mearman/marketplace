@@ -47,7 +47,7 @@
 		{
 			"name": "cve-search",
 			"source": "./plugins/cve-search",
-			"description": "CVE Search: Tools for searching vulnerabilities by CVE ID, product name, or vendor, and auditing project dependencies",
+			"description": "CVE Search: Tools for searching vulnerabilities by CVE ID, product name, or vendor, with detailed vulnerability information and dependency auditing",
 			"version": "0.2.0"
 		}
 	]
