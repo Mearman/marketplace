@@ -7,6 +7,55 @@ description: Get GitHub repository information including stars, forks, issues, l
 
 Retrieve detailed information about a GitHub repository.
 
+## Usage
+
+```bash
+npx tsx scripts/repo.ts <repository> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `repository` | Yes | Repository in format `owner/repo` or full GitHub URL |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--token=TOKEN` | GitHub Personal Access Token (optional, overrides GITHUB_TOKEN env var) |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+facebook/react
+----------------
+Description: A declarative, efficient, and flexible JavaScript library for building user interfaces.
+Created: 2013-05-24
+Updated: 2023-10-15
+Pushed: 2023-10-15
+
+Statistics:
+  Stars: 213,456
+  Forks: 45,678
+  Open issues: 1,234
+  Watchers: 7,890
+
+Details:
+  Language: TypeScript
+  License: MIT
+  Private: No
+  Fork: No
+  Default branch: main
+
+Features:
+  Issues: Enabled
+  Projects: Enabled
+  Wiki: Enabled
+  Pages: Disabled
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -68,40 +117,6 @@ The response contains comprehensive repository metadata:
 - **`license`** - License information
 - **`topics`** - Repository topics
 - **`default_branch`** - Default branch name
-
-## Output Format
-
-```
-facebook/react
-----------------
-Description: A declarative, efficient, and flexible JavaScript library for building user interfaces.
-Created: 2013-05-24
-Updated: 2023-10-15
-Pushed: 2023-10-15
-
-Statistics:
-  Stars: 213,456
-  Forks: 45,678
-  Open issues: 1,234
-  Watchers: 7,890
-
-Details:
-  Language: TypeScript
-  License: MIT
-  Private: No
-  Fork: No
-  Default branch: main
-
-Features:
-  Issues: Enabled
-  Projects: Enabled
-  Wiki: Enabled
-  Pages: Disabled
-
-Topics: react, javascript, library, ui
-Homepage: https://react.dev
-Repository: https://github.com/facebook/react
-```
 
 ## URL Format Support
 

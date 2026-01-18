@@ -7,6 +7,38 @@ description: Fetch the README content from a GitHub repository. Use when the use
 
 Fetch and decode the README content from a GitHub repository.
 
+## Usage
+
+```bash
+npx tsx scripts/readme.ts <repository> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `repository` | Yes | Repository in format `owner/repo` or full GitHub URL |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--token=TOKEN` | GitHub Personal Access Token (optional, overrides GITHUB_TOKEN env var) |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+README.md from facebook/react
+-----------------------------
+Size: 12.3 KB
+URL: https://github.com/facebook/react/blob/main/README.md
+
+# README Contents
+
+[decoded README content displayed here]
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -51,19 +83,6 @@ The response contains README metadata and base64-encoded content:
 - **`html_url`** - GitHub URL to view the README
 - **`content`** - Base64-encoded content
 - **`encoding`** - Encoding type (always "base64")
-
-## Output Format
-
-```
-README.md from facebook/react
------------------------------
-Size: 12.3 KB
-URL: https://github.com/facebook/react/blob/main/README.md
-
-# README Contents
-
-[decoded README content displayed here]
-```
 
 ## README Detection
 

@@ -7,6 +7,52 @@ description: Get GitHub user profile information including repos, followers, and
 
 Retrieve detailed information about a GitHub user or organization.
 
+## Usage
+
+```bash
+npx tsx scripts/user.ts <username> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `username` | Yes | GitHub username |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--token=TOKEN` | GitHub Personal Access Token (optional, overrides GITHUB_TOKEN env var) |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+torvalds (Linus Torvalds)
+--------------------------
+Bio: Creator of Linux
+Location: Portland, OR
+Company: Linux Foundation
+
+Account:
+  Type: User
+  Created: 2010-08-19
+  Updated: 2023-10-01
+  Hireable: Yes
+
+Statistics:
+  Public repos: 12
+  Public gists: 5
+  Followers: 156,789
+  Following: 0
+
+Links:
+  Profile: https://github.com/torvalds
+  Blog: https://lkml.org/
+  Avatar: https://avatars.githubusercontent.com/u/102402?v=4
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -64,33 +110,6 @@ The response contains comprehensive user profile metadata:
 - **`following`** - Number of following
 - **`created_at`** - Account creation timestamp
 - **`updated_at`** - Last profile update timestamp
-
-## Output Format
-
-```
-torvalds (Linus Torvalds)
---------------------------
-Bio: Creator of Linux
-Location: Portland, OR
-Company: Linux Foundation
-
-Account:
-  Type: User
-  Created: 2010-08-19
-  Updated: 2023-10-01
-  Hireable: Yes
-
-Statistics:
-  Public repos: 12
-  Public gists: 5
-  Followers: 156,789
-  Following: 0
-
-Links:
-  Profile: https://github.com/torvalds
-  Blog: https://lkml.org/
-  Avatar: https://avatars.githubusercontent.com/u/102402?v=4
-```
 
 ## Authentication
 
