@@ -37,6 +37,12 @@
 			"source": "./plugins/npms-io",
 			"description": "NPMS Package Analysis: Tools for package quality analysis, comparison, and name suggestions",
 			"version": "0.2.0"
+		},
+		{
+			"name": "cve-search",
+			"source": "./plugins/cve-search",
+			"description": "CVE Search: Tools for searching vulnerabilities by CVE ID or product name, with detailed vulnerability information",
+			"version": "0.1.0"
 		}
 	]
 }
