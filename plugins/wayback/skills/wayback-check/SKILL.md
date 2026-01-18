@@ -7,6 +7,41 @@ description: Check if a URL is archived in the Wayback Machine. Use when the use
 
 Check if a URL has been archived by the Internet Archive's Wayback Machine.
 
+## Usage
+
+```bash
+npx tsx scripts/check.ts <url> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `url` | Yes | The URL to check |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-raw` | Include Wayback toolbar in archived URL |
+| `--timestamp=DATE` | Find snapshot closest to date (YYYYMMDD or YYYYMMDDhhmmss) |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+When archived:
+```
+✓ Archived
+  Timestamp: January 1, 2024 (3 days ago)
+  URL: https://web.archive.org/web/20240101120000id_/https://example.com
+```
+
+When not archived:
+```
+✗ Not archived
+  Consider using wayback-submit to archive this URL.
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -55,21 +90,6 @@ https://archive.org/wayback/available?url=https://example.com&timestamp=20200101
 - `status`: HTTP status code
 
 **Not Archived** - Response has empty `archived_snapshots` object.
-
-## Output Format
-
-When archived:
-```
-✓ Archived
-  Timestamp: {human readable date} ({age, e.g., "3 days ago"})
-  URL: {wayback_url}
-```
-
-When not archived:
-```
-✗ Not archived
-  Consider using wayback-submit to archive this URL.
-```
 
 ## Raw Mode
 

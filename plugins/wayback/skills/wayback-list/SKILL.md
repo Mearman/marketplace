@@ -7,6 +7,39 @@ description: List Wayback Machine snapshots for a URL. Use when the user wants t
 
 Retrieve a list of archived snapshots for a URL from the Wayback Machine CDX API.
 
+## Usage
+
+```bash
+npx tsx scripts/list.ts <url> [limit] [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `url` | Yes | The URL to search for |
+| `limit` | No | Max number of results (default: unlimited) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-raw` | Include Wayback toolbar in URLs |
+| `--with-screenshots` | Cross-reference to show which captures have screenshots (📷) |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+January 1, 2024 (3 days ago)
+  https://web.archive.org/web/20240101120000id_/https://example.com
+
+December 15, 2023 (20 days ago)
+  https://web.archive.org/web/20231215100000id_/https://example.com
+
+Total: 2 snapshot(s)
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -84,18 +117,6 @@ https://web.archive.org/web/{timestamp}/{original_url}
 For raw content (no Wayback toolbar):
 ```
 https://web.archive.org/web/{timestamp}id_/{original_url}
-```
-
-## Output Format
-
-```
-{human readable date} ({age})
-  https://web.archive.org/web/{timestamp}id_/{url}
-
-{human readable date} ({age})
-  https://web.archive.org/web/{timestamp}id_/{url}
-
-Total: {n} snapshot(s)
 ```
 
 ## Common Queries

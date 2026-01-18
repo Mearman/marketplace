@@ -7,16 +7,50 @@ description: Get detailed metadata for Python packages from PyPI including versi
 
 Retrieve comprehensive metadata for Python packages from the Python Package Index (PyPI).
 
-## Script Execution
+## Usage
 
 ```bash
 npx tsx scripts/info.ts <package-name> [options]
 ```
 
-Options:
-- `--no-cache` - Bypass cache and fetch fresh data from PyPI
-- `--releases` - Show detailed release history and file information
-- `--files` - Show distribution files for the latest release
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `package-name` | Yes | The exact package name (case-insensitive) |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-cache` | Bypass cache and fetch fresh data from PyPI |
+| `--releases` | Show detailed release history and file information |
+| `--files` | Show distribution files for the latest release |
+
+### Output
+
+```
+django
+==================================================
+Latest Version: 5.0.1
+License: BSD
+Author: Django Software Foundation
+
+Summary:
+A high-level Python web framework that encourages rapid development and clean,
+pragmatic design.
+
+Project URLs:
+  Documentation: https://docs.djangoproject.com/
+  Repository: https://github.com/django/django
+  Bug Tracker: https://code.djangoproject.com/
+
+Python Requirement: >=3.10
+
+Dependencies (latest):
+  - asgiref >=3.6.0,<4
+  - sqlparse >=0.2.2
+```
 
 Run from the pypi-json plugin directory: `~/.claude/plugins/cache/pypi-json/`
 

@@ -7,6 +7,38 @@ description: Submit a URL to the Wayback Machine for archiving. Use when the use
 
 Submit a URL to the Internet Archive's Wayback Machine using the Save Page Now 2 (SPN2) API.
 
+## Usage
+
+```bash
+npx tsx scripts/submit.ts <url> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `url` | Yes | URL to archive |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-raw` | Include Wayback toolbar in archived URL |
+| `--key=ACCESS:SECRET` | Use API authentication (get keys at https://archive.org/account/s3.php) |
+
+### Output
+
+When submission succeeds:
+```
+✓ Archive submitted successfully
+  Job ID: spn2-abc123...
+  Check status: https://web.archive.org/save/status/spn2-abc123...
+
+  Waiting for capture...
+  ✓ Capture complete
+  URL: https://web.archive.org/web/20240115123456id_/https://example.com
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -121,18 +153,6 @@ https://web.archive.org/save/{URL}
 
 Lower rate limits apply (6 concurrent, 4k daily).
 
-## Output Format
-
-```
-✓ Archived
-  Job ID: {job_id}
-  Timestamp: {human readable date}
-  URL: https://web.archive.org/web/{timestamp}id_/{url}
-```
-
-## Best Practices
-
-1. Use `if_not_archived_within=1d` to avoid duplicate captures
 2. Use `delay_wb_availability=1` for batch jobs (reduces server load)
 3. Check job status for captures that take time (JS-heavy pages)
 4. Use `capture_screenshot=1` for visual verification

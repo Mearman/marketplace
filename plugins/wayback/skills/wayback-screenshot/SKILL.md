@@ -7,6 +7,41 @@ description: Retrieve screenshots from the Wayback Machine. Use when the user wa
 
 Access existing screenshots stored by the Wayback Machine.
 
+## Usage
+
+```bash
+npx tsx scripts/screenshot.ts <url> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `url` | Yes | The URL to find screenshots for |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--timestamp=DATE` | Get screenshot from specific capture (YYYYMMDDhhmmss) |
+| `--list` | List available screenshots for URL |
+| `--download=PATH` | Download screenshot to file |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+```
+Screenshots for: https://example.com/
+
+January 15, 2024 12:34 (3 days ago)
+  https://web.archive.org/web/20240115123456im_/https://example.com/
+
+December 1, 2023 08:00 (46 days ago)
+  https://web.archive.org/web/20231201080000im_/https://example.com/
+
+Total: 2 screenshot(s)
+```
+
 ## Script Execution (Preferred)
 
 ```bash
@@ -71,18 +106,6 @@ When submitting with `capture_screenshot=1`, the response includes:
 }
 ```
 
-## Output Format
-
-```
-Screenshots for: https://example.com/
-
-2024-01-15 12:34 (3 days ago)
-  https://web.archive.org/web/20240115123456im_/https://example.com/
-
-2023-12-01 08:00 (46 days ago)
-  https://web.archive.org/web/20231201080000im_/https://example.com/
-
-Total: 2 screenshot(s)
 ```
 
 ## Caveats

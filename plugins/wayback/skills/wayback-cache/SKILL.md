@@ -7,6 +7,25 @@ description: Manage Wayback Machine API cache. Use when clearing cached data, ch
 
 Manage the OS tmpdir-based cache for Wayback Machine API responses.
 
+## Usage
+
+```bash
+npx tsx scripts/cache.ts <command> [options]
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `clear` | Clear all cached Wayback data |
+| `status` | Show cache directory location and file count |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--no-cache` | Bypass cache for single operation |
+
 ## Cache Location
 
 Cached responses are stored in the OS temporary directory:
