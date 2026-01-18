@@ -82,7 +82,7 @@ The API returns comprehensive package information structured in these main secti
 
 ```
 django
-------
+==================================================
 Latest Version: 5.0.1
 License: BSD
 Author: Django Software Foundation
@@ -96,16 +96,16 @@ Project URLs:
   Repository: https://github.com/django/django
   Bug Tracker: https://code.djangoproject.com/
 
-Python Requirement: >=3.10
+Python Requirement: Python >=3.10
 Classifiers:
-  Development Status :: 5 - Production/Stable
-  Environment :: Web Environment
-  Framework :: Django :: 5.0
-  ...
+  - Development Status :: 5 - Production/Stable
+  - Environment :: Web Environment
+  - Framework :: Django :: 5.0
+  ... (and more)
 
-Latest Release Files:
-  Django-5.0.1-py3-none-any.whl (8.2 MB)
-  Django-5.0.1.tar.gz (9.1 MB)
+Latest Release Files (with --files flag):
+  Django-5.0.1-py3-none-any.whl [wheel] - 8.2 MB
+  Django-5.0.1.tar.gz [source (tar.gz)] - 9.1 MB
 ```
 
 ## Examples
@@ -142,6 +142,9 @@ For more information, see:
 
 **Package not found**: If the package doesn't exist on PyPI, the API returns a 404 status code.
 
-**Network timeout**: Requests timeout after 10 seconds. Use `--no-cache` to retry.
+**Network errors**: Connection timeouts or unreachable hosts. Use `--no-cache` to retry from PyPI.
 
-**Invalid package name**: PyPI is case-insensitive for package names. The API normalizes names by replacing hyphens and underscores.
+**Invalid package name**: PyPI is case-insensitive for package names. The API normalizes names by:
+- Converting to lowercase
+- Treating hyphens (`-`), underscores (`_`), and dots (`.`) as equivalent
+- Examples: `my-package`, `my_package`, `my.package` all refer to the same package

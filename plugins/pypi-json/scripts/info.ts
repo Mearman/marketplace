@@ -11,15 +11,14 @@
 
 import {
 	API,
-	PyPIFile,
+	PyPIDistribution,
 	PyPIPackageInfo,
 	compareVersions,
-	extractDomain,
 	fetchWithCache,
 	formatBytes,
 	formatClassifier,
 	formatPythonRequirement,
-	getFileType,
+	getDistributionType,
 	getMainClassifiers,
 	parseArgs,
 } from "./utils";
@@ -80,7 +79,6 @@ const main = async () => {
 		if (info.project_urls && Object.keys(info.project_urls).length > 0) {
 			console.log(`\nProject URLs:`);
 			Object.entries(info.project_urls).forEach(([label, url]) => {
-				const domain = extractDomain(url);
 				console.log(`  ${label}: ${url}`);
 			});
 		}
@@ -110,9 +108,9 @@ const main = async () => {
 		// Display latest release files
 		if (flags.has("files") && data.urls && data.urls.length > 0) {
 			console.log(`\nLatest Release Files (${data.urls.length} total):`);
-			data.urls.slice(0, 10).forEach((file: PyPIFile) => {
+			data.urls.slice(0, 10).forEach((file: PyPIDistribution) => {
 				const size = file.size ? formatBytes(file.size) : "unknown";
-				const fileType = getFileType(file.filename);
+				const fileType = getDistributionType(file.filename);
 				console.log(`  ${file.filename} [${fileType}] - ${size}`);
 				if (file.yanked) {
 					console.log(`    ⚠️  YANKED${file.yanked_reason ? `: ${file.yanked_reason}` : ""}`);
@@ -152,20 +150,32 @@ const main = async () => {
 
 		console.log("");
 	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
+		if (error instanceof Error) {
+			const message = error.message;
 
-		// Check for specific error cases
-		if (message.includes("404")) {
-			console.error(`Error: Package '${packageName}' not found on PyPI`);
-			process.exit(1);
+			// Check for HTTP 404 - package not found
+			if (message.includes("404") || message.includes("not found")) {
+				console.error(`Error: Package '${packageName}' not found on PyPI`);
+				process.exit(1);
+			}
+
+			// Check for network/timeout errors
+			if (
+				message.includes("ECONNREFUSED") ||
+				message.includes("ETIMEDOUT") ||
+				message.includes("timeout") ||
+				message.includes("ENOTFOUND")
+			) {
+				console.error(
+					`Error: Network error. Check your connection or try again with --no-cache`
+				);
+				process.exit(1);
+			}
+
+			console.error("Error:", message);
+		} else {
+			console.error("Error:", String(error));
 		}
-
-		if (message.includes("Network")) {
-			console.error(`Error: Network timeout. Try again or use --no-cache to force a fresh request`);
-			process.exit(1);
-		}
-
-		console.error("Error:", message);
 		process.exit(1);
 	}
 };
