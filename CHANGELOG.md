@@ -1,3 +1,8 @@
+## <small>1.13.1 (2026-01-18)</small>
+
+* fix(pypi-json): address code review feedback and improve robustness ([8382640](https://github.com/Mearman/marketplace/commit/8382640))
+* fix(pypi-json): address remaining review feedback and improve robustness ([e5045a1](https://github.com/Mearman/marketplace/commit/e5045a1))
+
 ## 1.13.0 (2026-01-18)
 
 * Merge pull request #2 from Mearman/claude/add-pypi-json-skill-0dHUB ([dddc851](https://github.com/Mearman/marketplace/commit/dddc851)), closes [#2](https://github.com/Mearman/marketplace/issues/2)

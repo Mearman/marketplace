@@ -163,7 +163,7 @@ Get package name suggestions and autocomplete from NPMS.io based on a search que
 
 </details>
 
-### PyPI JSON API v0.2.0
+### PyPI JSON API v0.2.1
 
 Tools for querying Python package metadata, release information, and statistics from the Python Package Index
 
