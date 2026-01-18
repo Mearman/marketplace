@@ -1,3 +1,9 @@
+## <small>1.12.2 (2026-01-18)</small>
+
+* docs(gravatar): add API Query section to gravatar-check skill ([a6c331e](https://github.com/Mearman/marketplace/commit/a6c331e))
+* refactor(docs): remove unused skillName parameter from extractApiDetails ([f5554b8](https://github.com/Mearman/marketplace/commit/f5554b8))
+* fix(docs): correct syntax errors in README generator ([7d31f75](https://github.com/Mearman/marketplace/commit/7d31f75))
+
 ## <small>1.12.1 (2026-01-18)</small>
 
 * refactor(docs): restructure README with per-skill collapsible details ([555ee94](https://github.com/Mearman/marketplace/commit/555ee94))
