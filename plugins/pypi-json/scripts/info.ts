@@ -84,7 +84,8 @@ const main = async () => {
 		}
 
 		// Display Python requirement
-		console.log(`\nPython Requirement: ${formatPythonRequirement(info.requires_python)}`);
+		const pythonReq = formatPythonRequirement(info.requires_python);
+		console.log(`\nPython Requirement: ${pythonReq}`);
 
 		// Display keywords
 		if (info.keywords) {
@@ -154,7 +155,7 @@ const main = async () => {
 			const message = error.message;
 
 			// Check for HTTP 404 - package not found
-			if (message.includes("404") || message.includes("not found")) {
+			if (message.includes("404")) {
 				console.error(`Error: Package '${packageName}' not found on PyPI`);
 				process.exit(1);
 			}

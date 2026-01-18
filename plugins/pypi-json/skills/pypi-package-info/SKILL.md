@@ -96,7 +96,7 @@ Project URLs:
   Repository: https://github.com/django/django
   Bug Tracker: https://code.djangoproject.com/
 
-Python Requirement: Python >=3.10
+Python Requirement: >=3.10
 Classifiers:
   - Development Status :: 5 - Production/Stable
   - Environment :: Web Environment

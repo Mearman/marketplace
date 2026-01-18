@@ -117,8 +117,8 @@ export function getDistributionType(filename: string): string {
  * Parse requires_python string for display
  */
 export function formatPythonRequirement(requires_python?: string): string {
-	if (!requires_python) return "Python version not specified";
-	return `Python ${requires_python}`;
+	if (!requires_python) return "not specified";
+	return requires_python;
 }
 
 /**
@@ -179,11 +179,13 @@ export function parseVersion(version: string): number[] {
 		parts.push(0);
 	}
 
-	// Add pre-release priority (0 = final release, lower = earlier pre-release)
+	// Add pre-release priority (higher value = more stable)
+	// 1=alpha, 2=beta, 3=rc, 4=final release
 	if (prerelease) {
-		if (prerelease.includes("alpha") || prerelease.includes("a")) parts.push(1);
-		else if (prerelease.includes("beta") || prerelease.includes("b")) parts.push(2);
-		else if (prerelease.includes("rc") || prerelease.includes("c")) parts.push(3);
+		const lower = prerelease.toLowerCase();
+		if (lower.startsWith("alpha") || lower === "a") parts.push(1);
+		else if (lower.startsWith("beta") || lower === "b") parts.push(2);
+		else if (lower.startsWith("rc") || lower === "c") parts.push(3);
 		else parts.push(2); // Default to beta priority for unknown pre-releases
 	} else {
 		parts.push(4); // Final release (sorts after pre-releases)
