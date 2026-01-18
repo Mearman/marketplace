@@ -1,3 +1,8 @@
+## 1.13.0 (2026-01-18)
+
+* Merge pull request #2 from Mearman/claude/add-pypi-json-skill-0dHUB ([dddc851](https://github.com/Mearman/marketplace/commit/dddc851)), closes [#2](https://github.com/Mearman/marketplace/issues/2)
+* feat(pypi-json): add PyPI JSON API plugin with package information skill ([807847f](https://github.com/Mearman/marketplace/commit/807847f))
+
 ## <small>1.12.2 (2026-01-18)</small>
 
 * docs(gravatar): add API Query section to gravatar-check skill ([a6c331e](https://github.com/Mearman/marketplace/commit/a6c331e))

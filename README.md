@@ -163,6 +163,23 @@ Get package name suggestions and autocomplete from NPMS.io based on a search que
 
 </details>
 
+### PyPI JSON API v0.2.0
+
+Tools for querying Python package metadata, release information, and statistics from the Python Package Index
+
+```bash
+/plugin install pypi-json@mearman
+```
+
+##### Skills
+
+<details>
+<summary>PyPI Package Information</summary>
+
+Retrieve comprehensive metadata for Python packages from the Python Package Index (PyPI).
+
+</details>
+
 ### Wayback Machine Archive v0.7.0
 
 Tools for checking, submitting, listing, screenshotting, and cache management for archived URLs
