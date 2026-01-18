@@ -126,35 +126,58 @@ function generatePluginsList(plugins: Plugin[]): string {
 				description = plugin.description;
 			}
 
-			const skillList = plugin.skills.map((s) => s.name).join(", ");
 			const skillsDetails = plugin.skills
-				.map(
-					(skill) => `#### ${skill.name}
+				.map((skill) => {
+					// Read the SKILL.md to extract the heading and first paragraph
+					const skillMdPath = join(pluginsDir, plugin.name, "skills", skill.name, "SKILL.md");
+					let skillHeading = skill.name; // fallback
+					let skillDescription = skill.description; // fallback to YAML description
 
-${skill.description}`
-				)
+					try {
+						const content = readFileSync(skillMdPath, "utf-8");
+						// Extract heading (first # line)
+						const headingMatch = content.match(/^#\s+(.+)$/m);
+						if (headingMatch) {
+							skillHeading = headingMatch[1];
+						}
+
+						// Extract first paragraph after the heading (skip YAML frontmatter)
+						const lines = content.split("\n");
+						const headingIndex = lines.findIndex((line) => line.startsWith("#"));
+						if (headingIndex >= 0) {
+							// Skip empty lines and the heading itself, find first non-empty line
+							let contentStart = headingIndex + 1;
+							while (contentStart < lines.length && lines[contentStart].trim() === "") {
+								contentStart++;
+														 }
+							if (contentStart < lines.length) {
+								skillDescription = lines[contentStart];
+							}
+						}
+					} catch {
+						// File doesn't exist or can't be read, use YAML description
+					}
+
+					return `<details>
+<summary>${skillHeading}</summary>
+
+${skillDescription}
+
+</details>`;
+				})
 				.join("\n\n");
 
-			return `### ${title}
+			return `### ${title} v${plugin.version}
 
 ${description}
-
-**Skills:** ${skillList}
 
 \`\`\`bash
 /plugin install ${plugin.name}@mearman
 \`\`\`
 
-<details>
-<summary>View details</summary>
-
-**Version:** ${plugin.version}
-
 ##### Skills
 
-${skillsDetails}
-
-</details>`;
+${skillsDetails}`;
 		})
 		.join("\n\n");
 }
