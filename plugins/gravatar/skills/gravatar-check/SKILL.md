@@ -26,6 +26,41 @@ Uses a HEAD request with `d=404` parameter to check if a Gravatar exists:
 
 Results are cached for 24 hours to avoid redundant API calls.
 
+## API Query
+
+### Request Format
+
+```
+HEAD https://www.gravatar.com/avatar/{hash}?d=404
+```
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `hash` | Yes | MD5 hash of the lowercase, trimmed email address |
+| `d` | No | Query type: `404` returns 404 if no image found (default behavior) |
+| `rating` | No | Filter by content rating: `g`, `pg`, `r`, `x` (default: `g`) |
+
+### Hash Calculation
+
+Gravatar uses MD5 hash of the email address:
+1. Convert email to lowercase
+2. Trim whitespace
+3. Compute MD5 hash
+4. Use hex-encoded hash in URL
+
+### Response Codes
+
+| Status | Meaning |
+|--------|---------|
+| `200 OK` | Gravatar exists for this email |
+| `404 Not Found` | No Gravatar registered for this email |
+
+### Response Body
+
+When status is 200 OK, the response includes image data. When 404, a default image may be returned instead depending on other parameters.
+
 ## Output Format
 
 When Gravatar exists:
