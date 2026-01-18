@@ -1,5 +1,5 @@
 {
   "name": "github-api",
-  "description": "GitHub REST API tools for repository metadata, READMEs, user profiles, and rate limit checking",
+  "description": "GitHub REST API: Tools for repository metadata, READMEs, user profiles, and rate limit checking",
   "version": "0.2.0"
 }
