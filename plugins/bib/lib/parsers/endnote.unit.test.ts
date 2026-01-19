@@ -4,7 +4,6 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { EndNoteXMLParser, createEndNoteXMLParser } from "./endnote";
-import type { ConversionResult } from "../types";
 
 // Mock dependencies
 vi.mock("../mappings/entry-types.js", () => ({
