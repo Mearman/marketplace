@@ -1,44 +1,44 @@
 [
-  {
-    "id": "smith2024",
-    "type": "article-journal",
-    "author": [
-      {"family": "Smith", "given": "John"},
-      {"family": "Doe", "given": "Jane"}
-    ],
-    "title": "Machine Learning in Computational Biology",
-    "container-title": "Nature Machine Intelligence",
-    "issued": {"date-parts": [[2024]]},
-    "volume": "6",
-    "issue": "3",
-    "page": "245-260",
-    "DOI": "10.1038/s42256-024-00123-4",
-    "abstract": "This paper explores the application of machine learning techniques in computational biology.",
-    "keyword": "machine learning; computational biology; bioinformatics"
-  },
-  {
-    "id": "jones2023",
-    "type": "book",
-    "author": [
-      {"family": "Jones", "given": "Alice"}
-    ],
-    "title": "Introduction to Artificial Intelligence",
-    "publisher": "MIT Press",
-    "issued": {"date-parts": [[2023]]},
-    "publisher-place": "Cambridge, MA",
-    "ISBN": "978-0-262-04567-8"
-  },
-  {
-    "id": "chen2024",
-    "type": "paper-conference",
-    "author": [
-      {"family": "Chen", "given": "Wei"},
-      {"family": "Kumar", "given": "Raj"}
-    ],
-    "title": "Deep Learning for Natural Language Processing",
-    "container-title": "Proceedings of the International Conference on Machine Learning",
-    "issued": {"date-parts": [[2024]]},
-    "page": "1234-1245",
-    "event-place": "Vienna, Austria"
-  }
+	{
+		"id": "smith2024",
+		"type": "article-journal",
+		"author": [
+			{"family": "Smith", "given": "John"},
+			{"family": "Doe", "given": "Jane"}
+		],
+		"title": "Machine Learning in Computational Biology",
+		"container-title": "Nature Machine Intelligence",
+		"issued": {"date-parts": [[2024]]},
+		"volume": "6",
+		"issue": "3",
+		"page": "245-260",
+		"DOI": "10.1038/s42256-024-00123-4",
+		"abstract": "This paper explores the application of machine learning techniques in computational biology.",
+		"keyword": "machine learning; computational biology; bioinformatics"
+	},
+	{
+		"id": "jones2023",
+		"type": "book",
+		"author": [
+			{"family": "Jones", "given": "Alice"}
+		],
+		"title": "Introduction to Artificial Intelligence",
+		"publisher": "MIT Press",
+		"issued": {"date-parts": [[2023]]},
+		"publisher-place": "Cambridge, MA",
+		"ISBN": "978-0-262-04567-8"
+	},
+	{
+		"id": "chen2024",
+		"type": "paper-conference",
+		"author": [
+			{"family": "Chen", "given": "Wei"},
+			{"family": "Kumar", "given": "Raj"}
+		],
+		"title": "Deep Learning for Natural Language Processing",
+		"container-title": "Proceedings of the International Conference on Machine Learning",
+		"issued": {"date-parts": [[2024]]},
+		"page": "1234-1245",
+		"event-place": "Vienna, Austria"
+	}
 ]
