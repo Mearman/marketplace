@@ -179,7 +179,7 @@ describe("Generators", () => {
 			const options: GeneratorOptions = { sort: true };
 			generator.generate(mockEntries, options);
 
-			// @ts-ignore - accessing private property for testing
+			// @ts-expect-error - accessing private property for testing
 			const bibTeXGenerate = generator.bibtexGenerator.generate;
 			expect(bibTeXGenerate).toHaveBeenCalledWith(mockEntries, options);
 		});
