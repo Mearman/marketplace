@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError, type Dependencies } from "./compare";
-import { parseArgs, type NpmsMgetResponse, formatNumber, formatScore } from "./utils";
+import { main, handleError } from "./compare";
+import { parseArgs, type NpmsMgetResponse } from "./utils";
 
 describe("compare.ts", () => {
 	let mockConsole: any;

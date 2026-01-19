@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError, type Dependencies } from "./analyze";
+import { main, handleError } from "./analyze";
 import { parseArgs, type NpmsPackage } from "./utils";
 
 describe("analyze.ts", () => {
@@ -545,7 +545,7 @@ describe("analyze.ts", () => {
 			expect(() => handleError(error, "my-package", { console: mockConsole, process: mockProcess }))
 				.toThrow("process.exit called");
 
-			expect(mockConsole.log).toHaveBeenCalledWith('Package "my-package" not found or analysis not available');
+			expect(mockConsole.log).toHaveBeenCalledWith("Package \"my-package\" not found or analysis not available");
 			expect(mockProcess.exit).toHaveBeenCalledWith(1);
 		});
 

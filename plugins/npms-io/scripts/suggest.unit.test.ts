@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError, type Dependencies } from "./suggest";
+import { main, handleError } from "./suggest";
 import { parseArgs, type NpmsSuggestion } from "./utils";
 
 describe("suggest.ts", () => {
