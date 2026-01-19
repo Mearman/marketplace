@@ -124,24 +124,52 @@ export function markdownToLatex(markdown: string): string {
 	return latex;
 }
 
-function main() {
-	const args = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	console: Console;
+	process: NodeJS.Process;
+	readFileSync: (path: string, encoding: BufferEncoding) => string;
+	writeFileSync: (path: string, data: string, encoding: BufferEncoding) => void;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error(`Error: ${message}`);
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = (args: ReturnType<typeof parseArgs>, deps: Dependencies): void => {
+	const { console: consoleDep, process: processDep, readFileSync, writeFileSync } = deps;
 
 	// Get input
 	let input: string;
 	if (args.flags.has("file")) {
 		const filePath = args.positional[0];
 		if (!filePath) {
-			console.error("Error: No input file specified");
-			process.exit(1);
+			consoleDep.error("Error: No input file specified");
+			processDep.exit(1);
 		}
 		input = readFileSync(filePath, "utf-8");
 	} else {
 		input = args.positional.join(" ");
 		if (!input) {
-			console.error("Error: No input text specified");
-			console.error("Usage: md-to-latex.ts <text> or md-to-latex.ts --file <file>");
-			process.exit(1);
+			consoleDep.error("Error: No input text specified");
+			consoleDep.error("Usage: md-to-latex.ts <text> or md-to-latex.ts --file <file>");
+			processDep.exit(1);
 		}
 	}
 
@@ -152,13 +180,27 @@ function main() {
 	const outputFile = args.options.get("output");
 	if (outputFile) {
 		writeFileSync(outputFile, output, "utf-8");
-		console.log(`Converted LaTeX written to ${outputFile}`);
+		consoleDep.log(`Converted LaTeX written to ${outputFile}`);
 	} else {
-		console.log(output);
+		consoleDep.log(output);
 	}
-}
+};
 
-// Only run main if this is the main module (not imported in tests)
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	console,
+	process,
+	readFileSync,
+	writeFileSync,
+};
+
 if (import.meta.url === `file://${process.argv[1]}`) {
-	main();
+	try {
+		main(parseArgs(process.argv.slice(2)), defaultDeps);
+	} catch (error) {
+		handleError(error, defaultDeps);
+	}
 }
