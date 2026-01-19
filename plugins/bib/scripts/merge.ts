@@ -9,7 +9,14 @@
 import { writeFileSync } from "fs";
 import { parseArgs, readBibFile } from "./utils.js";
 import { mergeEntries } from "../lib/crud/index.js";
-import { generate } from "../lib/converter.js";
+import { parse, generate } from "../lib/converter.js";
+import type { BibFormat } from "../lib/types.js";
+
+// Type guard for BibFormat
+function isBibFormat(value: string): value is BibFormat {
+	const validFormats: Array<string> = ["bibtex", "ris", "endnote", "csl-json"];
+	return validFormats.includes(value);
+}
 
 function main() {
 	const args = parseArgs(process.argv.slice(2));
@@ -23,7 +30,6 @@ function main() {
 
 	const entrySets = args.positional.map((file) => {
 		const { content, format } = readBibFile(file);
-		const { parse } = require("../lib/converter.js");
 		return parse(content, format).entries;
 	});
 
@@ -32,8 +38,9 @@ function main() {
 
 	console.log(`Total entries after merge: ${merged.length}`);
 
-	const outputFormat = args.options.get("format") || "bibtex";
-	const output = generate(merged, outputFormat as any, { sort: args.flags.has("sort") });
+	const formatOption = args.options.get("format") || "bibtex";
+	const outputFormat = isBibFormat(formatOption) ? formatOption : "bibtex";
+	const output = generate(merged, outputFormat, { sort: args.flags.has("sort") });
 
 	const outputFile = args.options.get("output") || args.options.get("o");
 	if (outputFile) {

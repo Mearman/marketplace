@@ -5,7 +5,7 @@
  */
 
 import type { BibEntry, BibFormat } from "../types.js";
-import { parse, generate } from "../converter.js";
+import { parse } from "../converter.js";
 
 /**
  * Read entries from a bibliography file

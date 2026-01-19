@@ -180,6 +180,10 @@ export interface BibEntry {
 
   // Format-specific metadata (preserved for round-trips)
   _formatMetadata?: FormatMetadata;
+
+  // Index signature for dynamic property access (parsers assign fields at runtime)
+  // Allows unknown values which are validated at runtime
+  [key: string]: unknown;
 }
 
 // ============================================================================

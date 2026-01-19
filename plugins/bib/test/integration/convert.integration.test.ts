@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { convert, parse, generate } from "../../lib/converter.js";
+import { convert, generate } from "../../lib/converter.js";
 import type { BibEntry } from "../../lib/types.js";
 
 describe("Format Conversion Integration", () => {

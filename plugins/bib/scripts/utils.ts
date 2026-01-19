@@ -10,6 +10,8 @@ export { formatNumber, formatDate } from "../../../lib/helpers/index.js";
 
 // Plugin-specific utilities
 import type { BibFormat } from "../lib/types.js";
+import type { ConversionWarning } from "../lib/types.js";
+import type { ConversionStats } from "../lib/types.js";
 import { detectFormat } from "../lib/converter.js";
 import { readFileSync } from "fs";
 
@@ -49,7 +51,7 @@ export function parseFormat(formatStr: string): BibFormat {
 /**
  * Format warnings for display
  */
-export function formatWarnings(warnings: any[]): string {
+export function formatWarnings(warnings: ConversionWarning[]): string {
 	if (warnings.length === 0) {
 		return "";
 	}
@@ -68,7 +70,7 @@ export function formatWarnings(warnings: any[]): string {
 /**
  * Format conversion stats for display
  */
-export function formatStats(stats: any): string {
+export function formatStats(stats: ConversionStats): string {
 	const lines: string[] = [];
 	lines.push("\nConversion Statistics:");
 	lines.push(`  Total entries: ${stats.total}`);
