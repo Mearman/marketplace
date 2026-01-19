@@ -5,7 +5,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { main, handleError } from "./check";
 import { parseArgs } from "./utils";
-import { API } from "./utils";
 
 // Mock fetch
 global.fetch = vi.fn();
