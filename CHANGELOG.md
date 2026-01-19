@@ -1,3 +1,7 @@
+## <small>1.16.1 (2026-01-19)</small>
+
+* chore(ci): add sync-versions and validate to pre-commit ([d0dd6d7](https://github.com/Mearman/marketplace/commit/d0dd6d7))
+
 ## 1.16.0 (2026-01-19)
 
 * chore(ci): add vitest configuration ([dbbdbc0](https://github.com/Mearman/marketplace/commit/dbbdbc0))
