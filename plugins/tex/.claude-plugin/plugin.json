@@ -1,0 +1,11 @@
+{
+  "name": "tex",
+  "version": "0.1.0",
+  "description": "LaTeX manipulation, generation, and conversion tools",
+  "skills": [
+    "./skills/tex-encode",
+    "./skills/tex-decode",
+    "./skills/tex-strip",
+    "./skills/tex-protect"
+  ]
+}
