@@ -175,8 +175,7 @@ describe("BibLaTeX Parser", () => {
 		});
 
 		it("should handle undefined validate method", () => {
-			// @ts-ignore
-			mockBibTeXValidate.mockReturnValue(undefined);
+			mockBibTeXValidate.mockReturnValue(undefined as unknown as string[]);
 
 			const content = "@article{test,...}";
 			const result = biblatexParser.validate(content);
