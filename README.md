@@ -32,9 +32,9 @@ Ask: "Check if example.com is archived in the Wayback Machine"
 <!-- AUTO-GENERATED PLUGINS START -->
 ## Available Plugins
 
-### Bibliography Manipulation v0.1.0
+### bib v0.1.0
 
-Convert, validate, merge, filter, and perform CRUD operations on bibliography files (BibTeX, BibLaTeX, RIS, EndNote XML, CSL JSON)
+Bibliography manipulation plugin supporting BibTeX, BibLaTeX, RIS, EndNote XML, and CSL JSON formats. Convert, validate, merge, filter, and perform CRUD operations on bibliography files.
 
 ```bash
 /plugin install bib@mearman
@@ -1015,9 +1015,9 @@ Run from the pypi-json plugin directory: `~/.claude/plugins/cache/pypi-json/`
 
 </details>
 
-### LaTeX Manipulation v0.1.0
+### tex v0.1.0
 
-Encode/decode Unicode ↔ LaTeX commands, strip formatting for plain text, protect text from LaTeX interpretation
+LaTeX manipulation, generation, and conversion tools
 
 ```bash
 /plugin install tex@mearman

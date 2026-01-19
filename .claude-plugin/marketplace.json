@@ -53,13 +53,13 @@
 		{
 			"name": "bib",
 			"source": "./plugins/bib",
-			"description": "Bibliography Manipulation: Convert, validate, merge, filter, and perform CRUD operations on bibliography files (BibTeX, BibLaTeX, RIS, EndNote XML, CSL JSON)",
+			"description": "Bibliography manipulation plugin supporting BibTeX, BibLaTeX, RIS, EndNote XML, and CSL JSON formats. Convert, validate, merge, filter, and perform CRUD operations on bibliography files.",
 			"version": "0.1.0"
 		},
 		{
 			"name": "tex",
 			"source": "./plugins/tex",
-			"description": "LaTeX Manipulation: Encode/decode Unicode ↔ LaTeX commands, strip formatting for plain text, protect text from LaTeX interpretation",
+			"description": "LaTeX manipulation, generation, and conversion tools",
 			"version": "0.1.0"
 		}
 	]
