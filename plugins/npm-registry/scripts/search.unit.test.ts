@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError, type Dependencies } from "./search";
+import { main, handleError } from "./search";
 import { parseArgs } from "./utils";
 import type { NpmSearchResponse } from "./utils";
 

@@ -4,7 +4,6 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { main, handleError } from "./downloads";
-import type { Dependencies } from "./downloads";
 import type { NpmDownloadsResponse } from "./utils";
 import { parseArgs } from "./utils";
 

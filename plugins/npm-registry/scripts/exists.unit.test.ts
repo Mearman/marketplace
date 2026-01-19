@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError, type Dependencies } from "./exists";
+import { main, handleError } from "./exists";
 import { parseArgs } from "./utils";
 
 describe("exists.ts", () => {
