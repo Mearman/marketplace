@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { formatNumber, formatAge, formatDate, sleep } from "./index";
+import { formatNumber, formatAge, formatDate } from "./index";
 
 describe("formatNumber", () => {
 	it("should format millions with M suffix", () => {
