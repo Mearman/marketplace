@@ -3,7 +3,7 @@
  */
 
 import { createCacheManager } from "../../../lib/cache";
-import { parseArgs as sharedParseArgs } from "../../../lib/args";
+import { parseArgs as sharedParseArgs, type ParsedArgs } from "../../../lib/args";
 import { formatNumber as sharedFormatNumber } from "../../../lib/helpers";
 
 // ============================================================================
@@ -76,6 +76,9 @@ export const { getCacheKey, getCached, setCached, clearCache, fetchWithCache } =
 // Re-export other shared utilities
 export const parseArgs = sharedParseArgs;
 export const formatNumber = sharedFormatNumber;
+
+// Re-export types
+export type { ParsedArgs };
 
 // ============================================================================
 // API URLs

@@ -136,6 +136,168 @@ chore(wayback): update dependencies
 
 Use appropriate scope for the change. If no existing scope fits, add a new one rather than force-fitting into an unrelated scope.
 
+## Testing Plugin Scripts
+
+All executable CLI scripts must be tested using dependency injection. This pattern enables comprehensive testing while preserving CLI functionality.
+
+### Testing Pattern
+
+**Before (not testable):**
+```typescript
+#!/usr/bin/env npx tsx
+import { fetchWithCache } from "./utils";
+
+const main = async () => {
+  const data = await fetchWithCache({ url: "https://api.example.com" });
+  console.log("Output");
+};
+
+main(); // ❌ Can't test - no exports
+```
+
+**After (testable):**
+```typescript
+#!/usr/bin/env npx tsx
+import { fetchWithCache } from "./utils";
+import type { ParsedArgs } from "./utils";
+
+export interface Dependencies {
+  fetchWithCache: typeof fetchWithCache;
+  console: Console;
+  process: NodeJS.Process;
+}
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+  const data = await deps.fetchWithCache({ url: "https://api.example.com" });
+  deps.console.log("Output");
+};
+
+const defaultDeps: Dependencies = {
+  fetchWithCache,
+  console,
+  process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+    handleError(error, "", defaultDeps);
+  });
+}
+```
+
+### Test File Structure
+
+Name test files: `<script-name>.unit.test.ts`
+
+```typescript
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { main, handleError } from "./my-script";
+import { parseArgs } from "./utils";
+
+describe("my-script.ts", () => {
+  let mockConsole: any;
+  let mockProcess: any;
+  let mockFetchWithCache: any;
+  let deps: any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mockConsole = {
+      log: vi.fn(),
+      error: vi.fn(),
+    };
+
+    mockProcess = {
+      exit: vi.fn().mockImplementation(() => {
+        throw new Error("process.exit called");
+      }),
+    };
+
+    mockFetchWithCache = vi.fn();
+
+    deps = {
+      fetchWithCache: mockFetchWithCache,
+      console: mockConsole,
+      process: mockProcess,
+    };
+  });
+
+  describe("main", () => {
+    it("should display output", async () => {
+      mockFetchWithCache.mockResolvedValue({ data: "test" });
+      const args = parseArgs(["arg1"]);
+
+      await main(args, deps);
+
+      expect(mockConsole.log).toHaveBeenCalledWith("Output");
+    });
+
+    it("should handle errors", async () => {
+      mockFetchWithCache.mockRejectedValue(new Error("Network error"));
+      const args = parseArgs(["arg1"]);
+
+      await expect(main(args, deps)).rejects.toThrow("process.exit called");
+      expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Error"));
+    });
+  });
+
+  describe("handleError", () => {
+    it("should log and exit on error", () => {
+      const error = new Error("Test error");
+      expect(() => handleError(error, "", deps))
+        .toThrow("process.exit called");
+      expect(mockProcess.exit).toHaveBeenCalledWith(1);
+    });
+  });
+});
+```
+
+### Key Patterns
+
+1. **Mock process.exit**: Make it throw so you can catch it with `expect().rejects.toThrow()`
+2. **Use `any` for mocks**: Simpler than complex mock type definitions
+3. **Test all code paths**: Success cases, error cases, edge cases
+4. **Test flag combinations**: `--no-cache`, `--verbose`, etc.
+5. **Cover error handling**: 404s, network errors, validation errors
+
+### Coverage Targets
+
+- **Per script**: >80% line coverage
+- **Overall scripts**: >85% combined coverage
+- **Branch coverage**: >75%
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run specific test file
+pnpm test plugins/my-plugin/scripts/my-script.unit.test.ts
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Run tests for a specific plugin
+pnpm test plugins/my-plugin/scripts/
+```
+
+### Current Test Coverage
+
+As of January 2026, the codebase maintains:
+- **Overall**: 992/1003 tests passing (98.9% pass rate)
+- **Test files**: 37/41 passing (41 total test files)
+- **19 CLI scripts** refactored across 6 plugins with comprehensive tests
+- **Tests by plugin**:
+  - github-api: 119 tests (4 scripts)
+  - npm-registry: 123 tests (4 scripts)
+  - npms-io: 153 tests (3 scripts)
+  - gravatar: 104 tests (3 scripts)
+  - wayback: 69 tests (5 scripts, 11 minor assertion issues)
+  - pypi-json: 82 tests (1 script)
+- **Average per script**: ~53 tests
+
 ## Adding a Plugin
 
 1. Create `plugins/<name>/.claude-plugin/plugin.json`:
