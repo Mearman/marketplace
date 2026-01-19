@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { markdownToLatex } from "./md-to-latex.js";
 
 describe("markdownToLatex", () => {
@@ -300,5 +300,143 @@ code block
 			expect(output).toContain("Line 1");
 			expect(output).toContain("Line 2");
 		});
+	});
+});
+
+describe("main() function with dependency injection", () => {
+	let mockConsole: any;
+	let mockProcess: any;
+	let mockReadFileSync: any;
+	let mockWriteFileSync: any;
+	let deps: any;
+	let parseArgs: any;
+
+	beforeEach(async () => {
+		mockConsole = {
+			log: vi.fn(),
+			error: vi.fn(),
+		};
+
+		mockProcess = {
+			exit: vi.fn().mockImplementation(() => {
+				throw new Error("process.exit called");
+			}),
+		};
+
+		mockReadFileSync = vi.fn();
+		mockWriteFileSync = vi.fn();
+
+		deps = {
+			console: mockConsole,
+			process: mockProcess,
+			readFileSync: mockReadFileSync,
+			writeFileSync: mockWriteFileSync,
+		};
+
+		// Import parseArgs dynamically
+		const mod = await import("../../../lib/args/index.js");
+		parseArgs = mod.parseArgs;
+
+		vi.clearAllMocks();
+	});
+
+	it("should convert Markdown text from positional arguments", async () => {
+		const { main } = await import("./md-to-latex");
+		const args = parseArgs(["## Hello World"]);
+
+		main(args, deps);
+
+		expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("\\section{Hello World}"));
+	});
+
+	it("should read Markdown from file when --file flag is used", async () => {
+		const { main } = await import("./md-to-latex");
+		mockReadFileSync.mockReturnValue("**Bold text**");
+
+		const args = parseArgs(["--file", "input.md"]);
+
+		main(args, deps);
+
+		expect(mockReadFileSync).toHaveBeenCalledWith("input.md", "utf-8");
+		expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("\\textbf{Bold text}"));
+	});
+
+	it("should write output to file when --output option is provided", async () => {
+		const { main } = await import("./md-to-latex");
+
+		const args = parseArgs(["## Test", "--output=output.tex"]);
+
+		main(args, deps);
+
+		expect(mockWriteFileSync).toHaveBeenCalledWith("output.tex", expect.stringContaining("\\section{Test}"), "utf-8");
+		expect(mockConsole.log).toHaveBeenCalledWith("Converted LaTeX written to output.tex");
+	});
+
+	it("should show error when --file flag but no file path", async () => {
+		const { main } = await import("./md-to-latex");
+
+		const args = parseArgs(["--file"]);
+
+		expect(() => main(args, deps)).toThrow("process.exit called");
+		expect(mockConsole.error).toHaveBeenCalledWith("Error: No input file specified");
+	});
+
+	it("should show error when no input text provided", async () => {
+		const { main } = await import("./md-to-latex");
+
+		const args = parseArgs([]);
+
+		expect(() => main(args, deps)).toThrow("process.exit called");
+		expect(mockConsole.error).toHaveBeenCalledWith("Error: No input text specified");
+	});
+
+	it("should show error when --file but empty positional args", async () => {
+		const { main } = await import("./md-to-latex");
+
+		const args = parseArgs(["--file"]);
+
+		expect(() => main(args, deps)).toThrow("process.exit called");
+		expect(mockConsole.error).toHaveBeenCalledWith("Error: No input file specified");
+	});
+});
+
+describe("handleError", () => {
+	let mockConsole: any;
+	let mockProcess: any;
+	let deps: any;
+
+	beforeEach(() => {
+		mockConsole = {
+			error: vi.fn(),
+		};
+
+		mockProcess = {
+			exit: vi.fn().mockImplementation(() => {
+				throw new Error("process.exit called");
+			}),
+		};
+
+		deps = {
+			console: mockConsole,
+			process: mockProcess,
+		};
+
+		vi.clearAllMocks();
+	});
+
+	it("should log error message and exit", async () => {
+		const { handleError } = await import("./md-to-latex");
+		const error = new Error("Test error");
+
+		expect(() => handleError(error, deps)).toThrow("process.exit called");
+		expect(mockConsole.error).toHaveBeenCalledWith("Error: Test error");
+		expect(mockProcess.exit).toHaveBeenCalledWith(1);
+	});
+
+	it("should handle string errors", async () => {
+		const { handleError } = await import("./md-to-latex");
+
+		expect(() => handleError("String error", deps)).toThrow("process.exit called");
+		expect(mockConsole.error).toHaveBeenCalledWith("Error: String error");
 	});
 });
