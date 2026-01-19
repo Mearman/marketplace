@@ -10,10 +10,27 @@ import { decodeLatex } from "../../../lib/latex/index.js";
 /**
  * Convert LaTeX to Markdown
  */
-function latexToMarkdown(latex: string): string {
+export function latexToMarkdown(latex: string): string {
 	let markdown = latex;
 
-	// Decode LaTeX special characters to Unicode
+	// Extract code blocks first to protect them from conversions
+	const codeBlocks: string[] = [];
+
+	// Extract verbatim blocks
+	markdown = markdown.replace(/\\begin\{verbatim\}([\s\S]*?)\\end\{verbatim\}/g, (_match, content) => {
+		const placeholder = `<<<CODEBLOCK${codeBlocks.length}>>>`;
+		codeBlocks.push(content);
+		return placeholder;
+	});
+
+	// Extract lstlisting blocks
+	markdown = markdown.replace(/\\begin\{lstlisting\}([\s\S]*?)\\end\{lstlisting\}/g, (_match, content) => {
+		const placeholder = `<<<CODEBLOCK${codeBlocks.length}>>>`;
+		codeBlocks.push(content);
+		return placeholder;
+	});
+
+	// Decode LaTeX special characters to Unicode (after code blocks extracted)
 	markdown = decodeLatex(markdown);
 
 	// Sections/headers
@@ -30,10 +47,6 @@ function latexToMarkdown(latex: string): string {
 	markdown = markdown.replace(/\\emph\{([^}]+)\}/g, "*$1*");
 	markdown = markdown.replace(/\\texttt\{([^}]+)\}/g, "`$1`");
 	markdown = markdown.replace(/\\verb\|([^|]+)\|/g, "`$1`");
-
-	// Code blocks
-	markdown = markdown.replace(/\\begin\{verbatim\}([\s\S]*?)\\end\{verbatim\}/g, "```\n$1```");
-	markdown = markdown.replace(/\\begin\{lstlisting\}([\s\S]*?)\\end\{lstlisting\}/g, "```\n$1```");
 
 	// Lists
 	markdown = markdown.replace(/\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/g, (_, items) => {
@@ -71,6 +84,11 @@ function latexToMarkdown(latex: string): string {
 	// Math (preserve LaTeX math)
 	// Inline math stays as $...$
 	// Display math stays as $$...$$
+
+	// Restore code blocks
+	codeBlocks.forEach((content, i) => {
+		markdown = markdown.replace(`<<<CODEBLOCK${i}>>>`, `\`\`\`\n${content}\`\`\``);
+	});
 
 	// Clean up extra whitespace
 	markdown = markdown.replace(/\n{3,}/g, "\n\n");
@@ -112,4 +130,7 @@ function main() {
 	}
 }
 
-main();
+// Only run main if this is the main module (not imported in tests)
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main();
+}

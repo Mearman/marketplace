@@ -9,7 +9,7 @@ import { parseArgs } from "../../../lib/args/index.js";
 /**
  * Convert Markdown to LaTeX
  */
-function markdownToLatex(markdown: string): string {
+export function markdownToLatex(markdown: string): string {
 	let latex = markdown;
 
 	// Extract code blocks first to protect them
@@ -158,4 +158,7 @@ function main() {
 	}
 }
 
-main();
+// Only run main if this is the main module (not imported in tests)
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main();
+}
