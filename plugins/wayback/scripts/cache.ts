@@ -17,13 +17,40 @@ import * as path from "path";
 
 const CACHE_DIR = path.join(os.tmpdir(), "wayback-cache");
 
-const clearCache = async (verbose: boolean): Promise<void> => {
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	console: Console;
+	process: NodeJS.Process;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	_command: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error("\nError:", message);
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+const clearCache = async (verbose: boolean, deps: Dependencies): Promise<void> => {
 	try {
 		const files = await fs.readdir(CACHE_DIR);
 		const cacheFiles = files.filter((f) => f.endsWith(".json"));
 
 		if (cacheFiles.length === 0) {
-			console.log("Cache is already empty");
+			deps.console.log("Cache is already empty");
 			return;
 		}
 
@@ -38,37 +65,36 @@ const clearCache = async (verbose: boolean): Promise<void> => {
 				})
 			);
 
-			console.log(`Deleting ${cacheFiles.length} file(s) from ${CACHE_DIR}`);
+			deps.console.log(`Deleting ${cacheFiles.length} file(s) from ${CACHE_DIR}`);
 			for (const { file, size } of fileStats) {
-				console.log(`  ${file} (${(size / 1024).toFixed(2)} KB)`);
+				deps.console.log(`  ${file} (${(size / 1024).toFixed(2)} KB)`);
 			}
-			console.log(`Total size: ${(totalSize / 1024).toFixed(2)} KB`);
+			deps.console.log(`Total size: ${(totalSize / 1024).toFixed(2)} KB`);
 		} else {
-			console.log(`Clearing ${cacheFiles.length} cache file(s) from ${CACHE_DIR}`);
+			deps.console.log(`Clearing ${cacheFiles.length} cache file(s) from ${CACHE_DIR}`);
 		}
 
 		await Promise.all(
 			cacheFiles.map((f) => fs.unlink(path.join(CACHE_DIR, f)))
 		);
 
-		console.log("✓ Cache cleared");
+		deps.console.log("✓ Cache cleared");
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-			console.log("Cache directory not found or already empty");
+			deps.console.log("Cache directory not found or already empty");
 		} else {
-			console.error("Error clearing cache:", error);
-			process.exit(1);
+			handleError(error, "clear", deps);
 		}
 	}
 };
 
-const showStatus = async (verbose: boolean): Promise<void> => {
+const showStatus = async (verbose: boolean, deps: Dependencies): Promise<void> => {
 	try {
 		const files = await fs.readdir(CACHE_DIR);
 		const cacheFiles = files.filter((f) => f.endsWith(".json"));
 
-		console.log(`Cache directory: ${CACHE_DIR}`);
-		console.log(`Cached files: ${cacheFiles.length}`);
+		deps.console.log(`Cache directory: ${CACHE_DIR}`);
+		deps.console.log(`Cached files: ${cacheFiles.length}`);
 
 		if (verbose && cacheFiles.length > 0) {
 			let totalSize = 0;
@@ -84,37 +110,41 @@ const showStatus = async (verbose: boolean): Promise<void> => {
 			// Sort by modification time (newest first)
 			fileStats.sort((a, b) => b.modified.getTime() - a.modified.getTime());
 
-			console.log(`\nTotal size: ${(totalSize / 1024).toFixed(2)} KB\n`);
+			deps.console.log(`\nTotal size: ${(totalSize / 1024).toFixed(2)} KB\n`);
 
-			console.log("Cache entries (newest first):");
+			deps.console.log("Cache entries (newest first):");
 			for (const { file, size, modified } of fileStats) {
 				const age = Math.floor((Date.now() - modified.getTime()) / 1000 / 60);
 				const ageStr = age < 60 ? `${age}m` : age < 1440 ? `${Math.floor(age / 60)}h` : `${Math.floor(age / 1440)}d`;
-				console.log(`  ${file} (${(size / 1024).toFixed(2)} KB, ${ageStr} ago)`);
+				deps.console.log(`  ${file} (${(size / 1024).toFixed(2)} KB, ${ageStr} ago)`);
 			}
 		}
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-			console.log(`Cache directory: ${CACHE_DIR}`);
-			console.log("Cached files: 0");
-			console.log("\nCache directory does not exist yet (no API calls made)");
+			deps.console.log(`Cache directory: ${CACHE_DIR}`);
+			deps.console.log("Cached files: 0");
+			deps.console.log("\nCache directory does not exist yet (no API calls made)");
 		} else {
-			console.error("Error reading cache:", error);
-			process.exit(1);
+			handleError(error, "status", deps);
 		}
 	}
 };
 
-const main = async () => {
-	const args = process.argv.slice(2);
-	const flags = new Set(args.filter((a) => a.startsWith("--")));
-	const positional = args.filter((a) => !a.startsWith("--"));
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (
+	args: { flags: Set<string>; positional: string[] },
+	deps: Dependencies
+): Promise<void> => {
+	const { flags, positional } = args;
 
 	const verbose = flags.has("--verbose");
 	const command = positional[0];
 
 	if (!command) {
-		console.log(`Usage: npx tsx cache.ts <command> [options]
+		deps.console.log(`Usage: npx tsx cache.ts <command> [options]
 
 Commands:
   clear             Clear all cached data
@@ -127,21 +157,40 @@ Examples:
   npx tsx cache.ts clear
   npx tsx cache.ts status
   npx tsx cache.ts status --verbose`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
 	switch (command) {
 	case "clear":
-		await clearCache(verbose);
+		await clearCache(verbose, deps);
 		break;
 	case "status":
-		await showStatus(verbose);
+		await showStatus(verbose, deps);
 		break;
 	default:
-		console.error(`Unknown command: ${command}`);
-		console.log("Valid commands: clear, status");
-		process.exit(1);
+		deps.console.error(`Unknown command: ${command}`);
+		deps.console.log("Valid commands: clear, status");
+		deps.process.exit(1);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	const args = process.argv.slice(2);
+	const flags = new Set(args.filter((a) => a.startsWith("--")));
+	const positional = args.filter((a) => !a.startsWith("--"));
+
+	main({ flags, positional }, defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("\nError:", message);
+		process.exit(1);
+	});
+}

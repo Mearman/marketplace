@@ -19,10 +19,38 @@ import {
 	getAuthHeaders,
 	parseArgs,
 	sleep,
+	type ParsedArgs,
 } from "./utils";
 
-const main = async () => {
-	const { flags, options, positional } = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	console: Console;
+	process: NodeJS.Process;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	_url: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error("\nError:", message);
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, options, positional } = args;
 
 	const noRaw = flags.has("no-raw");
 	const captureOutlinks = flags.has("capture-outlinks");
@@ -32,7 +60,7 @@ const main = async () => {
 	const url = positional[0];
 
 	if (!url) {
-		console.log(`Usage: npx tsx submit.ts <url> [options]
+		deps.console.log(`Usage: npx tsx submit.ts <url> [options]
 
 Options:
   --no-raw              Include Wayback toolbar in archived URL
@@ -45,10 +73,10 @@ Examples:
   npx tsx submit.ts https://example.com
   npx tsx submit.ts https://example.com --key=abc123:secret456
   npx tsx submit.ts https://example.com --capture-screenshot --skip-if-recent=1d`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
-	console.log(`Submitting: ${url}`);
+	deps.console.log(`Submitting: ${url}`);
 
 	// Build form data
 	const formData = new URLSearchParams();
@@ -63,9 +91,9 @@ Examples:
 	};
 
 	if (apiKey) {
-		console.log("  Using authenticated SPN2 API");
+		deps.console.log("  Using authenticated SPN2 API");
 	} else {
-		console.log("  Using anonymous mode (lower rate limits)");
+		deps.console.log("  Using anonymous mode (lower rate limits)");
 	}
 
 	try {
@@ -78,7 +106,7 @@ Examples:
 		const data: SPN2Response = await response.json();
 
 		if (data.job_id) {
-			console.log(`  Job ID: ${data.job_id}`);
+			deps.console.log(`  Job ID: ${data.job_id}`);
 
 			// Poll for completion
 			let status: SPN2Response = data;
@@ -96,43 +124,57 @@ Examples:
 				status = await statusResponse.json();
 
 				if (status.status === "pending") {
-					process.stdout.write(".");
+					deps.process.stdout.write(".");
 				}
 			}
-			console.log();
+			deps.console.log();
 
 			if (status.status === "success" && status.timestamp) {
 				const modifier = noRaw ? "" : "id_";
 				const archiveUrl = buildArchiveUrl(status.timestamp, status.original_url || url, modifier);
 
-				console.log("✓ Archived");
-				console.log(`  Timestamp: ${formatTimestamp(status.timestamp)} (just now)`);
-				console.log(`  URL: ${archiveUrl}`);
+				deps.console.log("✓ Archived");
+				deps.console.log(`  Timestamp: ${formatTimestamp(status.timestamp)} (just now)`);
+				deps.console.log(`  URL: ${archiveUrl}`);
 
 				if (status.screenshot) {
-					console.log(`  Screenshot: ${status.screenshot}`);
+					deps.console.log(`  Screenshot: ${status.screenshot}`);
 				}
 			} else if (status.status === "error") {
-				console.log("✗ Failed to archive");
-				console.log(`  Error: ${status.status_ext || status.message || "Unknown error"}`);
-				process.exit(1);
+				deps.console.log("✗ Failed to archive");
+				deps.console.log(`  Error: ${status.status_ext || status.message || "Unknown error"}`);
+				deps.process.exit(1);
 			} else {
-				console.log("⏳ Job still processing");
-				console.log(`  Check status: ${API.saveStatus(data.job_id)}`);
+				deps.console.log("⏳ Job still processing");
+				deps.console.log(`  Check status: ${API.saveStatus(data.job_id)}`);
 			}
 		} else if (data.message) {
-			console.log("✗ Failed to archive");
-			console.log(`  Error: ${data.message}`);
-			process.exit(1);
+			deps.console.log("✗ Failed to archive");
+			deps.console.log(`  Error: ${data.message}`);
+			deps.process.exit(1);
 		} else {
-			console.log("✗ Unexpected response");
-			console.log(JSON.stringify(data, null, 2));
-			process.exit(1);
+			deps.console.log("✗ Unexpected response");
+			deps.console.log(JSON.stringify(data, null, 2));
+			deps.process.exit(1);
 		}
 	} catch (error) {
-		console.error("Error:", error);
-		process.exit(1);
+		handleError(error, url, deps);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("\nError:", message);
+		process.exit(1);
+	});
+}

@@ -18,9 +18,38 @@ import {
 	formatAge,
 	formatTimestamp,
 	parseArgs,
+	type ParsedArgs,
 } from "./utils";
 
-const fetchScreenshotTimestamps = async (url: string): Promise<Set<string>> => {
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	fetchWithCache: typeof fetchWithCache;
+	console: Console;
+	process: NodeJS.Process;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	_url: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error("\nError:", message);
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+export const fetchScreenshotTimestamps = async (url: string): Promise<Set<string>> => {
 	const screenshotUrl = `web.archive.org/screenshot/${url}`;
 	const cdxUrl = API.cdx(screenshotUrl, { fl: "timestamp" });
 
@@ -39,8 +68,12 @@ const fetchScreenshotTimestamps = async (url: string): Promise<Set<string>> => {
 	}
 };
 
-const main = async () => {
-	const { flags, positional } = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, positional } = args;
 
 	const noRaw = flags.has("no-raw");
 	const withScreenshots = flags.has("with-screenshots");
@@ -48,7 +81,7 @@ const main = async () => {
 	const limit = parseInt(positional[1] || "10", 10);
 
 	if (!url) {
-		console.log(`Usage: npx tsx list.ts <url> [limit] [options]
+		deps.console.log(`Usage: npx tsx list.ts <url> [limit] [options]
 
 Options:
   --no-raw           Include Wayback toolbar in URLs
@@ -59,30 +92,30 @@ Examples:
   npx tsx list.ts https://example.com
   npx tsx list.ts https://example.com 20
   npx tsx list.ts https://example.com --with-screenshots`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
-	console.log(`Fetching last ${limit} snapshots for: ${url}\n`);
+	deps.console.log(`Fetching last ${limit} snapshots for: ${url}\n`);
 
 	const apiUrl = API.cdx(url, { limit, filter: "statuscode:200" });
 
-	const data = await fetchWithCache<CDXRow[]>({
+	const data = await deps.fetchWithCache<CDXRow[]>({
 		url: apiUrl,
 		ttl: 3600, // 1 hour
 		bypassCache: flags.has("no-cache"),
 	});
 
 	if (data.length <= 1) {
-		console.log("No snapshots found");
-		process.exit(0);
+		deps.console.log("No snapshots found");
+		deps.process.exit(0);
 	}
 
 	// Optionally fetch screenshot timestamps for cross-reference
 	let screenshotTimestamps = new Set<string>();
 	if (withScreenshots) {
-		process.stdout.write("Checking for screenshots...");
+		deps.process.stdout.write("Checking for screenshots...");
 		screenshotTimestamps = await fetchScreenshotTimestamps(url);
-		console.log(` found ${screenshotTimestamps.size}\n`);
+		deps.console.log(` found ${screenshotTimestamps.size}\n`);
 	}
 
 	// Skip header row, reverse for most recent first
@@ -100,22 +133,35 @@ Examples:
 
 		const indicator = withScreenshots ? (hasScreenshot ? " 📷" : "   ") : "";
 
-		console.log(`${formatTimestamp(timestamp)} (${formatAge(timestamp)})${indicator}`);
-		console.log(`  ${archiveUrl}`);
+		deps.console.log(`${formatTimestamp(timestamp)} (${formatAge(timestamp)})${indicator}`);
+		deps.console.log(`  ${archiveUrl}`);
 
 		if (hasScreenshot) {
-			console.log(`  📷 ${buildScreenshotUrl(timestamp, original)}`);
+			deps.console.log(`  📷 ${buildScreenshotUrl(timestamp, original)}`);
 		}
-		console.log();
+		deps.console.log();
 	}
 
-	console.log(`Total: ${snapshots.length} snapshot(s)`);
+	deps.console.log(`Total: ${snapshots.length} snapshot(s)`);
 	if (withScreenshots) {
-		console.log(`Screenshots: ${screenshotCount} capture(s) have screenshots`);
+		deps.console.log(`Screenshots: ${screenshotCount} capture(s) have screenshots`);
 	}
 };
 
-main().catch((e) => {
-	console.error("Error:", e);
-	process.exit(1);
-});
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	fetchWithCache,
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("\nError:", message);
+		process.exit(1);
+	});
+}

@@ -17,16 +17,45 @@ import {
 	formatAge,
 	formatTimestamp,
 	parseArgs,
+	type ParsedArgs,
 } from "./utils";
 
-const main = async () => {
-	const { flags, options, positional } = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	fetchWithCache: typeof fetchWithCache;
+	console: Console;
+	process: NodeJS.Process;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	_url: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error("\nError:", message);
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, options, positional } = args;
 	const noRaw = flags.has("no-raw");
 	const timestamp = options.get("timestamp");
 	const url = positional[0];
 
 	if (!url) {
-		console.log(`Usage: npx tsx check.ts <url> [options]
+		deps.console.log(`Usage: npx tsx check.ts <url> [options]
 
 Options:
   --no-raw           Include Wayback toolbar in archived URL
@@ -37,19 +66,19 @@ Examples:
   npx tsx check.ts https://example.com
   npx tsx check.ts https://example.com --timestamp=20200101
   npx tsx check.ts https://example.com --timestamp=20231225120000`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
 	const apiUrl = API.availability(url, timestamp);
 
 	if (timestamp) {
-		console.log(`Checking: ${url} (closest to ${formatTimestamp(timestamp)})`);
+		deps.console.log(`Checking: ${url} (closest to ${formatTimestamp(timestamp)})`);
 	} else {
-		console.log(`Checking: ${url}`);
+		deps.console.log(`Checking: ${url}`);
 	}
 
 	try {
-		const data = await fetchWithCache<AvailableResponse>({
+		const data = await deps.fetchWithCache<AvailableResponse>({
 			url: apiUrl,
 			ttl: 86400, // 24 hours
 			bypassCache: flags.has("no-cache"),
@@ -60,19 +89,38 @@ Examples:
 			const modifier = noRaw ? "" : "id_";
 			const archiveUrl = buildArchiveUrl(snapshot.timestamp, url, modifier);
 
-			console.log("✓ Archived");
-			console.log(`  Timestamp: ${formatTimestamp(snapshot.timestamp)} (${formatAge(snapshot.timestamp)})`);
-			console.log(`  Status: ${snapshot.status}`);
-			console.log(`  URL: ${archiveUrl}`);
+			deps.console.log();
+			deps.console.log("✓ Archived");
+			deps.console.log(`  Timestamp: ${formatTimestamp(snapshot.timestamp)} (${formatAge(snapshot.timestamp)})`);
+			deps.console.log(`  Status: ${snapshot.status}`);
+			deps.console.log(`  URL: ${archiveUrl}`);
+			deps.console.log();
 		} else {
-			console.log("✗ Not archived");
-			console.log("  Use wayback-submit to archive this URL.");
-			process.exit(1);
+			deps.console.log();
+			deps.console.log("✗ Not archived");
+			deps.console.log("  Use wayback-submit to archive this URL.");
+			deps.console.log();
+			deps.process.exit(1);
 		}
 	} catch (error) {
-		console.error("Error:", error);
-		process.exit(1);
+		handleError(error, url, deps);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	fetchWithCache,
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("\nError:", message);
+		process.exit(1);
+	});
+}
