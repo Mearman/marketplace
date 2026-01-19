@@ -1,0 +1,36 @@
+TY  - JOUR
+AU  - Smith, John
+AU  - Doe, Jane
+TI  - Machine Learning in Computational Biology
+JO  - Nature Machine Intelligence
+PY  - 2024
+VL  - 6
+IS  - 3
+SP  - 245
+EP  - 260
+DO  - 10.1038/s42256-024-00123-4
+AB  - This paper explores the application of machine learning techniques in computational biology.
+KW  - machine learning
+KW  - computational biology
+KW  - bioinformatics
+ER  -
+
+TY  - BOOK
+AU  - Jones, Alice
+TI  - Introduction to Artificial Intelligence
+PB  - MIT Press
+PY  - 2023
+CY  - Cambridge, MA
+SN  - 978-0-262-04567-8
+ER  -
+
+TY  - CONF
+AU  - Chen, Wei
+AU  - Kumar, Raj
+TI  - Deep Learning for Natural Language Processing
+T2  - Proceedings of the International Conference on Machine Learning
+PY  - 2024
+SP  - 1234
+EP  - 1245
+C1  - Vienna, Austria
+ER  -
