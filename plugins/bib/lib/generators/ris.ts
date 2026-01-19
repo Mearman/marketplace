@@ -11,11 +11,20 @@
  * ER  -
  */
 
-import type { Generator, BibEntry, GeneratorOptions } from "../types.js";
+import type { Generator, BibEntry, GeneratorOptions, DateVariable } from "../types.js";
 import { denormalizeFromCslType } from "../mappings/entry-types.js";
 import { getRisTag } from "../mappings/fields.js";
 import { serializeName } from "../parsers/names.js";
 import { serializeRISDate } from "../parsers/dates.js";
+
+// Type guard for DateVariable
+function isDateVariable(value: unknown): value is DateVariable {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"date-parts" in value
+	);
+}
 
 /**
  * RIS Generator Implementation
@@ -53,7 +62,8 @@ export class RISGenerator implements Generator {
 		lines.push(`TY  - ${risType}`);
 
 		// Field order (conventional RIS ordering)
-		const fieldOrder = [
+		// Type as Array<Extract<keyof BibEntry, string>> for type-safe string-only property access
+		const fieldOrder: Array<Extract<keyof BibEntry, string>> = [
 			"author",
 			"editor",
 			"translator",
@@ -76,7 +86,7 @@ export class RISGenerator implements Generator {
 		];
 
 		for (const cslField of fieldOrder) {
-			const value = (entry as any)[cslField];
+			const value = entry[cslField];
 			if (value === undefined || value === null) continue;
 
 			const fieldLines = this.generateField(cslField, value);
@@ -92,7 +102,7 @@ export class RISGenerator implements Generator {
 	/**
    * Generate field lines for a CSL field
    */
-	private generateField(cslField: string, value: any): string[] {
+	private generateField(cslField: string, value: unknown): string[] {
 		const lines: string[] = [];
 
 		// Handle special field types
@@ -144,6 +154,7 @@ export class RISGenerator implements Generator {
 
 		if (cslField === "issued") {
 			// Publication date
+			if (!isDateVariable(value)) return lines;
 			const dateStr = serializeRISDate(value);
 			if (dateStr) {
 				lines.push(`PY  - ${dateStr}`);
@@ -153,6 +164,7 @@ export class RISGenerator implements Generator {
 
 		if (cslField === "accessed") {
 			// Access date
+			if (!isDateVariable(value)) return lines;
 			const dateStr = serializeRISDate(value);
 			if (dateStr) {
 				lines.push(`Y2  - ${dateStr}`);

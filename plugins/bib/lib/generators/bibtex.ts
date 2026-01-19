@@ -10,12 +10,108 @@
  * - Handling of lossy conversions (warnings for unsupported types)
  */
 
-import type { Generator, BibEntry, GeneratorOptions } from "../types.js";
+import type { Generator, BibEntry, GeneratorOptions, DateVariable } from "../types.js";
 import { denormalizeFromCslType } from "../mappings/entry-types.js";
 import { getBibTeXField } from "../mappings/fields.js";
 import { serializeNames } from "../parsers/names.js";
 import { serializeBibTeXDate } from "../parsers/dates.js";
 import { encodeLatex } from "../parsers/latex.js";
+
+// Type guard for DateVariable
+function isDateVariable(value: unknown): value is DateVariable {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"date-parts" in value
+	);
+}
+
+// Type guard for valid BibEntry keys
+function isValidBibEntryKey(key: string): key is Extract<keyof BibEntry, string> {
+	const validKeys: Array<string> = [
+		"id",
+		"type",
+		"author",
+		"editor",
+		"translator",
+		"title",
+		"container-title",
+		"collection-title",
+		"issued",
+		"accessed",
+		"volume",
+		"issue",
+		"page",
+		"page-first",
+		"publisher",
+		"publisher-place",
+		"DOI",
+		"ISBN",
+		"ISSN",
+		"URL",
+		"abstract",
+		"keyword",
+		"note",
+		"genre",
+		"version",
+		"chapter-number",
+		"medium",
+		"title-short",
+		"status",
+		"archive",
+		"archive_location",
+		"call-number",
+		"number-of-pages",
+		"number-of-volumes",
+		"references",
+		"reviewed-title",
+		"reviewed-author",
+		"source",
+		"short-title",
+		"event-date",
+		"event-title",
+		"event-place",
+		"event",
+		"jurisdiction",
+		"language",
+		"license",
+		"original-title",
+		"original-date",
+		"original-publisher",
+		"original-publisher-place",
+		"part-title",
+		"part-number",
+		"part-volume",
+		"section",
+		"supplement",
+		"submitted",
+		"dimensions",
+		"scale",
+		"categories",
+		"citation-number",
+		"collection-number",
+		"collection-editor",
+		"collection-editor-first",
+		"collection-editor-last",
+		"director",
+		"composer",
+		"illustrator",
+		"original-author",
+		"recipient",
+		"interviewer",
+		"container-author",
+		"container-author-first",
+		"container-author-last",
+		"editor-first",
+		"editor-last",
+		"translator-first",
+		"translator-last",
+		"editorial-director",
+		"issue-date",
+		"keyword",
+	];
+	return validKeys.includes(key);
+}
 
 /**
  * BibTeX Generator Implementation
@@ -46,13 +142,14 @@ export class BibTeXGenerator implements Generator {
    */
 	private generateEntry(entry: BibEntry, indent: string, lineEnding: string): string {
 		// Determine BibTeX entry type
-		const { type: bibtexType, lossy } = denormalizeFromCslType(entry.type, "bibtex");
+		const { type: bibtexType } = denormalizeFromCslType(entry.type, "bibtex");
 
 		// Start entry
 		const lines: string[] = [`@${bibtexType}{${entry.id},`];
 
 		// Field order (conventional BibTeX ordering)
-		const fieldOrder = [
+		// Type as Array<Extract<keyof BibEntry, string>> for type-safe string-only property access
+		const fieldOrder: Array<Extract<keyof BibEntry, string>> = [
 			"author",
 			"editor",
 			"title",
@@ -73,16 +170,17 @@ export class BibTeXGenerator implements Generator {
 		];
 
 		// Generate fields
-		const generatedFields = new Set<string>();
+		const generatedFields = new Set<Extract<keyof BibEntry, string>>();
 
 		for (const cslField of fieldOrder) {
-			const value = (entry as any)[cslField];
+			if (!(cslField in entry)) continue;
+			const value = entry[cslField];
 			if (value === undefined || value === null) continue;
 
 			const bibtexField = getBibTeXField(cslField, bibtexType);
 			if (!bibtexField) continue;
 
-			const fieldLine = this.generateField(bibtexField, cslField, value, entry);
+			const fieldLine = this.generateField(bibtexField, cslField, value);
 			if (fieldLine) {
 				lines.push(indent + fieldLine + ",");
 				generatedFields.add(cslField);
@@ -92,13 +190,14 @@ export class BibTeXGenerator implements Generator {
 		// Add any remaining fields not in fieldOrder
 		for (const [cslField, value] of Object.entries(entry)) {
 			if (cslField === "id" || cslField === "type" || cslField === "_formatMetadata") continue;
+			if (!isValidBibEntryKey(cslField)) continue;
 			if (generatedFields.has(cslField)) continue;
 			if (value === undefined || value === null) continue;
 
 			const bibtexField = getBibTeXField(cslField, bibtexType);
 			if (!bibtexField) continue;
 
-			const fieldLine = this.generateField(bibtexField, cslField, value, entry);
+			const fieldLine = this.generateField(bibtexField, cslField, value);
 			if (fieldLine) {
 				lines.push(indent + fieldLine + ",");
 			}
@@ -119,7 +218,7 @@ export class BibTeXGenerator implements Generator {
 	/**
    * Generate a single field
    */
-	private generateField(bibtexField: string, cslField: string, value: any, entry: BibEntry): string | null {
+	private generateField(bibtexField: string, cslField: string, value: unknown): string | null {
 		// Handle special field types
 		if (cslField === "author" || cslField === "editor" || cslField === "translator") {
 			// Name fields
@@ -131,6 +230,7 @@ export class BibTeXGenerator implements Generator {
 
 		if (cslField === "issued") {
 			// Date field - expand to year/month/day
+			if (!isDateVariable(value)) return null;
 			const dateFields = serializeBibTeXDate(value);
 			const parts: string[] = [];
 
@@ -149,6 +249,7 @@ export class BibTeXGenerator implements Generator {
 
 		if (cslField === "accessed") {
 			// Access date
+			if (!isDateVariable(value)) return null;
 			const dateFields = serializeBibTeXDate(value);
 			if (dateFields.year) {
 				return `urldate = {${dateFields.year}${dateFields.month ? "-" + dateFields.month : ""}${

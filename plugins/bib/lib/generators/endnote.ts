@@ -32,7 +32,7 @@ export class EndNoteXMLGenerator implements Generator {
 
 		// Generate records
 		for (const entry of sortedEntries) {
-			const recordLines = this.generateEntry(entry, indent, lineEnding);
+			const recordLines = this.generateEntry(entry, indent);
 			lines.push(...recordLines);
 		}
 
@@ -46,7 +46,7 @@ export class EndNoteXMLGenerator implements Generator {
 	/**
    * Generate a single EndNote record
    */
-	private generateEntry(entry: BibEntry, indent: string, lineEnding: string): string[] {
+	private generateEntry(entry: BibEntry, indent: string): string[] {
 		const lines: string[] = [];
 		const i1 = indent + indent; // level 1 indent
 		const i2 = i1 + indent; // level 2 indent

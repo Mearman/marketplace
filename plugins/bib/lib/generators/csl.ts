@@ -23,10 +23,8 @@ export class CSLJSONGenerator implements Generator {
 		const sortedEntries = sort ? [...entries].sort((a, b) => a.id.localeCompare(b.id)) : entries;
 
 		// Remove format metadata (internal use only)
-		const cleanEntries = sortedEntries.map((entry) => {
-			const { _formatMetadata, ...cleanEntry } = entry;
-			return cleanEntry;
-		});
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const cleanEntries = sortedEntries.map(({ _formatMetadata, ...cleanEntry }) => cleanEntry);
 
 		// Serialize to JSON
 		return JSON.stringify(cleanEntries, null, indent);

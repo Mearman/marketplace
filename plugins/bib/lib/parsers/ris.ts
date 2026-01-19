@@ -23,6 +23,93 @@ import { getCslFieldFromRis } from "../mappings/fields.js";
 import { parseName } from "./names.js";
 import { parseDate } from "./dates.js";
 
+// Type guard for valid BibEntry keys
+function isValidBibEntryKey(key: string): key is keyof BibEntry {
+	const validKeys: Array<string> = [
+		"id",
+		"type",
+		"author",
+		"editor",
+		"translator",
+		"title",
+		"container-title",
+		"collection-title",
+		"issued",
+		"accessed",
+		"volume",
+		"issue",
+		"page",
+		"page-first",
+		"publisher",
+		"publisher-place",
+		"DOI",
+		"ISBN",
+		"ISSN",
+		"URL",
+		"abstract",
+		"keyword",
+		"note",
+		"genre",
+		"version",
+		"chapter-number",
+		"medium",
+		"title-short",
+		"status",
+		"archive",
+		"archive_location",
+		"call-number",
+		"number-of-pages",
+		"number-of-volumes",
+		"references",
+		"reviewed-title",
+		"reviewed-author",
+		"source",
+		"short-title",
+		"event-date",
+		"event-title",
+		"event-place",
+		"event",
+		"jurisdiction",
+		"language",
+		"license",
+		"original-title",
+		"original-date",
+		"original-publisher",
+		"original-publisher-place",
+		"part-title",
+		"part-number",
+		"part-volume",
+		"section",
+		"supplement",
+		"submitted",
+		"dimensions",
+		"scale",
+		"categories",
+		"citation-number",
+		"collection-number",
+		"collection-editor",
+		"collection-editor-first",
+		"collection-editor-last",
+		"director",
+		"composer",
+		"illustrator",
+		"original-author",
+		"recipient",
+		"interviewer",
+		"container-author",
+		"container-author-first",
+		"container-author-last",
+		"editor-first",
+		"editor-last",
+		"translator-first",
+		"translator-last",
+		"editorial-director",
+		"issue-date",
+		"keyword",
+	];
+	return validKeys.includes(key);
+}
+
 /**
  * Raw RIS entry (before normalization)
  */
@@ -200,7 +287,10 @@ export class RISParser implements Parser {
 				entry.page = values[0];
 			} else {
 				// Single-value field - use first value
-				(entry as any)[cslField] = values[0];
+				// Type guard ensures cslField is a valid BibEntry key
+				if (isValidBibEntryKey(cslField)) {
+					entry[cslField] = values[0];
+				}
 			}
 		}
 
