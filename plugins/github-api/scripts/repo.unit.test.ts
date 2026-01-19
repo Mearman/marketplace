@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError, type Dependencies } from "./repo";
+import { main, handleError } from "./repo";
 import type { GitHubRepository } from "./utils";
 import { parseArgs } from "./utils";
 
