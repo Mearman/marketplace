@@ -184,7 +184,7 @@ describe("readme.ts", () => {
 			await expect(main(args, deps)).rejects.toThrow("process.exit called");
 
 			expect(mockConsole.log).toHaveBeenCalledWith(
-				'Repository "facebook/react" has no README or does not exist'
+				"Repository \"facebook/react\" has no README or does not exist"
 			);
 		});
 	});
@@ -196,7 +196,7 @@ describe("readme.ts", () => {
 				.toThrow("process.exit called");
 
 			expect(mockConsole.log).toHaveBeenCalledWith(
-				'Repository "facebook/react" has no README or does not exist'
+				"Repository \"facebook/react\" has no README or does not exist"
 			);
 			expect(mockProcess.exit).toHaveBeenCalledWith(1);
 		});

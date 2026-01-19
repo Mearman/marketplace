@@ -19,31 +19,31 @@ import type { Generator, BibEntry, GeneratorOptions } from "../types.js";
  * The mapping tables handle BibLaTeX-specific types and fields.
  */
 export class BibLaTeXGenerator implements Generator {
-  format = "biblatex" as const;
+	format = "biblatex" as const;
 
-  private bibtexGenerator: BibTeXGenerator;
+	private bibtexGenerator: BibTeXGenerator;
 
-  constructor() {
-    this.bibtexGenerator = new BibTeXGenerator();
-  }
+	constructor() {
+		this.bibtexGenerator = new BibTeXGenerator();
+	}
 
-  /**
+	/**
    * Generate BibLaTeX output.
    *
    * Uses the same generation logic as BibTeX, but mapping tables
    * will use BibLaTeX types (dataset, software, online) and fields
    * (journaltitle, location) instead of BibTeX equivalents.
    */
-  generate(entries: BibEntry[], options?: GeneratorOptions): string {
-    // The mapping functions check entry metadata to determine
-    // whether to use BibTeX or BibLaTeX mappings
-    return this.bibtexGenerator.generate(entries, options);
-  }
+	generate(entries: BibEntry[], options?: GeneratorOptions): string {
+		// The mapping functions check entry metadata to determine
+		// whether to use BibTeX or BibLaTeX mappings
+		return this.bibtexGenerator.generate(entries, options);
+	}
 }
 
 /**
  * Create a BibLaTeX generator instance
  */
 export function createBibLaTeXGenerator(): Generator {
-  return new BibLaTeXGenerator();
+	return new BibLaTeXGenerator();
 }

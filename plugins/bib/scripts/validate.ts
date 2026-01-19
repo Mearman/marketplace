@@ -10,26 +10,26 @@ import { parseArgs, readBibFile, formatWarnings } from "./utils.js";
 import { validate } from "../lib/converter.js";
 
 function main() {
-  const args = parseArgs(process.argv.slice(2));
+	const args = parseArgs(process.argv.slice(2));
 
-  const inputFile = args.positional[0];
-  if (!inputFile) {
-    console.error("Error: No input file specified");
-    process.exit(1);
-  }
+	const inputFile = args.positional[0];
+	if (!inputFile) {
+		console.error("Error: No input file specified");
+		process.exit(1);
+	}
 
-  const { content, format } = readBibFile(inputFile);
+	const { content, format } = readBibFile(inputFile);
 
-  console.log(`Validating ${format} file: ${inputFile}`);
+	console.log(`Validating ${format} file: ${inputFile}`);
 
-  const warnings = validate(content, format);
+	const warnings = validate(content, format);
 
-  if (warnings.length === 0) {
-    console.log("✓ No validation errors found");
-  } else {
-    console.log(formatWarnings(warnings));
-    process.exit(1);
-  }
+	if (warnings.length === 0) {
+		console.log("✓ No validation errors found");
+	} else {
+		console.log(formatWarnings(warnings));
+		process.exit(1);
+	}
 }
 
 main();

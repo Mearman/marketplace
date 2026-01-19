@@ -118,7 +118,7 @@ describe("converter.ts", () => {
 		// Setup default generator behavior
 		mockBibTeXGenerator.generate.mockReturnValue("@article{test,...}");
 		mockBibLaTeXGenerator.generate.mockReturnValue("@article{test,...}");
-		mockCSLJSONGenerator.generate.mockReturnValue('[{"id":"test"}]');
+		mockCSLJSONGenerator.generate.mockReturnValue("[{\"id\":\"test\"}]");
 		mockRISGenerator.generate.mockReturnValue("TY  - JOUR\n...");
 		mockEndNoteXMLGenerator.generate.mockReturnValue("<record>...</record>");
 	});
@@ -130,7 +130,7 @@ describe("converter.ts", () => {
 
 			expect(mockBibTeXParser.parse).toHaveBeenCalledWith(content);
 			expect(mockCSLJSONGenerator.generate).toHaveBeenCalledWith(mockEntries, undefined);
-			expect(result.output).toBe('[{"id":"test"}]');
+			expect(result.output).toBe("[{\"id\":\"test\"}]");
 			expect(result.result).toEqual(mockParseResult);
 		});
 
@@ -144,7 +144,7 @@ describe("converter.ts", () => {
 		});
 
 		it("should convert csl-json to endnote", () => {
-			const content = '[{"id":"test"}]';
+			const content = "[{\"id\":\"test\"}]";
 			const result = convert(content, "csl-json", "endnote");
 
 			expect(mockCSLJSONParser.parse).toHaveBeenCalledWith(content);
@@ -247,7 +247,7 @@ describe("converter.ts", () => {
 		});
 
 		it("should return empty array for parsers without validate", () => {
-			const result = validate('[{"id":"test"}]', "endnote");
+			const result = validate("[{\"id\":\"test\"}]", "endnote");
 
 			expect(result).toEqual([]);
 		});
@@ -267,14 +267,14 @@ describe("converter.ts", () => {
 
 	describe("detectFormat", () => {
 		it("should detect csl-json array format", () => {
-			const content = '[{"id":"test","type":"article"}]';
+			const content = "[{\"id\":\"test\",\"type\":\"article\"}]";
 			const format = detectFormat(content);
 
 			expect(format).toBe("csl-json");
 		});
 
 		it("should detect csl-json object format", () => {
-			const content = '{"id":"test","type":"article"}';
+			const content = "{\"id\":\"test\",\"type\":\"article\"}";
 			const format = detectFormat(content);
 
 			expect(format).toBe("csl-json");
@@ -302,7 +302,7 @@ describe("converter.ts", () => {
 		});
 
 		it("should detect endnote XML format", () => {
-			const content = '<?xml version="1.0"?>\n<records><record>...</record></records>';
+			const content = "<?xml version=\"1.0\"?>\n<records><record>...</record></records>";
 			const format = detectFormat(content);
 
 			expect(format).toBe("endnote");
@@ -316,14 +316,14 @@ describe("converter.ts", () => {
 		});
 
 		it("should return null for invalid JSON", () => {
-			const content = '[{invalid json}]';
+			const content = "[{invalid json}]";
 			const format = detectFormat(content);
 
 			expect(format).toBeNull();
 		});
 
 		it("should handle whitespace", () => {
-			const content = '  \n  @article{test,...}  \n';
+			const content = "  \n  @article{test,...}  \n";
 			const format = detectFormat(content);
 
 			expect(format).toBe("bibtex");

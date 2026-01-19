@@ -111,7 +111,7 @@ describe("url.ts", () => {
 
 				for (const defaultType of validDefaults) {
 					vi.clearAllMocks();
-					const args = parseArgs([`user@example.com`, `--default=${defaultType}`]);
+					const args = parseArgs(["user@example.com", `--default=${defaultType}`]);
 
 					await main(args, deps);
 
@@ -134,7 +134,7 @@ describe("url.ts", () => {
 
 				for (const rating of validRatings) {
 					vi.clearAllMocks();
-					const args = parseArgs([`user@example.com`, `--rating=${rating}`]);
+					const args = parseArgs(["user@example.com", `--rating=${rating}`]);
 
 					await main(args, deps);
 

@@ -12,34 +12,34 @@ import { deleteEntries } from "../lib/crud/index.js";
 import { parse, generate } from "../lib/converter.js";
 
 function main() {
-  const args = parseArgs(process.argv.slice(2));
+	const args = parseArgs(process.argv.slice(2));
 
-  const inputFile = args.positional[0];
-  if (!inputFile) {
-    console.error("Error: No input file specified");
-    process.exit(1);
-  }
+	const inputFile = args.positional[0];
+	if (!inputFile) {
+		console.error("Error: No input file specified");
+		process.exit(1);
+	}
 
-  const id = args.options.get("id");
-  if (!id) {
-    console.error("Error: --id is required");
-    process.exit(1);
-  }
+	const id = args.options.get("id");
+	if (!id) {
+		console.error("Error: --id is required");
+		process.exit(1);
+	}
 
-  const { content, format } = readBibFile(inputFile);
-  const entries = parse(content, format).entries;
+	const { content, format } = readBibFile(inputFile);
+	const entries = parse(content, format).entries;
 
-  const filtered = deleteEntries(entries, [id]);
+	const filtered = deleteEntries(entries, [id]);
 
-  console.log(`Deleted entry: ${id}`);
-  console.log(`Remaining entries: ${filtered.length}`);
+	console.log(`Deleted entry: ${id}`);
+	console.log(`Remaining entries: ${filtered.length}`);
 
-  const output = generate(filtered, format);
+	const output = generate(filtered, format);
 
-  const outputFile = args.options.get("output") || inputFile;
-  writeFileSync(outputFile, output, "utf-8");
+	const outputFile = args.options.get("output") || inputFile;
+	writeFileSync(outputFile, output, "utf-8");
 
-  console.log(`Written to: ${outputFile}`);
+	console.log(`Written to: ${outputFile}`);
 }
 
 main();

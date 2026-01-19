@@ -283,7 +283,7 @@ describe("repo.ts", () => {
 
 			await expect(main(args, deps)).rejects.toThrow("process.exit called");
 
-			expect(mockConsole.log).toHaveBeenCalledWith('Repository "facebook/react" not found');
+			expect(mockConsole.log).toHaveBeenCalledWith("Repository \"facebook/react\" not found");
 		});
 	});
 
@@ -293,7 +293,7 @@ describe("repo.ts", () => {
 			expect(() => handleError(error, "facebook", "react", { console: mockConsole, process: mockProcess }))
 				.toThrow("process.exit called");
 
-			expect(mockConsole.log).toHaveBeenCalledWith('Repository "facebook/react" not found');
+			expect(mockConsole.log).toHaveBeenCalledWith("Repository \"facebook/react\" not found");
 			expect(mockProcess.exit).toHaveBeenCalledWith(1);
 		});
 

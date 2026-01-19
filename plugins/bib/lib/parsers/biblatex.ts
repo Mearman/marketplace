@@ -20,44 +20,44 @@ import type { Parser, ConversionResult, ConversionWarning } from "../types.js";
  * The mapping tables already handle BibLaTeX-specific types and fields.
  */
 export class BibLaTeXParser implements Parser {
-  format = "biblatex" as const;
+	format = "biblatex" as const;
 
-  private bibtexParser: BibTeXParser;
+	private bibtexParser: BibTeXParser;
 
-  constructor() {
-    this.bibtexParser = new BibTeXParser();
-  }
+	constructor() {
+		this.bibtexParser = new BibTeXParser();
+	}
 
-  /**
+	/**
    * Parse BibLaTeX content using BibTeX parser.
    *
    * BibLaTeX uses the same syntax as BibTeX but recognizes additional
    * entry types and fields. The mapping tables handle these differences.
    */
-  parse(content: string): ConversionResult {
-    const result = this.bibtexParser.parse(content);
+	parse(content: string): ConversionResult {
+		const result = this.bibtexParser.parse(content);
 
-    // Update metadata to indicate BibLaTeX source
-    for (const entry of result.entries) {
-      if (entry._formatMetadata) {
-        entry._formatMetadata.source = "biblatex";
-      }
-    }
+		// Update metadata to indicate BibLaTeX source
+		for (const entry of result.entries) {
+			if (entry._formatMetadata) {
+				entry._formatMetadata.source = "biblatex";
+			}
+		}
 
-    return result;
-  }
+		return result;
+	}
 
-  /**
+	/**
    * Validate BibLaTeX syntax (same as BibTeX)
    */
-  validate(content: string): ConversionWarning[] {
-    return this.bibtexParser.validate?.(content) || [];
-  }
+	validate(content: string): ConversionWarning[] {
+		return this.bibtexParser.validate?.(content) || [];
+	}
 }
 
 /**
  * Create a BibLaTeX parser instance
  */
 export function createBibLaTeXParser(): Parser {
-  return new BibLaTeXParser();
+	return new BibLaTeXParser();
 }

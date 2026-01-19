@@ -194,7 +194,7 @@ describe("user.ts", () => {
 
 			await expect(main(args, deps)).rejects.toThrow("process.exit called");
 
-			expect(mockConsole.log).toHaveBeenCalledWith('User "torvalds" not found');
+			expect(mockConsole.log).toHaveBeenCalledWith("User \"torvalds\" not found");
 		});
 	});
 
@@ -204,7 +204,7 @@ describe("user.ts", () => {
 			expect(() => handleError(error, "torvalds", { console: mockConsole, process: mockProcess }))
 				.toThrow("process.exit called");
 
-			expect(mockConsole.log).toHaveBeenCalledWith('User "torvalds" not found');
+			expect(mockConsole.log).toHaveBeenCalledWith("User \"torvalds\" not found");
 			expect(mockProcess.exit).toHaveBeenCalledWith(1);
 		});
 

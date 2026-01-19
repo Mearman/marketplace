@@ -28,176 +28,176 @@ import type { Person } from "../types.js";
  * @returns Structured Person object
  */
 export function parseName(nameStr: string): Person {
-  const trimmed = nameStr.trim();
+	const trimmed = nameStr.trim();
 
-  // Handle literal names (enclosed in braces or all caps for orgs)
-  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    return { literal: trimmed.slice(1, -1) };
-  }
+	// Handle literal names (enclosed in braces or all caps for orgs)
+	if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+		return { literal: trimmed.slice(1, -1) };
+	}
 
-  // Check if name contains comma (BibTeX format)
-  if (trimmed.includes(",")) {
-    return parseCommaSeparatedName(trimmed);
-  }
+	// Check if name contains comma (BibTeX format)
+	if (trimmed.includes(",")) {
+		return parseCommaSeparatedName(trimmed);
+	}
 
-  // Natural order: "First Last" or "First von Last"
-  return parseNaturalOrderName(trimmed);
+	// Natural order: "First Last" or "First von Last"
+	return parseNaturalOrderName(trimmed);
 }
 
 /**
  * Parse comma-separated name: "Last, First" or "Last, First, Suffix"
  */
 function parseCommaSeparatedName(nameStr: string): Person {
-  const parts = nameStr.split(",").map((p) => p.trim());
+	const parts = nameStr.split(",").map((p) => p.trim());
 
-  if (parts.length === 1) {
-    // Just a family name
-    return { family: parts[0] };
-  }
+	if (parts.length === 1) {
+		// Just a family name
+		return { family: parts[0] };
+	}
 
-  const person: Person = {};
+	const person: Person = {};
 
-  // First part: family name (may include particles)
-  const familyPart = parts[0];
-  const familyWords = familyPart.split(/\s+/);
+	// First part: family name (may include particles)
+	const familyPart = parts[0];
+	const familyWords = familyPart.split(/\s+/);
 
-  // Check for particles (lowercase words before the family name)
-  const particles: string[] = [];
-  const familyWords2: string[] = [];
+	// Check for particles (lowercase words before the family name)
+	const particles: string[] = [];
+	const familyWords2: string[] = [];
 
-  for (const word of familyWords) {
-    if (isParticle(word) && familyWords2.length === 0) {
-      particles.push(word);
-    } else {
-      familyWords2.push(word);
-    }
-  }
+	for (const word of familyWords) {
+		if (isParticle(word) && familyWords2.length === 0) {
+			particles.push(word);
+		} else {
+			familyWords2.push(word);
+		}
+	}
 
-  if (particles.length > 0) {
-    person["non-dropping-particle"] = particles.join(" ");
-  }
+	if (particles.length > 0) {
+		person["non-dropping-particle"] = particles.join(" ");
+	}
 
-  person.family = familyWords2.join(" ");
+	person.family = familyWords2.join(" ");
 
-  // Second part: given name
-  if (parts[1]) {
-    person.given = parts[1];
-  }
+	// Second part: given name
+	if (parts[1]) {
+		person.given = parts[1];
+	}
 
-  // Third part: suffix
-  if (parts[2]) {
-    person.suffix = parts[2];
-  }
+	// Third part: suffix
+	if (parts[2]) {
+		person.suffix = parts[2];
+	}
 
-  return person;
+	return person;
 }
 
 /**
  * Parse natural order name: "First Last" or "First von Last"
  */
 function parseNaturalOrderName(nameStr: string): Person {
-  const words = nameStr.split(/\s+/);
+	const words = nameStr.split(/\s+/);
 
-  if (words.length === 1) {
-    // Single word - assume family name
-    return { family: words[0] };
-  }
+	if (words.length === 1) {
+		// Single word - assume family name
+		return { family: words[0] };
+	}
 
-  const person: Person = {};
-  const givenWords: string[] = [];
-  const particleWords: string[] = [];
-  const familyWords: string[] = [];
-  let foundParticle = false;
+	const person: Person = {};
+	const givenWords: string[] = [];
+	const particleWords: string[] = [];
+	const familyWords: string[] = [];
+	let foundParticle = false;
 
-  // Scan from left to right
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
+	// Scan from left to right
+	for (let i = 0; i < words.length; i++) {
+		const word = words[i];
 
-    // Last word is always part of family name
-    if (i === words.length - 1) {
-      familyWords.push(word);
-      break;
-    }
+		// Last word is always part of family name
+		if (i === words.length - 1) {
+			familyWords.push(word);
+			break;
+		}
 
-    // Check if this looks like a suffix
-    if (isSuffix(word)) {
-      person.suffix = word;
-      continue;
-    }
+		// Check if this looks like a suffix
+		if (isSuffix(word)) {
+			person.suffix = word;
+			continue;
+		}
 
-    // Check if this is a particle
-    if (isParticle(word) && !foundParticle) {
-      foundParticle = true;
-      particleWords.push(word);
-    } else if (foundParticle) {
-      // After particle, everything is family name (except last is family)
-      if (isParticle(word)) {
-        particleWords.push(word);
-      } else {
-        familyWords.push(word);
-      }
-    } else {
-      // Before particle, everything is given name
-      givenWords.push(word);
-    }
-  }
+		// Check if this is a particle
+		if (isParticle(word) && !foundParticle) {
+			foundParticle = true;
+			particleWords.push(word);
+		} else if (foundParticle) {
+			// After particle, everything is family name (except last is family)
+			if (isParticle(word)) {
+				particleWords.push(word);
+			} else {
+				familyWords.push(word);
+			}
+		} else {
+			// Before particle, everything is given name
+			givenWords.push(word);
+		}
+	}
 
-  if (givenWords.length > 0) {
-    person.given = givenWords.join(" ");
-  }
+	if (givenWords.length > 0) {
+		person.given = givenWords.join(" ");
+	}
 
-  if (particleWords.length > 0) {
-    person["non-dropping-particle"] = particleWords.join(" ");
-  }
+	if (particleWords.length > 0) {
+		person["non-dropping-particle"] = particleWords.join(" ");
+	}
 
-  if (familyWords.length > 0) {
-    person.family = familyWords.join(" ");
-  }
+	if (familyWords.length > 0) {
+		person.family = familyWords.join(" ");
+	}
 
-  return person;
+	return person;
 }
 
 /**
  * Check if a word is a name particle (von, van, de, etc.)
  */
 function isParticle(word: string): boolean {
-  const lowercase = word.toLowerCase();
+	const lowercase = word.toLowerCase();
 
-  // Common particles (case-sensitive check)
-  const particles = [
-    "von",
-    "van",
-    "de",
-    "di",
-    "del",
-    "della",
-    "da",
-    "le",
-    "la",
-    "el",
-    "al",
-    "bin",
-    "ibn",
-    "ter",
-    "op",
-    "aan",
-    "dos",
-    "das",
-  ];
+	// Common particles (case-sensitive check)
+	const particles = [
+		"von",
+		"van",
+		"de",
+		"di",
+		"del",
+		"della",
+		"da",
+		"le",
+		"la",
+		"el",
+		"al",
+		"bin",
+		"ibn",
+		"ter",
+		"op",
+		"aan",
+		"dos",
+		"das",
+	];
 
-  // Particle if: (1) in list AND (2) starts with lowercase
-  return particles.includes(lowercase) && word[0] === word[0].toLowerCase();
+	// Particle if: (1) in list AND (2) starts with lowercase
+	return particles.includes(lowercase) && word[0] === word[0].toLowerCase();
 }
 
 /**
  * Check if a word is a suffix (Jr., Sr., III, etc.)
  */
 function isSuffix(word: string): boolean {
-  const normalized = word.replace(/\./g, "").toLowerCase();
+	const normalized = word.replace(/\./g, "").toLowerCase();
 
-  const suffixes = ["jr", "sr", "ii", "iii", "iv", "v", "vi", "esq", "phd", "md"];
+	const suffixes = ["jr", "sr", "ii", "iii", "iv", "v", "vi", "esq", "phd", "md"];
 
-  return suffixes.includes(normalized);
+	return suffixes.includes(normalized);
 }
 
 /**
@@ -208,85 +208,85 @@ function isSuffix(word: string): boolean {
  * @returns Name string
  */
 export function serializeName(person: Person, format: "bibtex" | "natural" = "bibtex"): string {
-  // Literal name - return as-is
-  if (person.literal) {
-    return format === "bibtex" ? `{${person.literal}}` : person.literal;
-  }
+	// Literal name - return as-is
+	if (person.literal) {
+		return format === "bibtex" ? `{${person.literal}}` : person.literal;
+	}
 
-  if (format === "bibtex") {
-    return serializeBibTeXName(person);
-  } else {
-    return serializeNaturalName(person);
-  }
+	if (format === "bibtex") {
+		return serializeBibTeXName(person);
+	} else {
+		return serializeNaturalName(person);
+	}
 }
 
 /**
  * Serialize to BibTeX format: "Last, First, Suffix"
  */
 function serializeBibTeXName(person: Person): string {
-  const parts: string[] = [];
+	const parts: string[] = [];
 
-  // Family name (with particles)
-  const familyParts: string[] = [];
-  if (person["non-dropping-particle"]) {
-    familyParts.push(person["non-dropping-particle"]);
-  }
-  if (person["dropping-particle"]) {
-    familyParts.push(person["dropping-particle"]);
-  }
-  if (person.family) {
-    familyParts.push(person.family);
-  }
+	// Family name (with particles)
+	const familyParts: string[] = [];
+	if (person["non-dropping-particle"]) {
+		familyParts.push(person["non-dropping-particle"]);
+	}
+	if (person["dropping-particle"]) {
+		familyParts.push(person["dropping-particle"]);
+	}
+	if (person.family) {
+		familyParts.push(person.family);
+	}
 
-  if (familyParts.length > 0) {
-    parts.push(familyParts.join(" "));
-  }
+	if (familyParts.length > 0) {
+		parts.push(familyParts.join(" "));
+	}
 
-  // Given name
-  if (person.given) {
-    parts.push(person.given);
-  }
+	// Given name
+	if (person.given) {
+		parts.push(person.given);
+	}
 
-  // Suffix
-  if (person.suffix) {
-    parts.push(person.suffix);
-  }
+	// Suffix
+	if (person.suffix) {
+		parts.push(person.suffix);
+	}
 
-  return parts.join(", ");
+	return parts.join(", ");
 }
 
 /**
  * Serialize to natural format: "First von Last, Suffix"
  */
 function serializeNaturalName(person: Person): string {
-  const parts: string[] = [];
+	const parts: string[] = [];
 
-  // Given name first
-  if (person.given) {
-    parts.push(person.given);
-  }
+	// Given name first
+	if (person.given) {
+		parts.push(person.given);
+	}
 
-  // Particles
-  if (person["non-dropping-particle"]) {
-    parts.push(person["non-dropping-particle"]);
-  }
-  if (person["dropping-particle"]) {
-    parts.push(person["dropping-particle"]);
-  }
+	// Particles
+	if (person["non-dropping-particle"]) {
+		parts.push(person["non-dropping-particle"]);
+	}
+	if (person["dropping-particle"]) {
+		parts.push(person["dropping-particle"]);
+	}
 
-  // Family name
-  if (person.family) {
-    parts.push(person.family);
-  }
+	// Family name
+	if (person.family) {
+		parts.push(person.family);
+	}
 
-  let name = parts.join(" ");
+	let name = parts.join(" ");
 
-  // Append suffix
-  if (person.suffix) {
-    name += `, ${person.suffix}`;
-  }
+	// Append suffix
+	if (person.suffix) {
+		name += `, ${person.suffix}`;
+	}
 
-  return name;
+	return name;
 }
 
 /**
@@ -300,15 +300,15 @@ function serializeNaturalName(person: Person): string {
  * @returns Array of Person objects
  */
 export function parseNames(namesStr: string, delimiter: string = " and "): Person[] {
-  if (!namesStr || namesStr.trim() === "") {
-    return [];
-  }
+	if (!namesStr || namesStr.trim() === "") {
+		return [];
+	}
 
-  return namesStr
-    .split(delimiter)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .map(parseName);
+	return namesStr
+		.split(delimiter)
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0)
+		.map(parseName);
 }
 
 /**
@@ -320,9 +320,9 @@ export function parseNames(namesStr: string, delimiter: string = " and "): Perso
  * @returns Delimited string
  */
 export function serializeNames(
-  persons: Person[],
-  delimiter: string = " and ",
-  format: "bibtex" | "natural" = "bibtex"
+	persons: Person[],
+	delimiter: string = " and ",
+	format: "bibtex" | "natural" = "bibtex"
 ): string {
-  return persons.map((p) => serializeName(p, format)).join(delimiter);
+	return persons.map((p) => serializeName(p, format)).join(delimiter);
 }

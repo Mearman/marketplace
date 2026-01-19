@@ -162,7 +162,7 @@ describe("download.ts", () => {
 
 				for (const defaultType of validDefaults) {
 					vi.clearAllMocks();
-					const args = parseArgs([`user@example.com`, `avatar.jpg`, `--default=${defaultType}`]);
+					const args = parseArgs(["user@example.com", "avatar.jpg", `--default=${defaultType}`]);
 
 					await main(args, deps);
 
@@ -190,7 +190,7 @@ describe("download.ts", () => {
 
 				for (const rating of validRatings) {
 					vi.clearAllMocks();
-					const args = parseArgs([`user@example.com`, `avatar.jpg`, `--rating=${rating}`]);
+					const args = parseArgs(["user@example.com", "avatar.jpg", `--rating=${rating}`]);
 
 					await main(args, deps);
 

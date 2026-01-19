@@ -22,21 +22,21 @@ import { createBibTeXGenerator, createBibLaTeXGenerator, createCSLJSONGenerator,
  * @returns Conversion result with generated content and warnings
  */
 export function convert(
-  content: string,
-  fromFormat: BibFormat,
-  toFormat: BibFormat,
-  options?: GeneratorOptions
+	content: string,
+	fromFormat: BibFormat,
+	toFormat: BibFormat,
+	options?: GeneratorOptions
 ): { output: string; result: ConversionResult } {
-  // Step 1: Parse source format to intermediate format
-  const parseResult = parse(content, fromFormat);
+	// Step 1: Parse source format to intermediate format
+	const parseResult = parse(content, fromFormat);
 
-  // Step 2: Generate target format from intermediate
-  const output = generate(parseResult.entries, toFormat, options);
+	// Step 2: Generate target format from intermediate
+	const output = generate(parseResult.entries, toFormat, options);
 
-  return {
-    output,
-    result: parseResult,
-  };
+	return {
+		output,
+		result: parseResult,
+	};
 }
 
 /**
@@ -47,8 +47,8 @@ export function convert(
  * @returns Parse result with entries and warnings
  */
 export function parse(content: string, format: BibFormat): ConversionResult {
-  const parser = getParser(format);
-  return parser.parse(content);
+	const parser = getParser(format);
+	return parser.parse(content);
 }
 
 /**
@@ -60,8 +60,8 @@ export function parse(content: string, format: BibFormat): ConversionResult {
  * @returns Generated bibliography content
  */
 export function generate(entries: BibEntry[], format: BibFormat, options?: GeneratorOptions): string {
-  const generator = getGenerator(format);
-  return generator.generate(entries, options);
+	const generator = getGenerator(format);
+	return generator.generate(entries, options);
 }
 
 /**
@@ -72,55 +72,55 @@ export function generate(entries: BibEntry[], format: BibFormat, options?: Gener
  * @returns Validation warnings
  */
 export function validate(content: string, format: BibFormat) {
-  const parser = getParser(format);
-  return parser.validate?.(content) || [];
+	const parser = getParser(format);
+	return parser.validate?.(content) || [];
 }
 
 /**
  * Get parser for format
  */
 function getParser(format: BibFormat) {
-  switch (format) {
-    case "bibtex":
-      return createBibTeXParser();
-    case "biblatex":
-      return createBibLaTeXParser();
-    case "csl-json":
-      return createCSLJSONParser();
-    case "ris":
-      return createRISParser();
-    case "endnote":
-      return createEndNoteXMLParser();
-    default:
-      throw new Error(`Unsupported source format: ${format}`);
-  }
+	switch (format) {
+	case "bibtex":
+		return createBibTeXParser();
+	case "biblatex":
+		return createBibLaTeXParser();
+	case "csl-json":
+		return createCSLJSONParser();
+	case "ris":
+		return createRISParser();
+	case "endnote":
+		return createEndNoteXMLParser();
+	default:
+		throw new Error(`Unsupported source format: ${format}`);
+	}
 }
 
 /**
  * Get generator for format
  */
 function getGenerator(format: BibFormat) {
-  switch (format) {
-    case "bibtex":
-      return createBibTeXGenerator();
-    case "biblatex":
-      return createBibLaTeXGenerator();
-    case "csl-json":
-      return createCSLJSONGenerator();
-    case "ris":
-      return createRISGenerator();
-    case "endnote":
-      return createEndNoteXMLGenerator();
-    default:
-      throw new Error(`Unsupported target format: ${format}`);
-  }
+	switch (format) {
+	case "bibtex":
+		return createBibTeXGenerator();
+	case "biblatex":
+		return createBibLaTeXGenerator();
+	case "csl-json":
+		return createCSLJSONGenerator();
+	case "ris":
+		return createRISGenerator();
+	case "endnote":
+		return createEndNoteXMLGenerator();
+	default:
+		throw new Error(`Unsupported target format: ${format}`);
+	}
 }
 
 /**
  * Get all supported formats
  */
 export function getSupportedFormats(): BibFormat[] {
-  return ["bibtex", "biblatex", "csl-json", "ris", "endnote"];
+	return ["bibtex", "biblatex", "csl-json", "ris", "endnote"];
 }
 
 /**
@@ -130,39 +130,39 @@ export function getSupportedFormats(): BibFormat[] {
  * @returns Detected format or null
  */
 export function detectFormat(content: string): BibFormat | null {
-  const trimmed = content.trim();
+	const trimmed = content.trim();
 
-  // JSON - check for array or object with id/type fields
-  if (trimmed.startsWith("[") || (trimmed.startsWith("{") && trimmed.includes('"type"'))) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      const item = Array.isArray(parsed) ? parsed[0] : parsed;
-      if (item && item.type && item.id) {
-        return "csl-json";
-      }
-    } catch {
-      // Not valid JSON
-    }
-  }
+	// JSON - check for array or object with id/type fields
+	if (trimmed.startsWith("[") || (trimmed.startsWith("{") && trimmed.includes("\"type\""))) {
+		try {
+			const parsed = JSON.parse(trimmed);
+			const item = Array.isArray(parsed) ? parsed[0] : parsed;
+			if (item && item.type && item.id) {
+				return "csl-json";
+			}
+		} catch {
+			// Not valid JSON
+		}
+	}
 
-  // BibTeX/BibLaTeX - check for @entry{
-  if (/@\w+\s*\{/.test(trimmed)) {
-    // Distinguish BibTeX from BibLaTeX by checking for BibLaTeX-specific types
-    if (/@(?:dataset|software|online|patent)\s*\{/i.test(trimmed)) {
-      return "biblatex";
-    }
-    return "bibtex";
-  }
+	// BibTeX/BibLaTeX - check for @entry{
+	if (/@\w+\s*\{/.test(trimmed)) {
+		// Distinguish BibTeX from BibLaTeX by checking for BibLaTeX-specific types
+		if (/@(?:dataset|software|online|patent)\s*\{/i.test(trimmed)) {
+			return "biblatex";
+		}
+		return "bibtex";
+	}
 
-  // RIS - check for TY  - tag
-  if (/^TY\s+-\s+/m.test(trimmed)) {
-    return "ris";
-  }
+	// RIS - check for TY  - tag
+	if (/^TY\s+-\s+/m.test(trimmed)) {
+		return "ris";
+	}
 
-  // EndNote XML - check for XML structure
-  if (trimmed.startsWith("<?xml") && trimmed.includes("<record>")) {
-    return "endnote";
-  }
+	// EndNote XML - check for XML structure
+	if (trimmed.startsWith("<?xml") && trimmed.includes("<record>")) {
+		return "endnote";
+	}
 
-  return null;
+	return null;
 }
