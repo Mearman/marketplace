@@ -98,6 +98,159 @@ describe("submit.ts", () => {
 				const logCalls = mockConsole.log.mock.calls.map((c: any[]) => c[0]).join(" ");
 				expect(logCalls).not.toContain("id_/");
 			});
+
+			it("should include capture-outlinks in form data", async () => {
+				const mockResponse = {
+					ok: true,
+					json: vi.fn().mockResolvedValue({
+						job_id: "job123",
+						status: "success",
+						timestamp: "20240101120000",
+					}),
+				} as any;
+				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+
+				const args = parseArgs(["--capture-outlinks", "https://example.com"]);
+
+				await main(args, deps);
+
+				expect(vi.mocked(global.fetch)).toHaveBeenCalledWith(
+					expect.stringContaining("/save"),
+					expect.objectContaining({
+						body: expect.stringContaining("capture_outlinks=1"),
+					})
+				);
+			});
+
+			it("should include capture-screenshot in form data", async () => {
+				const mockResponse = {
+					ok: true,
+					json: vi.fn().mockResolvedValue({
+						job_id: "job123",
+						status: "success",
+						timestamp: "20240101120000",
+						screenshot: "https://example.com/screenshot.png",
+					}),
+				} as any;
+				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+
+				const args = parseArgs(["--capture-screenshot", "https://example.com"]);
+
+				await main(args, deps);
+
+				expect(vi.mocked(global.fetch)).toHaveBeenCalledWith(
+					expect.any(String),
+					expect.objectContaining({
+						body: expect.stringContaining("capture_screenshot=1"),
+					})
+				);
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Screenshot:"));
+			});
+
+			it("should include skip-if-recent in form data", async () => {
+				const mockResponse = {
+					ok: true,
+					json: vi.fn().mockResolvedValue({
+						job_id: "job123",
+						status: "success",
+						timestamp: "20240101120000",
+					}),
+				} as any;
+				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+
+				const args = parseArgs(["--skip-if-recent=30d", "https://example.com"]);
+
+				await main(args, deps);
+
+				expect(vi.mocked(global.fetch)).toHaveBeenCalledWith(
+					expect.any(String),
+					expect.objectContaining({
+						body: expect.stringContaining("if_not_archived_within=30d"),
+					})
+				);
+			});
+
+			it("should poll for job completion when status is pending", async () => {
+				let callCount = 0;
+				vi.mocked(global.fetch).mockImplementation(() => {
+					callCount++;
+					// First call is to submit, second is status check (success immediately)
+					if (callCount === 1) {
+						return Promise.resolve({
+							ok: true,
+							json: vi.fn().mockResolvedValue({
+								job_id: "job123",
+								status: "success",
+								timestamp: "20240101120000",
+								original_url: "https://example.com",
+							}),
+						} as any);
+					}
+					return Promise.resolve({
+						ok: true,
+						json: vi.fn().mockResolvedValue({
+							job_id: "job123",
+							status: "success",
+							timestamp: "20240101120000",
+							original_url: "https://example.com",
+						}),
+					} as any);
+				});
+
+				const args = parseArgs(["https://example.com"]);
+
+				await main(args, deps);
+
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✓ Archived"));
+			}, 10000);
+
+			it("should handle job that completes with error status", async () => {
+				let callCount = 0;
+				vi.mocked(global.fetch).mockImplementation(() => {
+					callCount++;
+					if (callCount === 1) {
+						return Promise.resolve({
+							ok: true,
+							json: vi.fn().mockResolvedValue({
+								job_id: "job123",
+								status: "error",
+								status_ext: "Blocked by robots.txt",
+							}),
+						} as any);
+					}
+					return Promise.resolve({
+						ok: true,
+						json: vi.fn().mockResolvedValue({
+							job_id: "job123",
+							status: "error",
+							status_ext: "Blocked by robots.txt",
+						}),
+					} as any);
+				});
+
+				const args = parseArgs(["https://example.com"]);
+
+				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✗ Failed to archive"));
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Blocked by robots.txt"));
+			}, 10000);
+
+			it("should handle unexpected API response", async () => {
+				const mockResponse = {
+					ok: true,
+					json: vi.fn().mockResolvedValue({
+						unknown_field: "unexpected",
+					}),
+				} as any;
+				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+
+				const args = parseArgs(["https://example.com"]);
+
+				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✗ Unexpected response"));
+			});
 		});
 
 		describe("usage and validation", () => {
