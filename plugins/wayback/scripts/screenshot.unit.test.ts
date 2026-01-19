@@ -165,6 +165,163 @@ describe("screenshot.ts", () => {
 				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Network error");
 			});
 		});
+
+		describe("screenshot download", () => {
+			beforeEach(() => {
+				vi.clearAllMocks();
+			});
+
+			it("should download screenshot when --download is provided", async () => {
+				mockFetchWithCache.mockResolvedValue({
+					archived_snapshots: {
+						closest: {
+							available: true,
+							timestamp: "20240101120000",
+						},
+					},
+				});
+				vi.mocked(global.fetch).mockResolvedValueOnce({
+					json: async () => [
+						["timestamp", "url", "mime", "status", "digest", "length"],
+						["20240101120000", "url", "image/png", "200", "digest", "1000"],
+					],
+				} as any);
+				vi.mocked(global.fetch).mockResolvedValueOnce({
+					ok: true,
+					arrayBuffer: async () => new ArrayBuffer(1024),
+				} as any);
+
+				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
+
+				await main(args, deps);
+
+				expect(vi.mocked(writeFile)).toHaveBeenCalled();
+				expect(vi.mocked(writeFile).mock.calls[0][0]).toBe("screenshot.png");
+				expect(Buffer.isBuffer(vi.mocked(writeFile).mock.calls[0][1])).toBe(true);
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✓ Downloaded to: screenshot.png"));
+			});
+
+			it("should handle HTTP error when downloading screenshot", async () => {
+				mockFetchWithCache.mockResolvedValue({
+					archived_snapshots: {
+						closest: {
+							available: true,
+							timestamp: "20240101120000",
+						},
+					},
+				});
+				vi.mocked(global.fetch).mockResolvedValueOnce({
+					json: async () => [
+						["timestamp", "url", "mime", "status", "digest", "length"],
+						["20240101120000", "url", "image/png", "200", "digest", "1000"],
+					],
+				} as any);
+				vi.mocked(global.fetch).mockResolvedValueOnce({
+					ok: false,
+					status: 404,
+				} as any);
+
+				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
+
+				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✗ Screenshot not available (404)"));
+			});
+
+			it("should show message when --download not provided", async () => {
+				mockFetchWithCache.mockResolvedValue({
+					archived_snapshots: {
+						closest: {
+							available: true,
+							timestamp: "20240101120000",
+						},
+					},
+				});
+				vi.mocked(global.fetch).mockResolvedValue({
+					json: async () => [
+						["timestamp", "url", "mime", "status", "digest", "length"],
+						["20240101120000", "url", "image/png", "200", "digest", "1000"],
+					],
+				} as any);
+
+				const args = parseArgs(["https://example.com"]);
+
+				await main(args, deps);
+
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Use --download=PATH to save the screenshot"));
+			});
+		});
+
+		describe("screenshot unavailable scenarios", () => {
+			beforeEach(() => {
+				vi.clearAllMocks();
+			});
+
+			it("should exit when screenshot not available at specified timestamp", async () => {
+				mockFetchWithCache.mockResolvedValue({
+					archived_snapshots: {
+						closest: {
+							available: true,
+							timestamp: "20240101120000",
+						},
+					},
+				});
+				vi.mocked(global.fetch).mockResolvedValue({
+					json: async () => [["timestamp"]],
+				} as any);
+
+				const args = parseArgs(["--timestamp=20240101120000", "https://example.com"]);
+
+				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✗ No screenshot found at 2024-01-01 12:00"));
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Use --list to see available screenshots."));
+			});
+
+			it("should exit when no archived version found", async () => {
+				mockFetchWithCache.mockResolvedValue({
+					archived_snapshots: {
+						closest: {
+							available: false,
+						},
+					},
+				});
+
+				const args = parseArgs(["https://example.com"]);
+
+				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+
+				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✗ No archived version found"));
+			});
+
+			it("should handle write errors when downloading screenshot", async () => {
+				mockFetchWithCache.mockResolvedValue({
+					archived_snapshots: {
+						closest: {
+							available: true,
+							timestamp: "20240101120000",
+						},
+					},
+				});
+				vi.mocked(global.fetch).mockResolvedValueOnce({
+					json: async () => [
+						["timestamp", "url", "mime", "status", "digest", "length"],
+						["20240101120000", "url", "image/png", "200", "digest", "1000"],
+					],
+				} as any);
+				vi.mocked(global.fetch).mockResolvedValueOnce({
+					ok: true,
+					arrayBuffer: async () => new ArrayBuffer(1024),
+				} as any);
+				vi.mocked(writeFile).mockRejectedValue(new Error("Write permission denied"));
+
+				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
+
+				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+
+				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Write permission denied");
+			});
+		});
 	});
 
 	describe("checkScreenshotAvailable helper", () => {
