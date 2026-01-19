@@ -13,15 +13,32 @@ import {
 	fetchWithCache,
 	NpmsSuggestion,
 	parseArgs,
+	ParsedArgs,
 } from "./utils";
 
-const main = async () => {
-	const { flags, options, positional } = parseArgs(process.argv.slice(2));
+export interface Dependencies {
+	fetchWithCache: typeof fetchWithCache;
+	console: Console;
+	process: NodeJS.Process;
+}
+
+export const handleError = (
+	error: unknown,
+	_query: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error("Error:", message);
+	deps.process.exit(1);
+};
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, options, positional } = args;
 	const query = positional[0];
 	const size = Math.min(parseInt(options.get("size") || "25", 10), 250);
 
 	if (!query) {
-		console.log(`Usage: npx tsx suggest.ts <query> [options]
+		deps.console.log(`Usage: npx tsx suggest.ts <query> [options]
 
 Options:
   --size=N    Number of suggestions (default: 25, max: 250)
@@ -31,19 +48,19 @@ Examples:
   npx tsx suggest.ts react
   npx tsx suggest.ts --size=10 express
   npx tsx suggest.ts @babel/core`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
 	if (query.length < 2) {
-		console.log("Error: Query must be at least 2 characters");
-		process.exit(1);
+		deps.console.log("Error: Query must be at least 2 characters");
+		deps.process.exit(1);
 	}
 
 	const apiUrl = API.suggestions(query);
-	console.log(`Searching for: "${query}"`);
+	deps.console.log(`Searching for: "${query}"`);
 
 	try {
-		const data = await fetchWithCache<NpmsSuggestion[]>({
+		const data = await deps.fetchWithCache<NpmsSuggestion[]>({
 			url: apiUrl,
 			ttl: 3600, // 1 hour
 			cacheKey: `suggest-${query}-${size}`,
@@ -54,38 +71,47 @@ Examples:
 		const results = data.slice(0, size);
 
 		if (results.length === 0) {
-			console.log(`\nNo suggestions found for "${query}"`);
-			process.exit(0);
+			deps.console.log(`\nNo suggestions found for "${query}"`);
+			deps.process.exit(0);
 		}
 
-		console.log();
-		console.log(`Suggestions for "${query}" (${results.length} result${results.length !== 1 ? "s" : ""})`);
-		console.log("-".repeat(query.length + 25));
-		console.log();
+		deps.console.log();
+		deps.console.log(`Suggestions for "${query}" (${results.length} result${results.length !== 1 ? "s" : ""})`);
+		deps.console.log("-".repeat(query.length + 25));
+		deps.console.log();
 
 		// Show top 15 detailed results
 		const showDetailed = Math.min(results.length, 15);
 		results.slice(0, showDetailed).forEach((pkg, index) => {
-			console.log(`${index + 1}. ${pkg.name}`);
-			console.log(`   Score: ${pkg.score.toLocaleString()}`);
-			console.log(`   URL: https://www.npmjs.com/package/${pkg.name}`);
+			deps.console.log(`${index + 1}. ${pkg.name}`);
+			deps.console.log(`   Score: ${pkg.score.toLocaleString()}`);
+			deps.console.log(`   URL: https://www.npmjs.com/package/${pkg.name}`);
 			if (index < showDetailed - 1) {
-				console.log();
+				deps.console.log();
 			}
 		});
 
 		// Show condensed list for additional results
 		if (results.length > 15) {
-			console.log();
-			console.log(`Top ${results.length} suggestions:`);
-			console.log(`  ${results.map((r) => r.name).join(", ")}`);
+			deps.console.log();
+			deps.console.log(`Top ${results.length} suggestions:`);
+			deps.console.log(`  ${results.map((r) => r.name).join(", ")}`);
 		}
 
-		console.log();
+		deps.console.log();
 	} catch (error) {
-		console.error("Error:", error);
-		process.exit(1);
+		handleError(error, query, deps);
 	}
 };
 
-main();
+const defaultDeps: Dependencies = {
+	fetchWithCache,
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		handleError(error, "", defaultDeps);
+	});
+}
