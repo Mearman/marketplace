@@ -10,6 +10,51 @@
 import type { Parser, ConversionResult, ConversionWarning, BibEntry, CSLItemType } from "../types.js";
 
 /**
+ * Type guard to check if a string is a valid CSLItemType
+ * Uses a Set for O(1) lookup and type safety without type assertions
+ */
+function isCSLItemType(value: string): value is CSLItemType {
+	const validTypes = new Set<string>([
+		"article",
+		"article-journal",
+		"article-magazine",
+		"article-newspaper",
+		"bill",
+		"book",
+		"broadcast",
+		"chapter",
+		"dataset",
+		"entry",
+		"entry-dictionary",
+		"entry-encyclopedia",
+		"figure",
+		"graphic",
+		"interview",
+		"legal_case",
+		"legislation",
+		"manuscript",
+		"map",
+		"motion_picture",
+		"musical_score",
+		"paper-conference",
+		"patent",
+		"personal_communication",
+		"post",
+		"post-weblog",
+		"report",
+		"review",
+		"review-book",
+		"song",
+		"speech",
+		"thesis",
+		"treaty",
+		"webpage",
+		"software",
+	]);
+	return validTypes.has(value);
+}
+
+/**
  * CSL JSON Parser Implementation
  */
 export class CSLJSONParser implements Parser {
@@ -64,7 +109,7 @@ export class CSLJSONParser implements Parser {
 	/**
    * Parse a single CSL JSON item into BibEntry
    */
-	private parseEntry(item: any, index: number): BibEntry {
+	private parseEntry(item: Record<string, unknown>, index: number): BibEntry {
 		// Validate required fields
 		if (!item.id) {
 			throw new Error(`Entry at index ${index} missing required 'id' field`);
@@ -89,8 +134,8 @@ export class CSLJSONParser implements Parser {
 				continue; // Already handled
 			}
 
-			// Store field in entry
-			(entry as any)[key] = value;
+			// Store field in entry (BibEntry has index signature for dynamic access)
+			entry[key] = value;
 		}
 
 		return entry;
@@ -99,17 +144,21 @@ export class CSLJSONParser implements Parser {
 	/**
    * Normalize type field to CSLItemType
    */
-	private normalizeType(type: any): CSLItemType {
+	private normalizeType(type: unknown): CSLItemType {
 		if (typeof type !== "string") {
 			return "article"; // Fallback
 		}
 
 		// CSL JSON types should already be normalized
 		// Just validate it's a known type
-		const normalized = type.toLowerCase().replace(/_/g, "_");
+		const normalized = type.toLowerCase().replace(/_/g, "-");
 
-		// If unknown type, fall back to article
-		return normalized as CSLItemType;
+		// Use type guard to check if normalized is valid
+		if (isCSLItemType(normalized)) {
+			return normalized;
+		}
+
+		return "article";
 	}
 
 	/**

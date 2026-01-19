@@ -24,7 +24,7 @@ import { parseName } from "./names.js";
 import { parseDate } from "./dates.js";
 
 // Type guard for valid BibEntry keys
-function isValidBibEntryKey(key: string): key is keyof BibEntry {
+function isValidBibEntryKey(key: string): key is Extract<keyof BibEntry, string> {
 	const validKeys: Array<string> = [
 		"id",
 		"type",

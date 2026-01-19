@@ -325,7 +325,7 @@ export class BibTeXParser implements Parser {
 				}
 			} else {
 				// Direct mapping
-				(entry as any)[cslField] = decodedValue;
+				(entry as Record<string, unknown>)[cslField] = decodedValue;
 			}
 		}
 

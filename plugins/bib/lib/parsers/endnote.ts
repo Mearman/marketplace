@@ -24,7 +24,7 @@
  * </xml>
  */
 
-import type { Parser, ConversionResult, ConversionWarning, BibEntry } from "../types.js";
+import type { Parser, ConversionResult, ConversionWarning, BibEntry, Person } from "../types.js";
 import { normalizeToCslType } from "../mappings/entry-types.js";
 import { parseName } from "./names.js";
 import { parseDate } from "./dates.js";
@@ -205,12 +205,12 @@ export class EndNoteXMLParser implements Parser {
 	/**
    * Extract authors from contributors section
    */
-	private extractAuthors(xml: string): any[] {
+	private extractAuthors(xml: string): Person[] {
 		const authorsSection = this.extractTag(xml, "authors");
 		if (!authorsSection) return [];
 
 		const authorRegex = /<author>([^<]+)<\/author>/gi;
-		const authors: any[] = [];
+		const authors: Person[] = [];
 		let match: RegExpExecArray | null;
 
 		while ((match = authorRegex.exec(authorsSection)) !== null) {
@@ -223,12 +223,12 @@ export class EndNoteXMLParser implements Parser {
 	/**
    * Extract editors from contributors section
    */
-	private extractEditors(xml: string): any[] {
+	private extractEditors(xml: string): Person[] {
 		const editorsSection = this.extractTag(xml, "editors") || this.extractTag(xml, "secondary-authors");
 		if (!editorsSection) return [];
 
 		const editorRegex = /<(?:editor|author)>([^<]+)<\/(?:editor|author)>/gi;
-		const editors: any[] = [];
+		const editors: Person[] = [];
 		let match: RegExpExecArray | null;
 
 		while ((match = editorRegex.exec(editorsSection)) !== null) {
