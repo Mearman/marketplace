@@ -43,6 +43,13 @@ export default [
 			"test-naming/test-file-naming": "error",
 		},
 	},
+	{
+		// Allow 'any' types in test files for mocks
+		files: ["**/*.unit.test.ts", "**/*.test.ts"],
+		rules: {
+			"@typescript-eslint/no-explicit-any": "off",
+		},
+	},
 	...jsonc.configs["flat/recommended-with-json"].map((config) => ({
 		...config,
 		files: ["**/*.json"],
