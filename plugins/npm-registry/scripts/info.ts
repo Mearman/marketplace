@@ -13,14 +13,47 @@ import {
 	NpmPackage,
 	parseArgs,
 	parseRepositoryUrl,
+	type ParsedArgs,
 } from "./utils";
 
-const main = async () => {
-	const { flags, positional } = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	fetchWithCache: typeof fetchWithCache;
+	console: Console;
+	process: NodeJS.Process;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	packageName: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	if (message.includes("Resource not found")) {
+		deps.console.log(`Package "${packageName}" not found`);
+	} else {
+		deps.console.error("Error:", message);
+	}
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, positional } = args;
 	const packageName = positional[0];
 
 	if (!packageName) {
-		console.log(`Usage: npx tsx info.ts <package-name> [options]
+		deps.console.log(`Usage: npx tsx info.ts <package-name> [options]
 
 Options:
   --no-cache  Bypass cache and fetch fresh data
@@ -29,14 +62,14 @@ Examples:
   npx tsx info.ts react
   npx tsx info.ts @babel/core
   npx tsx info.ts express`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
 	const apiUrl = API.package(packageName);
-	console.log(`Fetching: ${packageName}`);
+	deps.console.log(`Fetching: ${packageName}`);
 
 	try {
-		const data = await fetchWithCache<NpmPackage>({
+		const data = await deps.fetchWithCache<NpmPackage>({
 			url: apiUrl,
 			ttl: 21600, // 6 hours
 			cacheKey: packageName,
@@ -44,59 +77,59 @@ Examples:
 		});
 
 		// Display package information
-		console.log();
-		console.log(`${data.name}`);
-		console.log("-".repeat(data.name.length));
+		deps.console.log();
+		deps.console.log(`${data.name}`);
+		deps.console.log("-".repeat(data.name.length));
 
 		if (data.description) {
-			console.log(`Description: ${data.description}`);
+			deps.console.log(`Description: ${data.description}`);
 		}
 
 		const latestVersion = data["dist-tags"]?.latest || Object.keys(data.versions || {}).pop();
-		console.log(`Latest: ${latestVersion}`);
+		deps.console.log(`Latest: ${latestVersion}`);
 
 		if (data.license) {
-			console.log(`License: ${data.license}`);
+			deps.console.log(`License: ${data.license}`);
 		}
 
 		if (data.homepage) {
-			console.log(`Homepage: ${data.homepage}`);
+			deps.console.log(`Homepage: ${data.homepage}`);
 		}
 
 		const repoUrl = parseRepositoryUrl(data.repository);
 		if (repoUrl) {
-			console.log(`Repository: ${repoUrl}`);
+			deps.console.log(`Repository: ${repoUrl}`);
 		}
 
 		if (data.bugs?.url) {
-			console.log(`Bugs: ${data.bugs.url}`);
+			deps.console.log(`Bugs: ${data.bugs.url}`);
 		}
 
 		// Author
 		if (data.author) {
 			const author = typeof data.author === "string" ? data.author : data.author.name || data.author.email || "";
 			if (author) {
-				console.log(`Author: ${author}`);
+				deps.console.log(`Author: ${author}`);
 			}
 		}
 
 		// Keywords
 		if (data.keywords && data.keywords.length > 0) {
-			console.log(`Keywords: ${data.keywords.slice(0, 10).join(", ")}`);
+			deps.console.log(`Keywords: ${data.keywords.slice(0, 10).join(", ")}`);
 			if (data.keywords.length > 10) {
-				console.log(`  (and ${data.keywords.length - 10} more)`);
+				deps.console.log(`  (and ${data.keywords.length - 10} more)`);
 			}
 		}
 
 		// Maintainers
 		if (data.maintainers && data.maintainers.length > 0) {
-			console.log("\nMaintainers:");
+			deps.console.log("\nMaintainers:");
 			data.maintainers.slice(0, 5).forEach((m) => {
 				const name = m.name || m.email || "unknown";
-				console.log(`  - ${name}`);
+				deps.console.log(`  - ${name}`);
 			});
 			if (data.maintainers.length > 5) {
-				console.log(`  (and ${data.maintainers.length - 5} more)`);
+				deps.console.log(`  (and ${data.maintainers.length - 5} more)`);
 			}
 		}
 
@@ -108,10 +141,10 @@ Examples:
 				.slice(0, 5);
 
 			if (versions.length > 0) {
-				console.log("\nVersions (last 5):");
+				deps.console.log("\nVersions (last 5):");
 				versions.forEach(([version, date]) => {
 					const d = new Date(date as string);
-					console.log(`  ${version} - Published ${d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}`);
+					deps.console.log(`  ${version} - Published ${d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}`);
 				});
 			}
 		}
@@ -119,31 +152,41 @@ Examples:
 		// Dependencies for latest version
 		if (latestVersion && data.versions?.[latestVersion]) {
 			const versionData = data.versions[latestVersion];
-			const deps = versionData.dependencies;
+			const depsCount = versionData.dependencies;
 
-			if (deps && Object.keys(deps).length > 0) {
-				console.log("\nDependencies (latest):");
-				Object.entries(deps)
+			if (depsCount && Object.keys(depsCount).length > 0) {
+				deps.console.log("\nDependencies (latest):");
+				Object.entries(depsCount)
 					.slice(0, 10)
 					.forEach(([name, range]) => {
-						console.log(`  ${name} ${range}`);
+						deps.console.log(`  ${name} ${range}`);
 					});
-				if (Object.keys(deps).length > 10) {
-					console.log(`  (and ${Object.keys(deps).length - 10} more)`);
+				if (Object.keys(depsCount).length > 10) {
+					deps.console.log(`  (and ${Object.keys(depsCount).length - 10} more)`);
 				}
 			}
 		}
 
-		console.log();
+		deps.console.log();
 	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		if (message.includes("Resource not found")) {
-			console.log(`Package "${packageName}" not found`);
-		} else {
-			console.error("Error:", message);
-		}
-		process.exit(1);
+		handleError(error, packageName, deps);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	fetchWithCache,
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("Error:", message);
+		process.exit(1);
+	});
+}

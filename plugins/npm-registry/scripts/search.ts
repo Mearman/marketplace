@@ -14,16 +14,45 @@ import {
 	fetchWithCache,
 	NpmSearchResponse,
 	parseArgs,
+	type ParsedArgs,
 } from "./utils";
 
-const main = async () => {
-	const { flags, options, positional } = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	fetchWithCache: typeof fetchWithCache;
+	console: Console;
+	process: NodeJS.Process;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	_query: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error("Error:", message);
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, options, positional } = args;
 	const query = positional[0];
 	const size = parseInt(options.get("size") || "20", 10);
 	const from = parseInt(options.get("from") || "0", 10);
 
 	if (!query) {
-		console.log(`Usage: npx tsx search.ts <query> [options]
+		deps.console.log(`Usage: npx tsx search.ts <query> [options]
 
 Options:
   --size=N    Number of results (default: 20, max: 250)
@@ -34,14 +63,14 @@ Examples:
   npx tsx search.ts http
   npx tsx search.ts react --size=10
   npx tsx search.ts database --from=20`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
 	const apiUrl = API.search(query, Math.min(size, 250), from);
-	console.log(`Searching: "${query}"`);
+	deps.console.log(`Searching: "${query}"`);
 
 	try {
-		const data = await fetchWithCache<NpmSearchResponse>({
+		const data = await deps.fetchWithCache<NpmSearchResponse>({
 			url: apiUrl,
 			ttl: 3600, // 1 hour
 			cacheKey: `${query}-${size}-${from}`,
@@ -49,11 +78,11 @@ Examples:
 		});
 
 		if (data.objects.length === 0) {
-			console.log(`No packages found for "${query}"`);
-			process.exit(0);
+			deps.console.log(`No packages found for "${query}"`);
+			deps.process.exit(0);
 		}
 
-		console.log(`\nFound ${data.total.toLocaleString()} package(s) for "${query}"\n`);
+		deps.console.log(`\nFound ${data.total.toLocaleString()} package(s) for "${query}"\n`);
 
 		data.objects.forEach((result, index) => {
 			const pkg = result.package;
@@ -62,27 +91,42 @@ Examples:
 			const popularity = result.score.detail.popularity * 100;
 			const maintenance = result.score.detail.maintenance * 100;
 
-			console.log(`${from + index + 1}. ${pkg.name} (${pkg.version})`);
+			deps.console.log(`${from + index + 1}. ${pkg.name} (${pkg.version})`);
 			if (pkg.description) {
-				console.log(`   ${pkg.description}`);
+				deps.console.log(`   ${pkg.description}`);
 			}
-			console.log(
+			deps.console.log(
 				`   Score: ${score.toFixed(0)}% (quality: ${quality.toFixed(0)}%, popularity: ${popularity.toFixed(0)}%, maintenance: ${maintenance.toFixed(0)}%)`
 			);
 			if (pkg.links?.npm) {
-				console.log(`   ${pkg.links.npm}`);
+				deps.console.log(`   ${pkg.links.npm}`);
 			}
-			console.log();
+			deps.console.log();
 		});
 
 		if (data.total > from + size) {
-			console.log(`Showing ${from + 1}-${from + data.objects.length} of ${data.total.toLocaleString()} results`);
-			console.log(`Use --from=${from + size} to see more results`);
+			deps.console.log(`Showing ${from + 1}-${from + data.objects.length} of ${data.total.toLocaleString()} results`);
+			deps.console.log(`Use --from=${from + size} to see more results`);
 		}
 	} catch (error) {
-		console.error("Error:", error);
-		process.exit(1);
+		handleError(error, query, deps);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	fetchWithCache,
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("Error:", message);
+		process.exit(1);
+	});
+}
