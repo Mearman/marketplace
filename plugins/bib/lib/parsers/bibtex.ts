@@ -17,7 +17,7 @@ import { normalizeToCslType } from "../mappings/entry-types.js";
 import { getCslFieldFromBibTeX } from "../mappings/fields.js";
 import { parseNames } from "./names.js";
 import { parseBibTeXDate } from "./dates.js";
-import { decodeLatex } from "./latex.js";
+import { decodeLatex } from "../../../../lib/latex/index.js";
 
 /**
  * Parsed BibTeX entry (raw format before normalization)

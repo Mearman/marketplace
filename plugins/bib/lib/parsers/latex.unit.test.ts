@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { decodeLatex, encodeLatex, hasLatexCommands, stripLatex, protectText, unprotectText } from "./latex.js";
+import { decodeLatex, encodeLatex, hasLatexCommands, stripLatex, protectText, unprotectText } from "../../../../lib/latex/index.js";
 
 describe("decodeLatex", () => {
   it("should decode umlaut", () => {

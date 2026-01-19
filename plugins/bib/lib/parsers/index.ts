@@ -4,7 +4,7 @@
 
 export * from "./names.js";
 export * from "./dates.js";
-export * from "./latex.js";
+export * from "../../../../lib/latex/index.js";
 export * from "./bibtex.js";
 export * from "./biblatex.js";
 export * from "./csl.js";
