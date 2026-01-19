@@ -32,6 +32,140 @@ Ask: "Check if example.com is archived in the Wayback Machine"
 <!-- AUTO-GENERATED PLUGINS START -->
 ## Available Plugins
 
+### Bibliography Manipulation v0.1.0
+
+Convert, validate, merge, filter, and perform CRUD operations on bibliography files (BibTeX, BibLaTeX, RIS, EndNote XML, CSL JSON)
+
+```bash
+/plugin install bib@mearman
+```
+
+##### Skills
+
+<details>
+<summary>bib-convert</summary>
+
+Convert bibliography files between 5 supported formats:
+
+
+Convert bibliography to another format:
+
+```bash
+npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/convert.ts input.bib --to=csl-json --output=output.json
+```
+
+### Options
+
+- `--from=<format>` - Source format (auto-detected if omitted)
+- `--to=<format>` - Target format (**required**)
+- `--output=<file>` - Output file (prints to stdout if omitted)
+- `--sort` - Sort entries by ID
+- `--indent=<string>` - Indentation for formatted output (default: 2 spaces)
+
+### Supported Formats
+
+- `bibtex` - BibTeX (.bib)
+- `biblatex` - BibLaTeX (.bib)
+- `csl-json` - CSL JSON (.json)
+- `ris` - RIS (.ris)
+- `endnote` - EndNote XML (.xml)
+
+
+</details>
+
+<details>
+<summary>bib-create</summary>
+
+Create and add new entries to bibliography files.
+
+
+```bash
+npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/create.ts output.bib --id=<id> --type=<type> [fields...]
+```
+
+
+</details>
+
+<details>
+<summary>bib-delete</summary>
+
+Delete entries from bibliography files.
+
+
+```bash
+npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/delete.ts input.bib --id=<id> --output=cleaned.bib
+```
+
+
+</details>
+
+<details>
+<summary>bib-filter</summary>
+
+Filter bibliography entries by various criteria.
+
+
+```bash
+npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/filter.ts input.bib [criteria] --output=filtered.bib
+```
+
+
+</details>
+
+<details>
+<summary>bib-merge</summary>
+
+Merge multiple bibliography files, with automatic deduplication.
+
+
+```bash
+npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/merge.ts file1.bib file2.bib file3.bib --output=merged.bib
+```
+
+
+</details>
+
+<details>
+<summary>bib-read</summary>
+
+Read and display bibliography entries in a human-readable format.
+
+
+```bash
+npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/read.ts input.bib [--id=<id>]
+```
+
+
+</details>
+
+<details>
+<summary>bib-update</summary>
+
+Update existing bibliography entries.
+
+
+```bash
+npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/update.ts input.bib --id=<id> [fields...] --output=updated.bib
+```
+
+
+</details>
+
+<details>
+<summary>bib-validate</summary>
+
+Validate bibliography files for syntax errors, format compliance, and completeness.
+
+
+```bash
+npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/validate.ts input.bib
+```
+
+The script automatically detects the format and validates accordingly.
+
+
+</details>
+
 ### CVE Search v0.3.0
 
 Tools for searching vulnerabilities by CVE ID, product name, or vendor, with detailed vulnerability information and dependency auditing
