@@ -18,15 +18,45 @@ import {
 	GravatarUrlOptions,
 	md5,
 	parseArgs,
+	type ParsedArgs,
 } from "./utils";
 
-const main = async () => {
-	const { flags, options, positional } = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	fetchWithCache: typeof fetchWithCache;
+	console: Console;
+	process: NodeJS.Process;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	_email: string,
+	_outputFile: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error("\nError:", message);
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, options, positional } = args;
 	const email = positional[0];
 	const outputFile = positional[1];
 
 	if (!email || !outputFile) {
-		console.log(`Usage: npx tsx download.ts <email> <output-file> [options]
+		deps.console.log(`Usage: npx tsx download.ts <email> <output-file> [options]
 
 Options:
   --size=N          Image size in pixels (default: 200, max: 2048)
@@ -38,7 +68,7 @@ Examples:
   npx tsx download.ts user@example.com avatar.jpg
   npx tsx download.ts user@example.com avatar.png --size=400
   npx tsx download.ts user@example.com avatar.jpg --default=identicon`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
 	// Parse options
@@ -55,8 +85,8 @@ Examples:
 		if (validDefaults.includes(defaultType)) {
 			urlOptions.default = defaultType as GravatarDefault;
 		} else {
-			console.error(`Error: Invalid default type. Must be one of: ${validDefaults.join(", ")}`);
-			process.exit(1);
+			deps.console.error(`Error: Invalid default type. Must be one of: ${validDefaults.join(", ")}`);
+			deps.process.exit(1);
 		}
 	}
 
@@ -66,20 +96,20 @@ Examples:
 		if (validRatings.includes(rating)) {
 			urlOptions.rating = rating as "g" | "pg" | "r" | "x";
 		} else {
-			console.error(`Error: Invalid rating level. Must be one of: ${validRatings.join(", ")}`);
-			process.exit(1);
+			deps.console.error(`Error: Invalid rating level. Must be one of: ${validRatings.join(", ")}`);
+			deps.process.exit(1);
 		}
 	}
 
-	console.log(`Email: ${email}`);
-	console.log(`Output: ${outputFile}`);
-	console.log(`Hash: ${md5(email)}`);
+	deps.console.log(`Email: ${email}`);
+	deps.console.log(`Output: ${outputFile}`);
+	deps.console.log(`Hash: ${md5(email)}`);
 
 	try {
 		const url = buildGravatarUrl(email, urlOptions);
 
 		// Download image using fetchWithCache
-		const buffer = await fetchWithCache<ArrayBuffer>({
+		const buffer = await deps.fetchWithCache<ArrayBuffer>({
 			url,
 			bypassCache: flags.has("no-cache"),
 			parseResponse: async (response) => response.arrayBuffer(),
@@ -88,16 +118,30 @@ Examples:
 		// Write to file
 		await writeFile(outputFile, Buffer.from(buffer));
 
-		console.log();
-		console.log("✓ Downloaded successfully");
-		console.log(`  Size: ${(buffer.byteLength / 1024).toFixed(1)} KB`);
-		console.log(`  File: ${outputFile}`);
-		console.log();
+		deps.console.log();
+		deps.console.log("✓ Downloaded successfully");
+		deps.console.log(`  Size: ${(buffer.byteLength / 1024).toFixed(1)} KB`);
+		deps.console.log(`  File: ${outputFile}`);
+		deps.console.log();
 	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		console.error("\nError:", message);
-		process.exit(1);
+		handleError(error, email, outputFile, deps);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	fetchWithCache,
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("Error:", message);
+		process.exit(1);
+	});
+}

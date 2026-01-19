@@ -16,14 +16,42 @@ import {
 	GravatarUrlOptions,
 	md5,
 	parseArgs,
+	type ParsedArgs,
 } from "./utils";
 
-const main = async () => {
-	const { flags, options, positional } = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	console: Console;
+	process: NodeJS.Process;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	_email: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error("Error:", message);
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, options, positional } = args;
 	const email = positional[0];
 
 	if (!email) {
-		console.log(`Usage: npx tsx url.ts <email> [options]
+		deps.console.log(`Usage: npx tsx url.ts <email> [options]
 
 Options:
   --size=N          Image size in pixels (default: 80, max: 2048)
@@ -36,7 +64,7 @@ Examples:
   npx tsx url.ts user@example.com --size=200
   npx tsx url.ts user@example.com --default=identicon
   npx tsx url.ts user@example.com --force-default --default=robohash`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
 	// Parse options
@@ -53,8 +81,8 @@ Examples:
 		if (validDefaults.includes(defaultType)) {
 			urlOptions.default = defaultType as GravatarDefault;
 		} else {
-			console.error(`Error: Invalid default type. Must be one of: ${validDefaults.join(", ")}`);
-			process.exit(1);
+			deps.console.error(`Error: Invalid default type. Must be one of: ${validDefaults.join(", ")}`);
+			deps.process.exit(1);
 		}
 	}
 
@@ -64,8 +92,8 @@ Examples:
 		if (validRatings.includes(rating)) {
 			urlOptions.rating = rating as "g" | "pg" | "r" | "x";
 		} else {
-			console.error(`Error: Invalid rating level. Must be one of: ${validRatings.join(", ")}`);
-			process.exit(1);
+			deps.console.error(`Error: Invalid rating level. Must be one of: ${validRatings.join(", ")}`);
+			deps.process.exit(1);
 		}
 	}
 
@@ -73,15 +101,15 @@ Examples:
 		urlOptions.forceDefault = true;
 	}
 
-	console.log(`Email: ${email}`);
+	deps.console.log(`Email: ${email}`);
 
 	try {
 		// Generate Gravatar URL (no caching needed - MD5 is trivial)
 		const url = buildGravatarUrl(email, urlOptions);
 		const hash = md5(email);
 
-		console.log(`Hash: ${hash}`);
-		console.log(`URL: ${url}`);
+		deps.console.log(`Hash: ${hash}`);
+		deps.console.log(`URL: ${url}`);
 
 		// Show options
 		const params: string[] = [];
@@ -91,12 +119,26 @@ Examples:
 		if (urlOptions.forceDefault) params.push("force-default");
 
 		if (params.length > 0) {
-			console.log(`Options: ${params.join(", ")}`);
+			deps.console.log(`Options: ${params.join(", ")}`);
 		}
 	} catch (error) {
-		console.error("Error:", error);
-		process.exit(1);
+		handleError(error, email, deps);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("Error:", message);
+		process.exit(1);
+	});
+}

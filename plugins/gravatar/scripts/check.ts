@@ -12,14 +12,43 @@ import {
 	fetchWithCache,
 	md5,
 	parseArgs,
+	type ParsedArgs,
 } from "./utils";
 
-const main = async () => {
-	const { flags, positional } = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	fetchWithCache: typeof fetchWithCache;
+	console: Console;
+	process: NodeJS.Process;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	_email: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	deps.console.error("\nError:", message);
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, positional } = args;
 	const email = positional[0];
 
 	if (!email) {
-		console.log(`Usage: npx tsx check.ts <email> [options]
+		deps.console.log(`Usage: npx tsx check.ts <email> [options]
 
 Options:
   --no-cache  Bypass cache and fetch fresh data
@@ -27,10 +56,10 @@ Options:
 Examples:
   npx tsx check.ts user@example.com
   npx tsx check.ts beau@dentedreality.com.au`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
-	console.log(`Checking: ${email}`);
+	deps.console.log(`Checking: ${email}`);
 
 	try {
 		const url = buildGravatarUrl(email, { default: "404" });
@@ -40,7 +69,7 @@ Examples:
 		// Using d=404 means Gravatar returns 404 if no image exists
 		let exists = false;
 		try {
-			await fetchWithCache<boolean>({
+			await deps.fetchWithCache<boolean>({
 				url,
 				bypassCache: flags.has("no-cache"),
 				fetchOptions: {
@@ -57,23 +86,38 @@ Examples:
 			}
 		}
 
-		console.log();
+		deps.console.log();
 		if (exists) {
-			console.log("✓ Gravatar exists");
-			console.log(`  Hash: ${hash}`);
-			console.log(`  URL: ${buildGravatarUrl(email)}`);
-			console.log(`  Profile: https://www.gravatar.com/${hash}`);
+			deps.console.log("✓ Gravatar exists");
+			deps.console.log(`  Hash: ${hash}`);
+			deps.console.log(`  URL: ${buildGravatarUrl(email)}`);
+			deps.console.log(`  Profile: https://www.gravatar.com/${hash}`);
 		} else {
-			console.log("✗ No Gravatar found");
-			console.log(`  Hash: ${hash}`);
-			console.log("  This email does not have a Gravatar image.");
-			console.log("  A default image will be shown.");
+			deps.console.log("✗ No Gravatar found");
+			deps.console.log(`  Hash: ${hash}`);
+			deps.console.log("  This email does not have a Gravatar image.");
+			deps.console.log("  A default image will be shown.");
 		}
-		console.log();
+		deps.console.log();
 	} catch (error) {
-		console.error("Error:", error);
-		process.exit(1);
+		handleError(error, email, deps);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	fetchWithCache,
+	console,
+	process,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("Error:", message);
+		process.exit(1);
+	});
+}
