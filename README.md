@@ -999,6 +999,68 @@ Run from the pypi-json plugin directory: `~/.claude/plugins/cache/pypi-json/`
 
 </details>
 
+### LaTeX Manipulation v0.1.0
+
+Encode/decode Unicode ↔ LaTeX commands, strip formatting for plain text, protect text from LaTeX interpretation
+
+```bash
+/plugin install tex@mearman
+```
+
+##### Skills
+
+<details>
+<summary>LaTeX Command Decoder</summary>
+
+Convert LaTeX command syntax to Unicode characters for readable text output.
+
+
+```bash
+npx tsx scripts/decode.ts [options] <text-or-file>
+```
+
+
+</details>
+
+<details>
+<summary>LaTeX Unicode Encoder</summary>
+
+Convert Unicode characters to LaTeX command syntax for use in LaTeX documents.
+
+
+```bash
+npx tsx scripts/encode.ts [options] <text-or-file>
+```
+
+
+</details>
+
+<details>
+<summary>LaTeX Text Protector</summary>
+
+Wrap text in protective braces to prevent LaTeX from interpreting or modifying it.
+
+
+```bash
+npx tsx scripts/protect.ts [options] <text-or-file>
+```
+
+
+</details>
+
+<details>
+<summary>LaTeX Command Stripper</summary>
+
+Extract plain text from LaTeX documents by removing all commands and formatting.
+
+
+```bash
+npx tsx scripts/strip.ts [options] <text-or-file>
+```
+
+
+</details>
+
 ### Wayback Machine Archive v0.7.0
 
 Tools for checking, submitting, listing, screenshotting, and cache management for archived URLs
