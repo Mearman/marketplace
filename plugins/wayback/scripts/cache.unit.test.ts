@@ -107,6 +107,73 @@ describe("cache.ts", () => {
 
 			expect(mockConsole.log).toHaveBeenCalledWith("Cached files: 2");
 		});
+
+		it("should show verbose status with files", async () => {
+			const mockDate = new Date("2024-01-15T10:30:00Z");
+			vi.mocked(fs.readdir).mockResolvedValue(["file1.json", "file2.json"] as any);
+			vi.mocked(fs.stat).mockResolvedValue({
+				size: 2048,
+				mtime: mockDate,
+			} as any);
+
+			const args = { flags: new Set<string>(["--verbose"]), positional: ["status"] };
+
+			await main(args, deps);
+
+			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Total size:"));
+			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Cache entries"));
+		});
+
+		it("should show verbose status with age formatting", async () => {
+			const recentDate = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
+			vi.mocked(fs.readdir).mockResolvedValue(["recent.json"] as any);
+			vi.mocked(fs.stat).mockResolvedValue({
+				size: 1024,
+				mtime: recentDate,
+			} as any);
+
+			const args = { flags: new Set<string>(["--verbose"]), positional: ["status"] };
+
+			await main(args, deps);
+
+			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("30m ago"));
+		});
+
+		it("should handle ENOENT error in status", async () => {
+			const error: NodeJS.ErrnoException = new Error("Directory not found");
+			error.code = "ENOENT";
+			vi.mocked(fs.readdir).mockRejectedValue(error);
+
+			const args = { flags: new Set<string>(), positional: ["status"] };
+
+			await main(args, deps);
+
+			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("does not exist yet"));
+		});
+
+		it("should show verbose clear output", async () => {
+			vi.mocked(fs.readdir).mockResolvedValue(["file1.json", "file2.json"] as any);
+			vi.mocked(fs.stat).mockResolvedValue({ size: 1024 } as any);
+			vi.mocked(fs.unlink).mockResolvedValue(undefined);
+
+			const args = { flags: new Set<string>(["--verbose"]), positional: ["clear"] };
+
+			await main(args, deps);
+
+			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("KB)"));
+		});
+
+		it("should handle ENOENT error in clear", async () => {
+			const error: NodeJS.ErrnoException = new Error("Directory not found");
+			error.code = "ENOENT";
+			vi.mocked(fs.readdir).mockRejectedValue(error);
+
+			const args = { flags: new Set<string>(), positional: ["clear"] };
+
+			await main(args, deps);
+
+			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("not found"));
+		});
 	});
 
 	describe("handleError", () => {
