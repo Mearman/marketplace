@@ -10,6 +10,7 @@
     "./skills/bib-create",
     "./skills/bib-read",
     "./skills/bib-update",
-    "./skills/bib-delete"
+    "./skills/bib-delete",
+    "./skills/bib-cite-web"
   ]
 }

@@ -43,6 +43,22 @@ Convert, validate, merge, filter, and perform CRUD operations on bibliography fi
 ##### Skills
 
 <details>
+<summary>Web Page Citation Creator</summary>
+
+Create bibliography citations from web page URLs with automatic archival snapshot and metadata extraction.
+
+
+```bash
+npx tsx plugins/bib/scripts/cite-web.ts <url>
+npx tsx plugins/bib/scripts/cite-web.ts <url> --format=bibtex
+npx tsx plugins/bib/scripts/cite-web.ts <url> --no-wayback
+npx tsx plugins/bib/scripts/cite-web.ts <url> --output=citations.bib
+```
+
+
+</details>
+
+<details>
 <summary>bib-convert</summary>
 
 Convert bibliography files between 5 supported formats:
