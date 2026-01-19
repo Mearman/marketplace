@@ -2,6 +2,7 @@ import tseslint from "@typescript-eslint/eslint-plugin";
 import tseslintParser from "@typescript-eslint/parser";
 import jsonc from "eslint-plugin-jsonc";
 import markdown from "@eslint/markdown";
+import testNamingRule from "./scripts/eslint-test-naming-rule";
 
 export default [
 	{
@@ -27,6 +28,11 @@ export default [
 		},
 		plugins: {
 			"@typescript-eslint": tseslint,
+			"test-naming": {
+				rules: {
+					"test-file-naming": testNamingRule,
+				},
+			},
 		},
 		rules: {
 			...tseslint.configs.recommended.rules,
@@ -34,6 +40,7 @@ export default [
 			"@typescript-eslint/no-explicit-any": "error",
 			"indent": ["error", "tab"],
 			"quotes": ["error", "double"],
+			"test-naming/test-file-naming": "error",
 		},
 	},
 	...jsonc.configs["flat/recommended-with-json"].map((config) => ({
