@@ -1010,6 +1010,36 @@ Encode/decode Unicode ↔ LaTeX commands, strip formatting for plain text, prote
 ##### Skills
 
 <details>
+<summary>LaTeX to Markdown Converter</summary>
+
+Convert LaTeX documents to Markdown format with support for common LaTeX commands and environments.
+
+
+```bash
+npx tsx plugins/tex/scripts/latex-to-md.ts <text>
+npx tsx plugins/tex/scripts/latex-to-md.ts --file <input.tex>
+npx tsx plugins/tex/scripts/latex-to-md.ts --file <input.tex> --output <output.md>
+```
+
+
+</details>
+
+<details>
+<summary>Markdown to LaTeX Converter</summary>
+
+Convert Markdown documents to LaTeX format with comprehensive support for common Markdown syntax.
+
+
+```bash
+npx tsx plugins/tex/scripts/md-to-latex.ts <text>
+npx tsx plugins/tex/scripts/md-to-latex.ts --file <input.md>
+npx tsx plugins/tex/scripts/md-to-latex.ts --file <input.md> --output <output.tex>
+```
+
+
+</details>
+
+<details>
 <summary>LaTeX Command Decoder</summary>
 
 Convert LaTeX command syntax to Unicode characters for readable text output.

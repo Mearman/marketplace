@@ -6,6 +6,8 @@
     "./skills/tex-encode",
     "./skills/tex-decode",
     "./skills/tex-strip",
-    "./skills/tex-protect"
+    "./skills/tex-protect",
+    "./skills/md-to-latex",
+    "./skills/latex-to-md"
   ]
 }
