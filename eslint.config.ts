@@ -48,6 +48,7 @@ export default [
 		files: ["**/*.unit.test.ts", "**/*.test.ts"],
 		rules: {
 			"@typescript-eslint/no-explicit-any": "off",
+			"@typescript-eslint/ban-ts-comment": "off",
 		},
 	},
 	...jsonc.configs["flat/recommended-with-json"].map((config) => ({
