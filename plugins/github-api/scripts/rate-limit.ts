@@ -15,11 +15,31 @@ import {
 	GitHubRateLimit,
 	getTokenFromEnv,
 	parseArgs,
+	type ParsedArgs,
 } from "./utils";
 
-const formatResetTime = (resetTimestamp: number): string => {
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	fetchWithCache: typeof fetchWithCache;
+	console: Console;
+	process: NodeJS.Process;
+	getAuthHeaders: (token?: string) => Record<string, string>;
+	getTokenFromEnv: () => string | undefined;
+	Date: {
+		now: () => number;
+	};
+}
+
+// ============================================================================
+// Formatters
+// ============================================================================
+
+const formatResetTime = (resetTimestamp: number, currentDate: Date): string => {
 	const reset = new Date(resetTimestamp * 1000);
-	const now = new Date();
+	const now = currentDate;
 	const diffMs = reset.getTime() - now.getTime();
 
 	if (diffMs <= 0) {
@@ -49,17 +69,23 @@ const formatNumber = (num: number): string => {
 	return num.toLocaleString("en-US");
 };
 
-const main = async () => {
-	const { flags, options } = parseArgs(process.argv.slice(2));
-	const token = options.get("token") || getTokenFromEnv();
+export { formatResetTime, formatNumber };
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, options } = args;
+	const token = options.get("token") || deps.getTokenFromEnv();
 
 	const apiUrl = API.rateLimit();
-	console.log("Fetching GitHub API rate limit status...");
+	deps.console.log("Fetching GitHub API rate limit status...");
 
 	try {
-		const headers = getAuthHeaders(token);
+		const headers = deps.getAuthHeaders(token);
 
-		const data = await fetchWithCache<GitHubRateLimit>({
+		const data = await deps.fetchWithCache<GitHubRateLimit>({
 			url: apiUrl,
 			ttl: 300, // 5 minutes
 			fetchOptions: { headers },
@@ -68,62 +94,84 @@ const main = async () => {
 		});
 
 		// Display rate limit information
-		console.log();
-		console.log("GitHub API Rate Limit Status");
-		console.log("-".repeat(32));
-		console.log();
+		deps.console.log();
+		deps.console.log("GitHub API Rate Limit Status");
+		deps.console.log("-".repeat(32));
+		deps.console.log();
+
+		const currentDate = new Date(deps.Date.now());
 
 		// Core API
 		const core = data.resources.core;
-		console.log("Core API:");
-		console.log(`  Limit: ${formatNumber(core.limit)} requests/hour`);
-		console.log(`  Used: ${formatNumber(core.used)} requests`);
-		console.log(`  Remaining: ${formatNumber(core.remaining)} requests`);
-		console.log(`  Resets in: ${formatResetTime(core.reset)}`);
-		console.log();
+		deps.console.log("Core API:");
+		deps.console.log(`  Limit: ${formatNumber(core.limit)} requests/hour`);
+		deps.console.log(`  Used: ${formatNumber(core.used)} requests`);
+		deps.console.log(`  Remaining: ${formatNumber(core.remaining)} requests`);
+		deps.console.log(`  Resets in: ${formatResetTime(core.reset, currentDate)}`);
+		deps.console.log();
 
 		// Search API
 		const search = data.resources.search;
-		console.log("Search API:");
-		console.log(`  Limit: ${formatNumber(search.limit)} requests/minute`);
-		console.log(`  Used: ${formatNumber(search.used)} requests`);
-		console.log(`  Remaining: ${formatNumber(search.remaining)} requests`);
-		console.log(`  Resets in: ${formatResetTime(search.reset)}`);
-		console.log();
+		deps.console.log("Search API:");
+		deps.console.log(`  Limit: ${formatNumber(search.limit)} requests/minute`);
+		deps.console.log(`  Used: ${formatNumber(search.used)} requests`);
+		deps.console.log(`  Remaining: ${formatNumber(search.remaining)} requests`);
+		deps.console.log(`  Resets in: ${formatResetTime(search.reset, currentDate)}`);
+		deps.console.log();
 
 		// Authentication status
 		if (token) {
 			const tokenPreview = token.slice(0, 7) + "...";
-			console.log(`Authentication: Authenticated (${tokenPreview})`);
+			deps.console.log(`Authentication: Authenticated (${tokenPreview})`);
 		} else {
-			console.log("Authentication: None (unauthenticated)");
-			console.log("  Tip: Use a GitHub token for 80x more quota");
+			deps.console.log("Authentication: None (unauthenticated)");
+			deps.console.log("  Tip: Use a GitHub token for 80x more quota");
 		}
 
-		console.log();
+		deps.console.log();
 
 		// Warning if approaching limit
 		const coreUsagePercent = (core.used / core.limit) * 100;
 		if (coreUsagePercent > 90) {
-			console.log("⚠️  Warning: Core API quota nearly exhausted!");
+			deps.console.log("Warning: Core API quota nearly exhausted!");
 		} else if (coreUsagePercent > 75) {
-			console.log("⚠️  Notice: Core API quota below 25%");
+			deps.console.log("Notice: Core API quota below 25%");
 		}
 
 		const searchUsagePercent = (search.used / search.limit) * 100;
 		if (searchUsagePercent > 90) {
-			console.log("⚠️  Warning: Search API quota nearly exhausted!");
+			deps.console.log("Warning: Search API quota nearly exhausted!");
 		} else if (searchUsagePercent > 75) {
-			console.log("⚠️  Notice: Search API quota below 25%");
+			deps.console.log("Notice: Search API quota below 25%");
 		}
 
 		if (coreUsagePercent > 75 || searchUsagePercent > 75) {
-			console.log();
+			deps.console.log();
 		}
 	} catch (error) {
-		console.error("Error:", error);
-		process.exit(1);
+		const message = error instanceof Error ? error.message : String(error);
+		deps.console.error("Error:", message);
+		deps.process.exit(1);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	fetchWithCache,
+	console,
+	process,
+	getAuthHeaders,
+	getTokenFromEnv,
+	Date,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("Error:", message);
+		process.exit(1);
+	});
+}

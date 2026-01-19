@@ -17,15 +17,52 @@ import {
 	GitHubUser,
 	getTokenFromEnv,
 	parseArgs,
+	type ParsedArgs,
 } from "./utils";
 
-const main = async () => {
-	const { flags, options, positional } = parseArgs(process.argv.slice(2));
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface Dependencies {
+	fetchWithCache: typeof fetchWithCache;
+	console: Console;
+	process: NodeJS.Process;
+	getAuthHeaders: (token?: string) => Record<string, string>;
+	getTokenFromEnv: () => string | undefined;
+}
+
+// ============================================================================
+// Error Handler
+// ============================================================================
+
+export const handleError = (
+	error: unknown,
+	username: string,
+	deps: Pick<Dependencies, "console" | "process">
+): void => {
+	const message = error instanceof Error ? error.message : String(error);
+	if (message.includes("Resource not found")) {
+		deps.console.log(`User "${username}" not found`);
+	} else if (message.includes("Authentication/Authorization failed: 403")) {
+		deps.console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
+	} else {
+		deps.console.error("Error:", message);
+	}
+	deps.process.exit(1);
+};
+
+// ============================================================================
+// Main Function
+// ============================================================================
+
+export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> => {
+	const { flags, options, positional } = args;
 	const username = positional[0];
-	const token = options.get("token") || getTokenFromEnv();
+	const token = options.get("token") || deps.getTokenFromEnv();
 
 	if (!username) {
-		console.log(`Usage: npx tsx user.ts <username> [options]
+		deps.console.log(`Usage: npx tsx user.ts <username> [options]
 
 Options:
   --token=TOKEN  GitHub Personal Access Token (overrides GITHUB_TOKEN env var)
@@ -35,16 +72,16 @@ Examples:
   npx tsx user.ts torvalds
   npx tsx user.ts facebook
   npx tsx user.ts sindresorhus`);
-		process.exit(1);
+		deps.process.exit(1);
 	}
 
 	const apiUrl = API.user(username);
-	console.log(`Fetching user: ${username}`);
+	deps.console.log(`Fetching user: ${username}`);
 
 	try {
-		const headers = getAuthHeaders(token);
+		const headers = deps.getAuthHeaders(token);
 
-		const data = await fetchWithCache<GitHubUser>({
+		const data = await deps.fetchWithCache<GitHubUser>({
 			url: apiUrl,
 			ttl: 3600, // 1 hour
 			fetchOptions: { headers },
@@ -53,58 +90,68 @@ Examples:
 		});
 
 		// Display user information
-		console.log();
+		deps.console.log();
 		const header = `${data.login}${data.name ? ` (${data.name})` : ""}`;
-		console.log(header);
-		console.log("-".repeat(header.length));
+		deps.console.log(header);
+		deps.console.log("-".repeat(header.length));
 
 		if (data.bio) {
-			console.log(`Bio: ${data.bio}`);
+			deps.console.log(`Bio: ${data.bio}`);
 		}
 
 		if (data.location) {
-			console.log(`Location: ${data.location}`);
+			deps.console.log(`Location: ${data.location}`);
 		}
 
 		if (data.company) {
-			console.log(`Company: ${data.company}`);
+			deps.console.log(`Company: ${data.company}`);
 		}
 
-		console.log("\nAccount:");
-		console.log(`  Type: ${data.type === "User" ? "User" : "Organization"}`);
-		console.log(`  Created: ${formatDate(data.created_at)}`);
-		console.log(`  Updated: ${formatDate(data.updated_at)}`);
+		deps.console.log("\nAccount:");
+		deps.console.log(`  Type: ${data.type === "User" ? "User" : "Organization"}`);
+		deps.console.log(`  Created: ${formatDate(data.created_at)}`);
+		deps.console.log(`  Updated: ${formatDate(data.updated_at)}`);
 		if (data.hireable !== null && data.hireable !== undefined) {
-			console.log(`  Hireable: ${data.hireable ? "Yes" : "No"}`);
+			deps.console.log(`  Hireable: ${data.hireable ? "Yes" : "No"}`);
 		}
 
-		console.log("\nStatistics:");
-		console.log(`  Public repos: ${data.public_repos}`);
-		console.log(`  Public gists: ${data.public_gists}`);
-		console.log(`  Followers: ${formatNumber(data.followers)}`);
-		console.log(`  Following: ${formatNumber(data.following)}`);
+		deps.console.log("\nStatistics:");
+		deps.console.log(`  Public repos: ${data.public_repos}`);
+		deps.console.log(`  Public gists: ${data.public_gists}`);
+		deps.console.log(`  Followers: ${formatNumber(data.followers)}`);
+		deps.console.log(`  Following: ${formatNumber(data.following)}`);
 
-		console.log("\nLinks:");
-		console.log(`  Profile: ${data.html_url}`);
+		deps.console.log("\nLinks:");
+		deps.console.log(`  Profile: ${data.html_url}`);
 		if (data.blog) {
-			console.log(`  Blog: ${data.blog}`);
+			deps.console.log(`  Blog: ${data.blog}`);
 		}
 		if (data.email) {
-			console.log(`  Email: ${data.email}`);
+			deps.console.log(`  Email: ${data.email}`);
 		}
-		console.log(`  Avatar: ${data.avatar_url}`);
-		console.log();
+		deps.console.log(`  Avatar: ${data.avatar_url}`);
+		deps.console.log();
 	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		if (message.includes("Resource not found")) {
-			console.log(`User "${username}" not found`);
-		} else if (message.includes("Authentication/Authorization failed: 403")) {
-			console.log("API rate limit exceeded. Use a GitHub token to increase your quota.");
-		} else {
-			console.error("Error:", message);
-		}
-		process.exit(1);
+		handleError(error, username, deps);
 	}
 };
 
-main();
+// ============================================================================
+// CLI Execution
+// ============================================================================
+
+const defaultDeps: Dependencies = {
+	fetchWithCache,
+	console,
+	process,
+	getAuthHeaders,
+	getTokenFromEnv,
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main(parseArgs(process.argv.slice(2)), defaultDeps).catch((error) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error("Error:", message);
+		process.exit(1);
+	});
+}
