@@ -1,3 +1,8 @@
+## <small>1.16.2 (2026-01-19)</small>
+
+* style(lib): rename test files to follow naming convention ([064f951](https://github.com/Mearman/marketplace/commit/064f951))
+* style(lint): auto-fix eslint violations ([ea85328](https://github.com/Mearman/marketplace/commit/ea85328))
+
 ## <small>1.16.1 (2026-01-19)</small>
 
 * chore(ci): add sync-versions and validate to pre-commit ([d0dd6d7](https://github.com/Mearman/marketplace/commit/d0dd6d7))
