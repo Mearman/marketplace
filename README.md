@@ -1107,7 +1107,7 @@ npx tsx scripts/strip.ts [options] <text-or-file>
 
 </details>
 
-### Wayback Machine Archive v0.9.0
+### Wayback Machine Archive v0.10.0
 
 Tools for checking, submitting, listing, screenshotting, and cache management for archived URLs
 

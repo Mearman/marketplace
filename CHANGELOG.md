@@ -1,3 +1,15 @@
+## 1.17.0 (2026-01-20)
+
+* chore(wayback): bump version to 0.9.0 ([100f5bc](https://github.com/Mearman/marketplace/commit/100f5bc))
+* feat(wayback): add capture frequency analysis script ([581616d](https://github.com/Mearman/marketplace/commit/581616d))
+* feat(wayback): add oldest and newest capture lookup script ([2c7897f](https://github.com/Mearman/marketplace/commit/2c7897f))
+* feat(wayback): add skill for capture frequency analysis ([1cb62a7](https://github.com/Mearman/marketplace/commit/1cb62a7))
+* feat(wayback): add skills for oldest, newest, and range capture lookup ([eb8fbb7](https://github.com/Mearman/marketplace/commit/eb8fbb7))
+* style(bib): fix generators linting issues ([39191fd](https://github.com/Mearman/marketplace/commit/39191fd))
+* style(github-api): remove unused Dependencies type import ([e2e7077](https://github.com/Mearman/marketplace/commit/e2e7077))
+* refactor(bib): eliminate type coercion with type guards ([6296ff4](https://github.com/Mearman/marketplace/commit/6296ff4))
+* refactor(bib): fix parsers type safety and remove coercion ([4d17183](https://github.com/Mearman/marketplace/commit/4d17183))
+
 ## <small>1.16.2 (2026-01-19)</small>
 
 * style(lib): rename test files to follow naming convention ([064f951](https://github.com/Mearman/marketplace/commit/064f951))
