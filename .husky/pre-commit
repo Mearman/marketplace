@@ -2,4 +2,4 @@ pnpm generate-readme
 pnpm sync-versions
 pnpm validate
 pnpm exec lint-staged && pnpm run typecheck
-git add README.md .claude-plugin/marketplace.json
+git add README.md .claude-plugin/marketplace.json plugins/*/README.md
