@@ -27,65 +27,68 @@ const ROOT_END_MARKER = "<!-- AUTO-GENERATED PLUGINS END -->";
 const PLUGIN_START_MARKER = "<!-- AUTO-GENERATED CONTENT START -->";
 const PLUGIN_END_MARKER = "<!-- AUTO-GENERATED CONTENT END -->";
 
+// Export markers for testing
+export { ROOT_START_MARKER, ROOT_END_MARKER, PLUGIN_START_MARKER, PLUGIN_END_MARKER };
+
 // ============================================================================
 // Type Definitions
 // ============================================================================
 
-interface Skill {
-  name: string;
-  description: string;
-  content?: string;
+export interface Skill {
+	name: string;
+	description: string;
+	content?: string;
 }
 
-interface Command {
-  name: string;
-  description: string;
-  content?: string;
+export interface Command {
+	name: string;
+	description: string;
+	content?: string;
 }
 
-interface Hook {
-  name: string;
-  description: string;
-  content?: string;
+export interface Hook {
+	name: string;
+	description: string;
+	content?: string;
 }
 
-interface Agent {
-  name: string;
-  description: string;
-  content?: string;
+export interface Agent {
+	name: string;
+	description: string;
+	content?: string;
 }
 
-interface McpServer {
-  name: string;
-  description: string;
-  content?: string;
+export interface McpServer {
+	name: string;
+	description: string;
+	content?: string;
 }
 
-interface LspServer {
-  name: string;
-  description: string;
-  content?: string;
+export interface LspServer {
+	name: string;
+	description: string;
+	content?: string;
 }
 
-interface PluginComponents {
-  skills?: Skill[];
-  commands?: Command[];
-  hooks?: Hook[];
-  agents?: Agent[];
-  mcp?: McpServer[];
-  lsp?: LspServer[];
+export interface PluginComponents {
+	skills?: Skill[];
+	commands?: Command[];
+	hooks?: Hook[];
+	agents?: Agent[];
+	mcp?: McpServer[];
+	lsp?: LspServer[];
 }
 
-interface Plugin {
-  name: string;
-  source: string;
-  description: string;
-  version: string;
-  components?: PluginComponents;
+export interface Plugin {
+	name: string;
+	source: string;
+	description: string;
+	version: string;
+	components?: PluginComponents;
 }
 
-interface MarketplaceJson {
-  plugins: Plugin[];
+export interface MarketplaceJson {
+	plugins: Plugin[];
 }
 
 // ============================================================================
@@ -160,7 +163,7 @@ const COMPONENT_TYPES: ComponentTypeConfig<any>[] = [
 /**
  * Extract YAML frontmatter from a markdown file.
  */
-function extractYamlFrontmatter(content: string): Record<string, string> | null {
+export function extractYamlFrontmatter(content: string): Record<string, string> | null {
 	const frontmatterRegex = /^---\n([\s\S]*?)\n---/;
 	const match = content.match(frontmatterRegex);
 
@@ -186,7 +189,7 @@ function extractYamlFrontmatter(content: string): Record<string, string> | null 
 /**
  * Remove YAML frontmatter from content.
  */
-function removeFrontmatter(content: string): string {
+export function removeFrontmatter(content: string): string {
 	return content.replace(/^---\n[\s\S]*?\n---\n?/, "");
 }
 
@@ -440,7 +443,7 @@ function discoverComponents(pluginName: string): PluginComponents {
 /**
  * Format component summary for root README card.
  */
-function formatComponentSummary(components: PluginComponents): string {
+export function formatComponentSummary(components: PluginComponents): string {
 	const parts: string[] = [];
 
 	for (const type of COMPONENT_TYPES) {
@@ -464,7 +467,7 @@ function formatComponentSummary(components: PluginComponents): string {
 /**
  * Extract title and description from plugin description.
  */
-function extractTitleAndDescription(description: string): { title: string; desc: string } {
+export function extractTitleAndDescription(description: string): { title: string; desc: string } {
 	const colonIndex = description.indexOf(":");
 
 	if (colonIndex > 0) {
@@ -493,7 +496,7 @@ function extractTitleAndDescription(description: string): { title: string; desc:
 /**
  * Generate the plugins list for root README (card format).
  */
-function generateRootReadmeList(plugins: Plugin[]): string {
+export function generateRootReadmeList(plugins: Plugin[]): string {
 	return plugins
 		.map((plugin) => {
 			const { title, desc } = extractTitleAndDescription(plugin.description);
@@ -558,7 +561,7 @@ function checkRootReadme(before: string, generated: string, after: string): bool
 /**
  * Generate content for a per-plugin README.
  */
-function generatePluginReadme(plugin: Plugin): string {
+export function generatePluginReadme(plugin: Plugin): string {
 	const { title, desc } = extractTitleAndDescription(plugin.description);
 	const displayName = title || plugin.name;
 
@@ -601,7 +604,7 @@ function generatePluginReadme(plugin: Plugin): string {
 /**
  * Preserve manual sections in a plugin README.
  */
-function preserveManualSections(readmePath: string, generated: string): string {
+export function preserveManualSections(readmePath: string, generated: string): string {
 	if (!existsSync(readmePath)) {
 		return generated;
 	}
