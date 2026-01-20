@@ -8,6 +8,7 @@ export default defineConfig({
 		environment: "node",
 		include: [
 			"lib/**/*.test.ts",
+			"scripts/**/*.test.ts",
 			"plugins/**/scripts/**/*.test.ts",
 			"plugins/**/lib/**/*.test.ts",
 		],
