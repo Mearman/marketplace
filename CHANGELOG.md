@@ -1,3 +1,9 @@
+## <small>1.17.2 (2026-01-20)</small>
+
+* test(lib): add unit tests for README generator ([bd5de36](https://github.com/Mearman/marketplace/commit/bd5de36))
+* refactor(lib): export pure functions from generator for testing ([17034b6](https://github.com/Mearman/marketplace/commit/17034b6))
+* chore(ci): include scripts directory in test patterns ([3bf39d4](https://github.com/Mearman/marketplace/commit/3bf39d4))
+
 ## <small>1.17.1 (2026-01-20)</small>
 
 * chore(ci): stage plugin READMEs in pre-commit hook ([3c67f3d](https://github.com/Mearman/marketplace/commit/3c67f3d))
