@@ -12,7 +12,7 @@
 			"name": "wayback",
 			"source": "./plugins/wayback",
 			"description": "Wayback Machine Archive: Tools for checking, submitting, listing, screenshotting, and cache management for archived URLs",
-			"version": "0.7.0"
+			"version": "0.9.0"
 		},
 		{
 			"name": "npm-registry",

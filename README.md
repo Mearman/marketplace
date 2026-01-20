@@ -1107,7 +1107,7 @@ npx tsx scripts/strip.ts [options] <text-or-file>
 
 </details>
 
-### Wayback Machine Archive v0.7.0
+### Wayback Machine Archive v0.9.0
 
 Tools for checking, submitting, listing, screenshotting, and cache management for archived URLs
 
@@ -1186,6 +1186,63 @@ When not archived:
 </details>
 
 <details>
+<summary>Analyze Wayback Machine Capture Frequency</summary>
+
+Analyze the capture frequency and rate for a URL over a specified time range.
+
+
+```bash
+npx tsx scripts/frequency.ts <url> [from] [to] [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `url` | Yes | The URL to analyze |
+| `from` | No | Start date (YYYYMMDD or YYYY-MM). Default: oldest capture |
+| `to` | No | End date (YYYYMMDD or YYYY-MM). Default: newest capture |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--full` | Include detailed breakdown by year |
+| `--json` | Output as JSON |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+**Default (compact):**
+```
+1423 captures over 3652 days
+Average: 0.39/day, 11.87/month, 142.3/year
+```
+
+**With --full:**
+```
+📊 CAPTURE FREQUENCY ANALYSIS
+
+URL: https://example.com
+Range: 2015-01-01 12:00 to 2025-01-01 08:00 (3652 days)
+
+Total captures: 1423
+Average rate:
+  0.39 captures per day
+  11.87 captures per month
+  142.3 captures per year
+
+By year:
+  2015: 156 captures
+  2016: 203 captures
+  2017: 189 captures
+  ...
+```
+
+
+</details>
+
+<details>
 <summary>List Wayback Machine Snapshots</summary>
 
 Retrieve a list of archived snapshots for a URL from the Wayback Machine CDX API.
@@ -1220,6 +1277,136 @@ December 15, 2023 (20 days ago)
   https://web.archive.org/web/20231215100000id_/https://example.com
 
 Total: 2 snapshot(s)
+```
+
+
+</details>
+
+<details>
+<summary>Find Newest Wayback Machine Capture</summary>
+
+Find the most recent archived snapshot of a URL from the Wayback Machine.
+
+
+```bash
+npx tsx scripts/oldest-newest.ts <url> --newest-only [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `url` | Yes | The URL to search for |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--full` | Include archive URL in output |
+| `--json` | Output as JSON |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+**Default (compact):**
+```
+2024-01-15 14:30 (2 days ago)
+```
+
+**With --full:**
+```
+🆕 NEWEST:
+  2024-01-15 14:30 (2 days ago)
+  https://web.archive.org/web/20240115143000id_/https://example.com
+```
+
+
+</details>
+
+<details>
+<summary>Find Oldest Wayback Machine Capture</summary>
+
+Find the earliest archived snapshot of a URL from the Wayback Machine.
+
+
+```bash
+npx tsx scripts/oldest-newest.ts <url> --oldest-only [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `url` | Yes | The URL to search for |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--full` | Include archive URL in output |
+| `--json` | Output as JSON |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+**Default (compact):**
+```
+1998-12-01 08:00 (9200 days ago)
+```
+
+**With --full:**
+```
+📜 OLDEST:
+  1998-12-01 08:00 (9200 days ago)
+  https://web.archive.org/web/19981201080000id_/https://example.com
+```
+
+
+</details>
+
+<details>
+<summary>Show Wayback Machine Archive Range</summary>
+
+Show both the oldest and newest archived snapshots for a URL, displaying the full archive time span.
+
+
+```bash
+npx tsx scripts/oldest-newest.ts <url> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `url` | Yes | The URL to search for |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--full` | Include archive URLs in output |
+| `--json` | Output as JSON |
+| `--no-cache` | Bypass cache and fetch fresh data from API |
+
+### Output
+
+**Default (compact):**
+```
+1998-12-01 08:00 (9200 days ago)
+2024-01-15 14:30 (2 days ago)
+```
+
+**With --full:**
+```
+📜 OLDEST:
+  1998-12-01 08:00 (9200 days ago)
+  https://web.archive.org/web/19981201080000id_/https://example.com
+
+🆕 NEWEST:
+  2024-01-15 14:30 (2 days ago)
+  https://web.archive.org/web/20240115143000id_/https://example.com
+
+Archive span: 9198 days
 ```
 
 
