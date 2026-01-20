@@ -1,3 +1,8 @@
+## <small>1.17.1 (2026-01-20)</small>
+
+* chore(ci): stage plugin READMEs in pre-commit hook ([3c67f3d](https://github.com/Mearman/marketplace/commit/3c67f3d))
+* refactor(lib): implement component-type-agnostic README generator architecture ([31acb27](https://github.com/Mearman/marketplace/commit/31acb27))
+
 ## 1.17.0 (2026-01-20)
 
 * chore(wayback): bump version to 0.9.0 ([100f5bc](https://github.com/Mearman/marketplace/commit/100f5bc))
