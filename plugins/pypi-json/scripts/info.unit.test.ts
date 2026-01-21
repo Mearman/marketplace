@@ -39,7 +39,7 @@ describe("info.ts", () => {
 	describe("main", () => {
 		describe("successful info display", () => {
 			it("should display package info", async () => {
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
@@ -53,21 +53,21 @@ describe("info.ts", () => {
 					},
 					releases: {},
 					urls: [],
-				});
+				}));
 
 				const args = parseArgs(["requests"]);
 
 				await main(args, deps);
 
-				assert.strictEqual(mockConsole.log.mock.calls[0][0], "Fetching: requests");
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("requests")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Latest Version: 2.31.0")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("License: Apache 2.0")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Author: Kenneth Reitz")));
+				assert.strictEqual(mockConsole.log.mock.calls[0].arguments[0], "Fetching: requests");
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("requests")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Latest Version: 2.31.0")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("License: Apache 2.0")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Author: Kenneth Reitz")));
 			});
 
 			it("should display summary", async () => {
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
@@ -75,21 +75,21 @@ describe("info.ts", () => {
 					},
 					releases: {},
 					urls: [],
-				});
+				}));
 
 				const args = parseArgs(["requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Summary:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "Python HTTP for Humans."));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Summary:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments[0] === "Python HTTP for Humans."));
 			});
 
 			it("should display description", async () => {
 				const longDescription = "Requests is an elegant and simple HTTP library for Python, built for human beings. "
 					.repeat(5); // Make it longer than 200 chars
 
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
@@ -97,18 +97,18 @@ describe("info.ts", () => {
 					},
 					releases: {},
 					urls: [],
-				});
+				}));
 
 				const args = parseArgs(["requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Description:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("...")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Description:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("...")));
 			});
 
 			it("should display project URLs", async () => {
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
@@ -119,19 +119,19 @@ describe("info.ts", () => {
 					},
 					releases: {},
 					urls: [],
-				});
+				}));
 
 				const args = parseArgs(["requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Project URLs:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Homepage:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Source:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Project URLs:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Homepage:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Source:")));
 			});
 
 			it("should display keywords", async () => {
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
@@ -139,17 +139,17 @@ describe("info.ts", () => {
 					},
 					releases: {},
 					urls: [],
-				});
+				}));
 
 				const args = parseArgs(["requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Keywords: http, requests, urllib")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Keywords: http, requests, urllib")));
 			});
 
 			it("should display classifiers", async () => {
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
@@ -161,17 +161,17 @@ describe("info.ts", () => {
 					},
 					releases: {},
 					urls: [],
-				});
+				}));
 
 				const args = parseArgs(["requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Classifiers:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Classifiers:")));
 			});
 
 			it("should display files with --files flag", async () => {
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
@@ -193,19 +193,19 @@ describe("info.ts", () => {
 							yanked: false,
 						},
 					],
-				});
+				}));
 
 				const args = parseArgs(["--files", "requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Latest Release Files")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("requests-2.31.0-py3-none-any.whl")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("requests-2.31.0.tar.gz")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Latest Release Files")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("requests-2.31.0-py3-none-any.whl")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("requests-2.31.0.tar.gz")));
 			});
 
 			it("should display yanked files", async () => {
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
@@ -221,18 +221,18 @@ describe("info.ts", () => {
 							yanked_reason: "Security issue",
 						},
 					],
-				});
+				}));
 
 				const args = parseArgs(["--files", "requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("YANKED")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Security issue")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("YANKED")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Security issue")));
 			});
 
 			it("should display releases with --releases flag", async () => {
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
@@ -260,32 +260,32 @@ describe("info.ts", () => {
 						],
 					},
 					urls: [],
-				});
+				}));
 
 				const args = parseArgs(["--releases", "requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Release History")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("2.31.0")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("2.30.0")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Release History")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("2.31.0")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("2.30.0")));
 			});
 
 			it("should bypass cache with --no-cache flag", async () => {
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
 					},
 					releases: {},
 					urls: [],
-				});
+				}));
 
 				const args = parseArgs(["--no-cache", "requests"]);
 
 				await main(args, deps);
 
-				assert.strictEqual(mockFetchWithCache.mock.calls[0][0].bypassCache, true);
+				assert.strictEqual(mockFetchWithCache.mock.calls[0].arguments[0].bypassCache, true);
 			});
 
 			it("should show truncation for many files", async () => {
@@ -297,20 +297,20 @@ describe("info.ts", () => {
 					yanked: false,
 				}));
 
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
 					},
 					releases: {},
 					urls,
-				});
+				}));
 
 				const args = parseArgs(["--files", "requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("... and 5 more files")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("... and 5 more files")));
 			});
 
 			it("should show truncation for many releases", async () => {
@@ -328,20 +328,20 @@ describe("info.ts", () => {
 					];
 				}
 
-				mockFetchWithCache.mockResolvedValue({
+				mockFetchWithCache.mock.mockImplementation(async () => ({
 					info: {
 						name: "requests",
 						version: "2.31.0",
 					},
 					releases,
 					urls: [],
-				});
+				}));
 
 				const args = parseArgs(["--releases", "requests"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("... and 5 more releases")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("... and 5 more releases")));
 			});
 		});
 
@@ -351,70 +351,70 @@ describe("info.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx info.ts <package-name>")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Usage:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("npx tsx info.ts <package-name>")));
 			});
 		});
 
 		describe("error handling", () => {
 			it("should handle 404 errors", async () => {
-				mockFetchWithCache.mockRejectedValue(new Error("404 Not Found"));
+				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("404 Not Found"); });
 
 				const args = parseArgs(["nonexistent-package"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("not found on PyPI")));
+				assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("not found on PyPI")));
 			});
 
 			it("should handle network errors", async () => {
-				mockFetchWithCache.mockRejectedValue(new Error("ECONNREFUSED"));
+				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("ECONNREFUSED"); });
 
 				const args = parseArgs(["requests"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
+				assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Network error")));
 			});
 
 			it("should handle timeout errors", async () => {
-				mockFetchWithCache.mockRejectedValue(new Error("ETIMEDOUT"));
+				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("ETIMEDOUT"); });
 
 				const args = parseArgs(["requests"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
+				assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Network error")));
 			});
 
 			it("should handle ENOTFOUND errors", async () => {
-				mockFetchWithCache.mockRejectedValue(new Error("ENOTFOUND pypi.org"));
+				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("ENOTFOUND pypi.org"); });
 
 				const args = parseArgs(["requests"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
+				assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Network error")));
 			});
 
 			it("should handle generic errors", async () => {
-				mockFetchWithCache.mockRejectedValue(new Error("Unknown error"));
+				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("Unknown error"); });
 
 				const args = parseArgs(["requests"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "Unknown error"));
+				assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error:" && call.arguments[1] === "Unknown error"));
 			});
 
 			it("should handle non-Error errors", async () => {
-				mockFetchWithCache.mockRejectedValue("string error");
+				mockFetchWithCache.mock.mockImplementation(async () => { throw "string error"; });
 
 				const args = parseArgs(["requests"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "string error"));
+				assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error:" && call.arguments[1] === "string error"));
 			});
 		});
 	});
@@ -425,8 +425,8 @@ describe("info.ts", () => {
 
 			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("not found on PyPI")));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("not found on PyPI")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0].arguments[0], 1);
 		});
 
 		it("should handle ECONNREFUSED error", () => {
@@ -434,8 +434,8 @@ describe("info.ts", () => {
 
 			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Network error")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0].arguments[0], 1);
 		});
 
 		it("should handle ETIMEDOUT error", () => {
@@ -443,8 +443,8 @@ describe("info.ts", () => {
 
 			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Network error")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0].arguments[0], 1);
 		});
 
 		it("should handle timeout error", () => {
@@ -452,8 +452,8 @@ describe("info.ts", () => {
 
 			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Network error")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0].arguments[0], 1);
 		});
 
 		it("should handle ENOTFOUND error", () => {
@@ -461,8 +461,8 @@ describe("info.ts", () => {
 
 			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("Network error")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0].arguments[0], 1);
 		});
 
 		it("should handle generic Error instance", () => {
@@ -470,8 +470,8 @@ describe("info.ts", () => {
 
 			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "Generic error"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error:" && call.arguments[1] === "Generic error"));
+			assert.strictEqual(mockProcess.exit.mock.calls[0].arguments[0], 1);
 		});
 
 		it("should handle non-Error error", () => {
@@ -479,8 +479,8 @@ describe("info.ts", () => {
 
 			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "string error"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error:" && call.arguments[1] === "string error"));
+			assert.strictEqual(mockProcess.exit.mock.calls[0].arguments[0], 1);
 		});
 
 		it("should ignore packageName parameter for non-404 errors", () => {
@@ -488,7 +488,7 @@ describe("info.ts", () => {
 
 			assert.throws(() => handleError(error, "any-package-name", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "Some other error"));
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error:" && call.arguments[1] === "Some other error"));
 		});
 	});
 });
