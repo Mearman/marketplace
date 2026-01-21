@@ -3,7 +3,7 @@
  */
 
 import { describe, it, beforeEach, mock } from "node:test";
-import assert from "node:assert";
+import * as assert from "node:assert";
 import { main, handleError } from "./analyze.js";
 import { parseArgs, type NpmsPackage } from "./utils.js";
 
@@ -28,7 +28,7 @@ describe("analyze.ts", () => {
 
 		// Mock process
 		mockProcess = {
-			exit: mock.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 		};
@@ -428,7 +428,7 @@ describe("analyze.ts", () => {
 				const usageOutput = logCalls.join("\n");
 				assert.ok(usageOutput.includes("Usage:"));
 				assert.ok(usageOutput.includes("npx tsx analyze.ts <package-name>"));
-				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+				assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should include examples in usage message", async () => {
@@ -527,9 +527,9 @@ describe("analyze.ts", () => {
 				await main(args, deps);
 
 				const logCalls = mockConsole.log.mock.calls;
-				assert.assert.deepStrictEqual(logCalls[0], ["Analyzing: test-formatting"]);
+				assert.deepStrictEqual(logCalls[0], ["Analyzing: test-formatting"]);
 				// Should have blank lines between sections
-				assert.ok(logCalls.some((call: any[]) => assert.deepStrictEqual(call, [])));
+				assert.ok(logCalls.some((call: any[]) => call.length === 0));
 			});
 		});
 	});
@@ -539,59 +539,59 @@ describe("analyze.ts", () => {
 			const error = new Error("Resource not found");
 			assert.throws(() => handleError(error, "my-package", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.log.mock.calls[mockConsole.log.mock.calls.length - 1], "Package \"my-package\" not found or analysis not available");
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.log.mock.calls[mockConsole.log.mock.calls.length - 1], "Package \"my-package\" not found or analysis not available");
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should log error message for generic errors", () => {
 			const error = new Error("Network timeout");
 			assert.throws(() => handleError(error, "react", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Network timeout"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Network timeout"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle string errors", () => {
 			assert.throws(() => handleError("string error", "express", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle null errors", () => {
 			assert.throws(() => handleError(null, "lodash", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "null"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "null"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle undefined errors", () => {
 			assert.throws(() => handleError(undefined, "axios", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "undefined"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "undefined"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle numeric errors", () => {
 			assert.throws(() => handleError(500, "vue", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "500"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "500"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle object errors without message property", () => {
 			const error = { code: "ERR_CODE", status: 500 };
 			assert.throws(() => handleError(error, "angular", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "[object Object]"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "[object Object]"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should always call process.exit with code 1", () => {
 			const error = new Error("Any error");
 			assert.throws(() => handleError(error, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should be case-sensitive for 'Resource not found' check", () => {
@@ -599,7 +599,7 @@ describe("analyze.ts", () => {
 			assert.throws(() => handleError(error, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
 			// Should go to error console, not friendly message
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "resource not found"]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "resource not found"]);
 			assert.ok(!mockConsole.log.mock.calls.some((call: any[]) => call[0] && typeof call[0] === "string" && call[0].includes("not found or analysis not available")));
 		});
 

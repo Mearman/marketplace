@@ -2,6 +2,8 @@
  * Test helpers for migrating from Vitest to Node.js built-in test runner
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { mock } from "node:test";
 
 /**
@@ -16,20 +18,22 @@ export const callsToArray = (mockFn: any): any[][] => {
 /**
  * Creates a mock function with Vitest-compatible mockResolvedValue/mockRejectedValue methods
  */
-export const createAsyncMock = () => {
+export const createAsyncMock = (): any => {
 	let resolveValue: any = undefined;
 	let rejectValue: any = undefined;
 
-	const fn = mock.fn(async (...args: any[]) => {
+	const fn = mock.fn(async () => {
 		if (rejectValue) throw rejectValue;
 		return resolveValue;
 	});
 
+	// @ts-expect-error - Adding Vitest-compatible methods
 	fn.mockResolvedValue = (val: any) => {
 		resolveValue = val;
 		rejectValue = undefined;
 	};
 
+	// @ts-expect-error - Adding Vitest-compatible methods
 	fn.mockRejectedValue = (val: any) => {
 		rejectValue = val;
 		resolveValue = undefined;
@@ -41,7 +45,7 @@ export const createAsyncMock = () => {
 /**
  * Creates a mock console with log, error, warn, etc. methods
  */
-export const createMockConsole = () => {
+export const createMockConsole = (): any => {
 	const logCalls: any[][] = [];
 	const errorCalls: any[][] = [];
 
@@ -61,7 +65,7 @@ export const createMockConsole = () => {
 /**
  * Creates a mock process.exit that throws an error for testing
  */
-export const createMockProcess = () => {
+export const createMockProcess = (): any => {
 	return {
 		exit: mock.fn(() => {
 			throw new Error("process.exit called");

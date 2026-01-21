@@ -4,7 +4,6 @@
 
 import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert";
-import { writeFile } from "fs/promises";
 import { main, handleError, listScreenshots, checkScreenshotAvailable } from "./screenshot.js";
 import { parseArgs } from "./utils.js";
 
@@ -54,7 +53,7 @@ describe("screenshot.ts", () => {
 	describe("main", () => {
 		describe("--list mode", () => {
 			it("should list screenshots", async () => {
-				mockGlobalFetch.mock.mockImplementation(async () => ({
+				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [
 						["timestamp", "url", "mime", "status", "digest", "length"],
 						["20240101120000", "https://example.com", "image/png", "200", "digest", "1000"],
@@ -70,7 +69,7 @@ describe("screenshot.ts", () => {
 			});
 
 			it("should show message when no screenshots found", async () => {
-				mockGlobalFetch.mock.mockImplementation(async () => ({
+				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [["timestamp"]],
 				}));
 
@@ -84,7 +83,7 @@ describe("screenshot.ts", () => {
 
 		describe("screenshot retrieval", () => {
 			it("should get screenshot", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => ({
+				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
 						closest: {
 							available: true,
@@ -92,7 +91,7 @@ describe("screenshot.ts", () => {
 						},
 					},
 				}));
-				mockGlobalFetch.mock.mockImplementation(async () => ({
+				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [
 						["timestamp", "url", "mime", "status", "digest", "length"],
 						["20240101120000", "web.archive.org/screenshot/https://example.com", "image/png", "200", "digest", "1000"],
@@ -108,7 +107,7 @@ describe("screenshot.ts", () => {
 			});
 
 			it("should handle --timestamp flag", async () => {
-				mockGlobalFetch.mock.mockImplementation(async () => ({
+				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [
 						["timestamp", "url", "mime", "status", "digest", "length"],
 						["20240101120000", "web.archive.org/screenshot/https://example.com", "image/png", "200", "digest", "1000"],
@@ -123,7 +122,7 @@ describe("screenshot.ts", () => {
 			});
 
 			it("should use --no-cache flag", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => ({
+				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
 						closest: {
 							available: true,
@@ -131,7 +130,7 @@ describe("screenshot.ts", () => {
 						},
 					},
 				}));
-				mockGlobalFetch.mock.mockImplementation(async () => ({
+				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [
 						["timestamp", "url", "mime", "status", "digest", "length"],
 						["20240101120000", "web.archive.org/screenshot/https://example.com", "image/png", "200", "digest", "1000"],
@@ -159,7 +158,7 @@ describe("screenshot.ts", () => {
 
 		describe("error handling", () => {
 			it("should handle network errors", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("Network error"); });
+				mockFetchWithCache = mock.fn(async () => { throw new Error("Network error"); });
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -175,7 +174,7 @@ describe("screenshot.ts", () => {
 			});
 
 			it("should download screenshot when --download is provided", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => ({
+				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
 						closest: {
 							available: true,
@@ -183,7 +182,7 @@ describe("screenshot.ts", () => {
 						},
 					},
 				}));
-				mockGlobalFetch.mock.mockImplementation(async (url: string) => {
+				mockGlobalFetch = mock.fn(async (url: string) => {
 					if (url.includes("cdx/search")) {
 						return {
 							json: async () => [
@@ -209,7 +208,7 @@ describe("screenshot.ts", () => {
 			});
 
 			it("should handle HTTP error when downloading screenshot", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => ({
+				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
 						closest: {
 							available: true,
@@ -217,7 +216,7 @@ describe("screenshot.ts", () => {
 						},
 					},
 				}));
-				mockGlobalFetch.mock.mockImplementation(async (url: string) => {
+				mockGlobalFetch = mock.fn(async (url: string) => {
 					if (url.includes("cdx/search")) {
 						return {
 							json: async () => [
@@ -240,7 +239,7 @@ describe("screenshot.ts", () => {
 			});
 
 			it("should show message when --download not provided", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => ({
+				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
 						closest: {
 							available: true,
@@ -248,7 +247,7 @@ describe("screenshot.ts", () => {
 						},
 					},
 				}));
-				mockGlobalFetch.mock.mockImplementation(async () => ({
+				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [
 						["timestamp", "url", "mime", "status", "digest", "length"],
 						["20240101120000", "url", "image/png", "200", "digest", "1000"],
@@ -269,7 +268,7 @@ describe("screenshot.ts", () => {
 			});
 
 			it("should exit when screenshot not available at specified timestamp", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => ({
+				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
 						closest: {
 							available: true,
@@ -277,7 +276,7 @@ describe("screenshot.ts", () => {
 						},
 					},
 				}));
-				mockGlobalFetch.mock.mockImplementation(async () => ({
+				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [["timestamp"]],
 				}));
 
@@ -290,7 +289,7 @@ describe("screenshot.ts", () => {
 			});
 
 			it("should exit when no archived version found", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => ({
+				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
 						closest: {
 							available: false,
@@ -306,7 +305,7 @@ describe("screenshot.ts", () => {
 			});
 
 			it("should handle write errors when downloading screenshot", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => ({
+				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
 						closest: {
 							available: true,
@@ -314,7 +313,7 @@ describe("screenshot.ts", () => {
 						},
 					},
 				}));
-				mockGlobalFetch.mock.mockImplementation(async (url: string) => {
+				mockGlobalFetch = mock.fn(async (url: string) => {
 					if (url.includes("cdx/search")) {
 						return {
 							json: async () => [
@@ -328,7 +327,7 @@ describe("screenshot.ts", () => {
 						arrayBuffer: async () => new ArrayBuffer(1024),
 					};
 				});
-				mockWriteFile.mock.mockImplementation(async () => { throw new Error("Write permission denied"); });
+				mockWriteFile = mock.fn(async () => { throw new Error("Write permission denied"); });
 
 				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
 
@@ -341,7 +340,7 @@ describe("screenshot.ts", () => {
 
 	describe("checkScreenshotAvailable helper", () => {
 		it("should return true when screenshot exists", async () => {
-			mockGlobalFetch.mock.mockImplementation(async () => ({
+			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [
 					["timestamp", "url", "mime", "status", "digest", "length"],
 					["20240101120000", "url", "image/png", "200", "digest", "1000"],
@@ -354,7 +353,7 @@ describe("screenshot.ts", () => {
 		});
 
 		it("should return false when no screenshot", async () => {
-			mockGlobalFetch.mock.mockImplementation(async () => ({
+			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [["timestamp"]],
 			}));
 
@@ -364,7 +363,7 @@ describe("screenshot.ts", () => {
 		});
 
 		it("should return false on error", async () => {
-			mockGlobalFetch.mock.mockImplementation(async () => { throw new Error("Network error"); });
+			mockGlobalFetch = mock.fn(async () => { throw new Error("Network error"); });
 
 			const result = await checkScreenshotAvailable("https://example.com", deps);
 
@@ -372,7 +371,7 @@ describe("screenshot.ts", () => {
 		});
 
 		it("should check specific timestamp", async () => {
-			mockGlobalFetch.mock.mockImplementation(async () => ({
+			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [
 					["timestamp", "url", "mime", "status", "digest", "length"],
 					["20240101120000", "url", "image/png", "200", "digest", "1000"],
@@ -387,7 +386,7 @@ describe("screenshot.ts", () => {
 
 	describe("listScreenshots helper", () => {
 		it("should list screenshots", async () => {
-			mockGlobalFetch.mock.mockImplementation(async () => ({
+			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [
 					["timestamp", "url", "mime", "status", "digest", "length"],
 					["20240101120000", "https://example.com", "image/png", "200", "digest", "1000"],
@@ -401,7 +400,7 @@ describe("screenshot.ts", () => {
 		});
 
 		it("should show message when no screenshots found", async () => {
-			mockGlobalFetch.mock.mockImplementation(async () => ({
+			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [["timestamp"]],
 			}));
 

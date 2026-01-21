@@ -10,7 +10,6 @@
  *   --no-cache        Bypass cache and fetch fresh data
  */
 
-import { writeFile } from "fs/promises";
 import {
 	buildGravatarUrl,
 	fetchWithCache,
@@ -29,6 +28,7 @@ export interface Dependencies {
 	fetchWithCache: typeof fetchWithCache;
 	console: Console;
 	process: NodeJS.Process;
+	writeFile: (path: string, data: Buffer) => Promise<void>;
 }
 
 // ============================================================================
@@ -116,7 +116,7 @@ Examples:
 		});
 
 		// Write to file
-		await writeFile(outputFile, Buffer.from(buffer));
+		await deps.writeFile(outputFile, Buffer.from(buffer));
 
 		deps.console.log();
 		deps.console.log("✓ Downloaded successfully");
@@ -136,6 +136,10 @@ const defaultDeps: Dependencies = {
 	fetchWithCache,
 	console,
 	process,
+	writeFile: async (path: string, data: Buffer): Promise<void> => {
+		const { writeFile: fsWriteFile } = await import("fs/promises");
+		await fsWriteFile(path, data);
+	},
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) {

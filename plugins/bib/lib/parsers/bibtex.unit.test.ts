@@ -1,5 +1,5 @@
 import { describe, it } from "node:test";
-import assert from "node:assert";
+import * as assert from "node:assert";
 import { BibTeXParser } from "./bibtex.js";
 
 describe("BibTeXParser", () => {
@@ -47,7 +47,7 @@ describe("BibTeXParser", () => {
 		});
 
 		it("should parse quoted field values", () => {
-			const bibtex = '@article{test, title = "The Title"}';
+			const bibtex = "@article{test, title = \"The Title\"}";
 			const result = parser.parse(bibtex);
 			assert.strictEqual(result.entries[0].title, "The Title");
 		});

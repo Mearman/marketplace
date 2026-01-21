@@ -3,7 +3,7 @@
  */
 
 import { describe, it, beforeEach, mock } from "node:test";
-import assert from "node:assert";
+import * as assert from "node:assert";
 import { main, handleError } from "./suggest.js";
 import { parseArgs, type NpmsSuggestion } from "./utils.js";
 
@@ -28,7 +28,7 @@ describe("suggest.ts", () => {
 
 		// Mock process
 		mockProcess = {
-			exit: mock.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 		};
@@ -56,7 +56,7 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				assert.assert.deepStrictEqual(mockConsole.log.mock.calls[0][0], "Searching for: \"react\"");
+				assert.deepStrictEqual(mockConsole.log.mock.calls[0][0], "Searching for: \"react\"");
 				assert.ok(String(mockConsole.log.mock.calls[1][0]).includes("Suggestions for \"react\""));
 				assert.ok(String(mockConsole.log.mock.calls[1][0]).includes("(3 results)"));
 			});
@@ -190,7 +190,7 @@ describe("suggest.ts", () => {
 				// Find the index of "2. pkg2"
 				const pkg2Index = logCalls.findIndex((call: any[]) => call[0] === "2. pkg2");
 				// The call before it should be a blank line
-				assert.assert.deepStrictEqual(logCalls[pkg2Index - 1], []);
+				assert.deepStrictEqual(logCalls[pkg2Index - 1], []);
 			});
 
 			it("should not add blank line after last detailed result", async () => {
@@ -207,7 +207,7 @@ describe("suggest.ts", () => {
 				// Find the index of "2. pkg2"
 				const pkg2Index = logCalls.findIndex((call: any[]) => call[0] === "2. pkg2");
 				// The call after it should NOT be a blank line (it should be the score)
-				assert.ok(!assert.deepStrictEqual(logCalls[pkg2Index + 1], []));
+				assert.ok(logCalls[pkg2Index + 1].length > 0);
 			});
 		});
 
@@ -221,7 +221,7 @@ describe("suggest.ts", () => {
 				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
 				assert.ok(logCalls.includes("Searching for: \"nonexistent-query-xyz\""));
 				assert.ok(logCalls.includes("\nNo suggestions found for \"nonexistent-query-xyz\""));
-				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [0]);
+				assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [0]);
 			});
 
 			it("should exit with code 0 when no results", async () => {
@@ -232,7 +232,7 @@ describe("suggest.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
 				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("No suggestions found")));
-				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [0]);
+				assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [0]);
 			});
 		});
 
@@ -244,7 +244,7 @@ describe("suggest.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
 				assert.ok(logCalls.includes("Error: Query must be at least 2 characters"));
-				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+				assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should show error for single character query", async () => {
@@ -277,7 +277,7 @@ describe("suggest.ts", () => {
 
 				assert.ok(usageOutput.includes("Usage:"));
 				assert.ok(usageOutput.includes("npx tsx suggest.ts <query>"));
-				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+				assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should include all options in usage message", async () => {
@@ -450,7 +450,7 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				assert.assert.deepStrictEqual(mockConsole.log.mock.calls[0][0], "Searching for: \"query\"");
+				assert.deepStrictEqual(mockConsole.log.mock.calls[0][0], "Searching for: \"query\"");
 				// Verify the output contains the expected header elements
 				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
 				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Suggestions for \"query\"")));
@@ -475,7 +475,7 @@ describe("suggest.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls;
 				// Last call should be a blank line
-				assert.assert.deepStrictEqual(logCalls[logCalls.length - 1], []);
+				assert.deepStrictEqual(logCalls[logCalls.length - 1], []);
 			});
 
 			it("should format large scores with locale string", async () => {
@@ -510,7 +510,7 @@ describe("suggest.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Network error"]);
+				assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Network error"]);
 			});
 
 			it("should handle timeout errors", async () => {
@@ -519,7 +519,7 @@ describe("suggest.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Request timeout"]);
+				assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Request timeout"]);
 			});
 
 			it("should handle API errors", async () => {
@@ -528,7 +528,7 @@ describe("suggest.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "API rate limit exceeded"]);
+				assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "API rate limit exceeded"]);
 			});
 
 			it("should handle non-Error errors", async () => {
@@ -537,7 +537,7 @@ describe("suggest.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
+				assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
 			});
 		});
 	});
@@ -547,51 +547,51 @@ describe("suggest.ts", () => {
 			const error = new Error("Test error message");
 			assert.throws(() => handleError(error, "react", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Test error message"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Test error message"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should log non-Error errors as strings", () => {
 			assert.throws(() => handleError("string error", "express", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle null errors", () => {
 			assert.throws(() => handleError(null, "lodash", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "null"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "null"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle undefined errors", () => {
 			assert.throws(() => handleError(undefined, "axios", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "undefined"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "undefined"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle numeric errors", () => {
 			assert.throws(() => handleError(500, "react", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "500"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "500"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle object errors without message property", () => {
 			const error = { code: "ERR_API", status: 500 };
 			assert.throws(() => handleError(error, "express", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "[object Object]"]);
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "[object Object]"]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should always call process.exit with code 1", () => {
 			const error = new Error("Any error");
 			assert.throws(() => handleError(error, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
+			assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should ignore _query parameter (present for interface consistency)", () => {
@@ -599,27 +599,27 @@ describe("suggest.ts", () => {
 			assert.throws(() => handleError(error, "any-query-name", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
 			// The _query parameter is unused in the error handling, just part of the interface
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Test error"]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Test error"]);
 		});
 
 		it("should handle Error objects with custom message property", () => {
 			const customError = new Error("Custom API error");
 			assert.throws(() => handleError(customError, "vue", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Custom API error"]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Custom API error"]);
 		});
 
 		it("should handle boolean errors", () => {
 			assert.throws(() => handleError(false, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "false"]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "false"]);
 		});
 
 		it("should handle array errors", () => {
 			const arrayError = ["error1", "error2"];
 			assert.throws(() => handleError(arrayError, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "error1,error2"]);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "error1,error2"]);
 		});
 	});
 });

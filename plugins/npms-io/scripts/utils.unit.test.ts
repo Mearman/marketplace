@@ -3,7 +3,7 @@
  */
 
 import { describe, it } from "node:test";
-import assert from "node:assert";
+import * as assert from "node:assert";
 import {
 	API,
 	formatDate,
@@ -206,14 +206,14 @@ describe("re-exported utilities", () => {
 
 		it("should parse positional arguments", () => {
 			const result = parseArgs(["react", "express"]);
-			assert.assert.deepStrictEqual(result.positional, ["react", "express"]);
+			assert.deepStrictEqual(result.positional, ["react", "express"]);
 		});
 
 		it("should parse mixed arguments", () => {
 			const result = parseArgs(["--flag", "--opt=value", "positional"]);
 			assert.strictEqual(result.flags.has("flag"), true);
 			assert.strictEqual(result.options.get("opt"), "value");
-			assert.assert.deepStrictEqual(result.positional, ["positional"]);
+			assert.deepStrictEqual(result.positional, ["positional"]);
 		});
 	});
 });

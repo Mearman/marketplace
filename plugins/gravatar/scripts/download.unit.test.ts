@@ -3,27 +3,20 @@
  */
 
 import { describe, it, beforeEach, mock } from "node:test";
-import assert from "node:assert";
+import * as assert from "node:assert";
 import { main, handleError } from "./download.js";
 import { parseArgs } from "./utils.js";
-
-// Mock writeFile
-let mockWriteFile: any;
-beforeEach(() => {
-	mockWriteFile = mock.fn(async () => {});
-	mock.method(global, "writeFile", mockWriteFile, { global: true });
-});
+import { callsToArray, firstCall } from "./test-helpers.js";
 
 describe("download.ts", () => {
 	let mockConsole: any;
 	let mockProcess: any;
 	let mockFetchWithCache: any;
+	let mockWriteFile: any;
 	let deps: any;
 
 	beforeEach(() => {
 		mock.reset();
-		mockWriteFile = mock.fn(async () => {});
-		mock.method(global, "writeFile", mockWriteFile, { global: true });
 
 		mockConsole = {
 			log: mock.fn(),
@@ -37,11 +30,13 @@ describe("download.ts", () => {
 		};
 
 		mockFetchWithCache = mock.fn(async () => new ArrayBuffer(5000));
+		mockWriteFile = mock.fn(async () => {});
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
 			console: mockConsole,
 			process: mockProcess,
+			writeFile: mockWriteFile,
 		};
 	});
 
@@ -55,13 +50,13 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				assert.strictEqual(mockConsole.log.mock.calls[0][0], "Email: user@example.com");
-				assert.strictEqual(mockConsole.log.mock.calls[1][0], "Output: avatar.jpg");
-				assert.match(mockConsole.log.mock.calls[2][0], /Hash:/);
-				assert.match(mockConsole.log.mock.calls[4][0], /✓ Downloaded successfully/);
-				assert.match(mockConsole.log.mock.calls[5][0], /Size: 10\.0 KB/);
-				assert.strictEqual(mockConsole.log.mock.calls[6][0], "  File: avatar.jpg");
-				assert.deepStrictEqual(mockWriteFile.mock.calls[0], ["avatar.jpg", Buffer.from(mockBuffer)]);
+				assert.strictEqual(callsToArray(mockConsole.log)[0][0], "Email: user@example.com");
+				assert.strictEqual(callsToArray(mockConsole.log)[1][0], "Output: avatar.jpg");
+				assert.match(callsToArray(mockConsole.log)[2][0], /Hash:/);
+				assert.match(callsToArray(mockConsole.log)[4][0], /✓ Downloaded successfully/);
+				assert.match(callsToArray(mockConsole.log)[5][0], /Size: 10\.0 KB/);
+				assert.strictEqual(callsToArray(mockConsole.log)[6][0], "  File: avatar.jpg");
+				assert.deepStrictEqual(callsToArray(mockWriteFile)[0], ["avatar.jpg", Buffer.from(mockBuffer)]);
 			});
 
 			it("should download gravatar with custom size", async () => {
@@ -72,9 +67,9 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = firstCall(mockFetchWithCache)[0];
 				assert.match(callArgs.url, /size=400/);
-				assert.match(mockConsole.log.mock.calls[5][0], /Size: 20\.0 KB/);
+				assert.match(callsToArray(mockConsole.log)[5][0], /Size: 20\.0 KB/);
 			});
 
 			it("should download gravatar with default image type", async () => {
@@ -85,7 +80,7 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = firstCall(mockFetchWithCache)[0];
 				assert.match(callArgs.url, /d=identicon/);
 			});
 
@@ -97,7 +92,7 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = firstCall(mockFetchWithCache)[0];
 				assert.match(callArgs.url, /r=pg/);
 			});
 
@@ -109,7 +104,7 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				assert.match(mockConsole.log.mock.calls[5][0], /Size: 1024\.0 KB/);
+				assert.match(callsToArray(mockConsole.log)[5][0], /Size: 1024\.0 KB/);
 			});
 		});
 
@@ -121,7 +116,7 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = firstCall(mockFetchWithCache)[0];
 				assert.match(callArgs.url, /size=2048/);
 			});
 
@@ -133,7 +128,7 @@ describe("download.ts", () => {
 				await main(args, deps);
 
 				// Size > 2048 should be ignored (not set in URL)
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = firstCall(mockFetchWithCache)[0];
 				assert.doesNotMatch(callArgs.url, /size=2049/);
 			});
 
@@ -144,7 +139,7 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = firstCall(mockFetchWithCache)[0];
 				assert.doesNotMatch(callArgs.url, /size=-100/);
 			});
 
@@ -154,8 +149,6 @@ describe("download.ts", () => {
 
 				for (const defaultType of validDefaults) {
 					mock.reset();
-					mockWriteFile = mock.fn(async () => {});
-					mock.method(global, "writeFile", mockWriteFile, { global: true });
 
 					mockConsole = { log: mock.fn(), error: mock.fn() };
 					mockProcess = {
@@ -164,16 +157,18 @@ describe("download.ts", () => {
 						}),
 					};
 					mockFetchWithCache = mock.fn(async () => mockBuffer);
+					mockWriteFile = mock.fn(async () => {});
 					deps = {
 						fetchWithCache: mockFetchWithCache,
 						console: mockConsole,
 						process: mockProcess,
+						writeFile: mockWriteFile,
 					};
 
 					const args = parseArgs(["user@example.com", "avatar.jpg", `--default=${defaultType}`]);
 					await main(args, deps);
 
-					const callArgs = mockFetchWithCache.mock.calls[0][0];
+					const callArgs = firstCall(mockFetchWithCache)[0];
 					assert.match(callArgs.url, new RegExp(`d=${defaultType}`));
 				}
 			});
@@ -183,8 +178,8 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.match(mockConsole.error.mock.calls[0][0], /Invalid default type/);
-				assert.match(mockConsole.error.mock.calls[1][0], /mp, identicon, monsterid, wavatar, retro, robohash, blank/);
+				assert.match(callsToArray(mockConsole.error)[0][0], /Invalid default type/);
+				assert.match(callsToArray(mockConsole.error)[0][0], /mp, identicon, monsterid, wavatar, retro, robohash, blank/);
 			});
 
 			it("should validate rating levels", async () => {
@@ -193,8 +188,6 @@ describe("download.ts", () => {
 
 				for (const rating of validRatings) {
 					mock.reset();
-					mockWriteFile = mock.fn(async () => {});
-					mock.method(global, "writeFile", mockWriteFile, { global: true });
 
 					mockConsole = { log: mock.fn(), error: mock.fn() };
 					mockProcess = {
@@ -203,16 +196,18 @@ describe("download.ts", () => {
 						}),
 					};
 					mockFetchWithCache = mock.fn(async () => mockBuffer);
+					mockWriteFile = mock.fn(async () => {});
 					deps = {
 						fetchWithCache: mockFetchWithCache,
 						console: mockConsole,
 						process: mockProcess,
+						writeFile: mockWriteFile,
 					};
 
 					const args = parseArgs(["user@example.com", "avatar.jpg", `--rating=${rating}`]);
 					await main(args, deps);
 
-					const callArgs = mockFetchWithCache.mock.calls[0][0];
+					const callArgs = firstCall(mockFetchWithCache)[0];
 					assert.match(callArgs.url, new RegExp(`r=${rating}`));
 				}
 			});
@@ -222,8 +217,8 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.match(mockConsole.error.mock.calls[0][0], /Invalid rating level/);
-				assert.match(mockConsole.error.mock.calls[1][0], /g, pg, r, x/);
+				assert.match(callsToArray(mockConsole.error)[0][0], /Invalid rating level/);
+				assert.match(callsToArray(mockConsole.error)[0][0], /g, pg, r, x/);
 			});
 
 			it("should combine multiple options", async () => {
@@ -240,7 +235,7 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = firstCall(mockFetchWithCache)[0];
 				assert.match(callArgs.url, /size=300/);
 				assert.match(callArgs.url, /d=robohash/);
 				assert.match(callArgs.url, /r=pg/);
@@ -255,7 +250,7 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = firstCall(mockFetchWithCache)[0];
 				assert.strictEqual(callArgs.bypassCache, false);
 			});
 
@@ -266,7 +261,7 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = firstCall(mockFetchWithCache)[0];
 				assert.strictEqual(callArgs.bypassCache, true);
 			});
 		});
@@ -277,8 +272,7 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.match(mockConsole.log.mock.calls[0][0], /Usage:/);
-				assert.match(mockConsole.log.mock.calls[1][0], /npx tsx download\.ts <email> <output-file>/);
+				assert.match(callsToArray(mockConsole.log)[0][0], /Usage:/);
 			});
 
 			it("should show usage message when no output file provided", async () => {
@@ -286,7 +280,7 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.match(mockConsole.log.mock.calls[0][0], /Usage:/);
+				assert.match(callsToArray(mockConsole.log)[0][0], /Usage:/);
 			});
 
 			it("should include examples in usage message", async () => {
@@ -294,7 +288,7 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join("\n");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join("\n");
 				assert.match(logCalls, /Examples:/);
 				assert.match(logCalls, /npx tsx download\.ts user@example\.com avatar\.jpg/);
 				assert.match(logCalls, /npx tsx download\.ts user@example\.com avatar\.png --size=400/);
@@ -305,7 +299,7 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join("\n");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join("\n");
 				assert.match(logCalls, /--no-cache/);
 				assert.match(logCalls, /Bypass cache and fetch fresh data/);
 			});
@@ -321,7 +315,7 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Network error"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Network error"]);
 			});
 
 			it("should handle timeout errors", async () => {
@@ -333,7 +327,7 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Request timeout"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Request timeout"]);
 			});
 
 			it("should handle 404 errors", async () => {
@@ -345,21 +339,21 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Resource not found"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Resource not found"]);
 			});
 
 			it("should handle file write errors", async () => {
 				mockWriteFile = mock.fn(async () => {
 					throw new Error("Permission denied");
 				});
-				mock.method(global, "writeFile", mockWriteFile, { global: true });
+				deps.writeFile = mockWriteFile;
 				mockFetchWithCache = mock.fn(async () => new ArrayBuffer(1000));
 				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg"]);
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Permission denied"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Permission denied"]);
 			});
 
 			it("should handle non-Error errors", async () => {
@@ -371,7 +365,7 @@ describe("download.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "string error"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "string error"]);
 			});
 		});
 
@@ -383,7 +377,7 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls;
+				const logCalls = callsToArray(mockConsole.log);
 				assert.deepStrictEqual(logCalls[0], ["Email: user@example.com"]);
 				assert.deepStrictEqual(logCalls[1], ["Output: avatar.jpg"]);
 				assert.match(logCalls[2][0], /Hash:/);
@@ -401,43 +395,43 @@ describe("download.ts", () => {
 			const error = new Error("Download failed");
 			assert.throws(() => handleError(error, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Download failed"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Download failed"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should log non-Error errors as strings", () => {
 			assert.throws(() => handleError("string error", "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "string error"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "string error"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should handle null errors", () => {
 			assert.throws(() => handleError(null, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "null"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "null"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should handle undefined errors", () => {
 			assert.throws(() => handleError(undefined, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "undefined"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "undefined"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should include blank line before error message", () => {
 			const error = new Error("Test error");
 			assert.throws(() => handleError(error, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Test error"]);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Test error"]);
 		});
 
 		it("should ignore parameters in error (present for interface consistency)", () => {
 			const error = new Error("Test error");
 			assert.throws(() => handleError(error, "any-email@example.com", "any-file.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Test error"]);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Test error"]);
 		});
 	});
 });

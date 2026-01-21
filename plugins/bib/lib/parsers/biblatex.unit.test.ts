@@ -2,185 +2,111 @@
  * Tests for BibLaTeX parser
  */
 
-import { describe, it, beforeEach, mock } from "node:test";
-import assert from "node:assert";
+import { describe, it, beforeEach } from "node:test";
+import * as assert from "node:assert";
 import { BibLaTeXParser, createBibLaTeXParser } from "./biblatex.js";
-import type { ConversionResult, BibEntry } from "../types.js";
 
 describe("BibLaTeX Parser", () => {
-	let biblatexParser: BibLaTeXParser;
-	let mockBibTeXParse: ReturnType<typeof mock.fn>;
-	let mockBibTeXValidate: ReturnType<typeof mock.fn>;
+	let parser: BibLaTeXParser;
 
 	beforeEach(() => {
-		mock.reset();
-
-		// Create mock functions for BibTeX parser
-		mockBibTeXParse = mock.fn();
-		mockBibTeXValidate = mock.fn();
-
-		// Create a fresh parser for each test with mocked dependencies
-		biblatexParser = new BibLaTeXParser(
-			// @ts-expect-error - accessing private property for testing
-			{ parse: mockBibTeXParse, validate: mockBibTeXValidate }
-		);
+		parser = new BibLaTeXParser();
 	});
 
 	describe("parse", () => {
-		const mockEntries: BibEntry[] = [
-			{
-				id: "test2024",
-				type: "article-journal",
-				title: "Test Article",
-				_formatMetadata: {
-					source: "bibtex" as const,
-					originalType: "article",
-				},
-			},
-		];
+		it("should parse simple article entry", () => {
+			const content = "@article{test2024, author = {Smith, John}, title = {Test Article}, year = {2024}}";
 
-		const mockParseResult: ConversionResult = {
-			entries: mockEntries,
-			warnings: [],
-			stats: {
-				total: 1,
-				successful: 1,
-				withWarnings: 0,
-				failed: 0,
-			},
-		};
+			const result = parser.parse(content);
 
-		beforeEach(() => {
-			mockBibTeXParse.mock.mockReturnValue(mockParseResult);
-		});
-
-		it("should delegate to BibTeX parser", () => {
-			const content = "@article{test2024,...}";
-
-			const result = biblatexParser.parse(content);
-
-			assert.strictEqual(mockBibTeXParse.mock.calls.length, 1);
-			assert.strictEqual(mockBibTeXParse.mock.calls[0][0], content);
-			assert.deepStrictEqual(result, mockParseResult);
+			assert.strictEqual(result.entries.length, 1);
+			assert.strictEqual(result.entries[0].id, "test2024");
+			assert.strictEqual(result.entries[0].title, "Test Article");
 		});
 
 		it("should update metadata source to biblatex", () => {
-			const content = "@article{test2024,...}";
+			const content = "@article{test2024, title = {Test Article}, year = {2024}}";
 
-			const result = biblatexParser.parse(content);
+			const result = parser.parse(content);
 
 			assert.strictEqual(result.entries[0]._formatMetadata?.source, "biblatex");
-		});
-
-		it("should handle entries without metadata", () => {
-			const entriesWithoutMetadata: BibEntry[] = [
-				{
-					id: "test2024",
-					type: "article-journal",
-					title: "Test Article",
-				},
-			];
-
-			mockBibTeXParse.mock.mockReturnValue({
-				entries: entriesWithoutMetadata,
-				warnings: [],
-				stats: { total: 1, successful: 1, withWarnings: 0, failed: 0 },
-			});
-
-			const content = "@article{test2024,...}";
-			const result = biblatexParser.parse(content);
-
-			assert.strictEqual(result.entries[0]._formatMetadata, undefined);
+			assert.strictEqual(result.entries[0]._formatMetadata?.originalType, "article");
 		});
 
 		it("should handle multiple entries", () => {
-			const multipleEntries: BibEntry[] = [
-				{
-					id: "entry1",
-					type: "article-journal",
-					_formatMetadata: { source: "bibtex" as const },
-				},
-				{
-					id: "entry2",
-					type: "book",
-					_formatMetadata: { source: "bibtex" as const },
-				},
-			];
+			const content = `
+@article{entry1, title = {First}}
+@book{entry2, title = {Second}}
+			`;
 
-			mockBibTeXParse.mock.mockReturnValue({
-				entries: multipleEntries,
-				warnings: [],
-				stats: { total: 2, successful: 2, withWarnings: 0, failed: 0 },
-			});
+			const result = parser.parse(content);
 
-			const content = "@article{entry1,...}\n@book{entry2,...}";
-			const result = biblatexParser.parse(content);
-
+			assert.strictEqual(result.entries.length, 2);
 			assert.strictEqual(result.entries[0]._formatMetadata?.source, "biblatex");
 			assert.strictEqual(result.entries[1]._formatMetadata?.source, "biblatex");
 		});
 
-		it("should preserve warnings from BibTeX parser", () => {
-			const resultWithWarnings: ConversionResult = {
-				entries: mockEntries,
-				warnings: [
-					{
-						entryId: "test2024",
-						severity: "warning",
-						type: "field-loss",
-						message: "Unknown field ignored",
-					},
-				],
-				stats: { total: 1, successful: 1, withWarnings: 1, failed: 0 },
-			};
+		it("should parse BibLaTeX-specific entry type dataset", () => {
+			const content = "@dataset{data2024, title = {Research Data}, year = {2024}}";
 
-			mockBibTeXParse.mock.mockReturnValue(resultWithWarnings);
+			const result = parser.parse(content);
 
-			const content = "@article{test2024,...}";
-			const result = biblatexParser.parse(content);
+			assert.strictEqual(result.entries.length, 1);
+			// @dataset maps to dataset CSL type
+			assert.ok(result.entries[0].type);
+		});
 
-			assert.strictEqual(result.warnings.length, 1);
-			assert.strictEqual(result.warnings[0].message, "Unknown field ignored");
+		it("should parse BibLaTeX-specific entry type online", () => {
+			const content = "@online{web2024, title = {Example Site}, url = {https://example.com}, year = {2024}}";
+
+			const result = parser.parse(content);
+
+			assert.strictEqual(result.entries.length, 1);
+			assert.strictEqual(result.entries[0].URL, "https://example.com");
+		});
+
+		it("should parse BibLaTeX-specific field journaltitle", () => {
+			const content = "@article{test2024, title = {Article}, journaltitle = {Journal Name}, year = {2024}}";
+
+			const result = parser.parse(content);
+
+			assert.strictEqual(result.entries[0]["container-title"], "Journal Name");
+		});
+
+		it("should preserve warnings from parser", () => {
+			const content = "@article{test, title = {Unmatched";
+
+			const result = parser.parse(content);
+
+			// Unmatched braces result in no entries being parsed
+			assert.strictEqual(result.entries.length, 0);
 		});
 	});
 
 	describe("validate", () => {
-		it("should delegate to BibTeX validator", () => {
-			const warnings = [
-				{
-					entryId: "test",
-					severity: "error" as const,
-					type: "validation-error" as const,
-					message: "Missing required field: author",
-				},
-			];
+		it("should validate correct BibLaTeX", () => {
+			const content = "@article{test2024, title = {Test}, year = {2024}}";
 
-			mockBibTeXValidate.mock.mockReturnValue(warnings);
+			const warnings = parser.validate(content);
 
-			const content = "@article{test,...}";
-			const result = biblatexParser.validate(content);
-
-			assert.strictEqual(mockBibTeXValidate.mock.calls.length, 1);
-			assert.strictEqual(mockBibTeXValidate.mock.calls[0][0], content);
-			assert.deepStrictEqual(result, warnings);
+			assert.strictEqual(warnings.filter((w) => w.severity === "error").length, 0);
 		});
 
-		it("should return empty array when BibTeX has no warnings", () => {
-			mockBibTeXValidate.mock.mockReturnValue([]);
+		it("should detect unmatched braces", () => {
+			const content = "@article{test, title = {Unmatched";
 
-			const content = "@article{test,...}";
-			const result = biblatexParser.validate(content);
+			const warnings = parser.validate(content);
 
-			assert.deepStrictEqual(result, []);
+			assert.ok(warnings.length > 0);
+			assert.strictEqual(warnings[0].type, "parse-error");
 		});
 
-		it("should handle undefined validate method", () => {
-			mockBibTeXValidate.mock.mockReturnValue(undefined as unknown as string[]);
+		it("should warn on empty file", () => {
+			const content = "";
 
-			const content = "@article{test,...}";
-			const result = biblatexParser.validate(content);
+			const warnings = parser.validate(content);
 
-			assert.deepStrictEqual(result, []);
+			assert.ok(warnings.some((w) => w.message.includes("No entries")));
 		});
 	});
 

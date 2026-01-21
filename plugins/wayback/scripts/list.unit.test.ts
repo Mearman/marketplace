@@ -49,7 +49,7 @@ describe("list.ts", () => {
 	describe("main", () => {
 		describe("successful listing", () => {
 			it("should list snapshots", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => [
+				mockFetchWithCache = mock.fn(async () => [
 					["timestamp", "url", "mime", "status", "digest", "length"],
 					["20240101120000", "https://example.com", "text/html", "200", "digest", "1000"],
 				]);
@@ -63,7 +63,7 @@ describe("list.ts", () => {
 			});
 
 			it("should use --no-raw flag", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => [
+				mockFetchWithCache = mock.fn(async () => [
 					["timestamp", "url", "mime", "status", "digest", "length"],
 					["20240101120000", "https://example.com", "text/html", "200", "digest", "1000"],
 				]);
@@ -78,10 +78,10 @@ describe("list.ts", () => {
 			});
 
 			it("should use --with-screenshots flag", async () => {
-				mockGlobalFetch.mock.mockImplementation(async () => ({
+				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [["2024010112"], ["2024010113"]],
 				}));
-				mockFetchWithCache.mock.mockImplementation(async () => [
+				mockFetchWithCache = mock.fn(async () => [
 					["timestamp", "url", "mime", "status", "digest", "length"],
 					["20240101120000", "https://example.com", "text/html", "200", "digest", "1000"],
 				]);
@@ -94,7 +94,7 @@ describe("list.ts", () => {
 			});
 
 			it("should bypass cache with --no-cache flag", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => [
+				mockFetchWithCache = mock.fn(async () => [
 					["timestamp", "url", "mime", "status", "digest", "length"],
 					["20240101120000", "https://example.com", "text/html", "200", "digest", "1000"],
 				]);
@@ -118,7 +118,7 @@ describe("list.ts", () => {
 			});
 
 			it("should handle no snapshots found", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => []);
+				mockFetchWithCache = mock.fn(async () => []);
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -130,7 +130,7 @@ describe("list.ts", () => {
 
 		describe("error handling", () => {
 			it("should handle network errors", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("Network error"); });
+				mockFetchWithCache = mock.fn(async () => { throw new Error("Network error"); });
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -142,7 +142,7 @@ describe("list.ts", () => {
 
 	describe("fetchScreenshotTimestamps helper", () => {
 		it("should return screenshot timestamps", async () => {
-			mockGlobalFetch.mock.mockImplementation(async () => ({
+			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [
 					["timestamp"],
 					["20240101120000"],
@@ -157,7 +157,7 @@ describe("list.ts", () => {
 		});
 
 		it("should return empty set on error", async () => {
-			mockGlobalFetch.mock.mockImplementation(async () => { throw new Error("Network error"); });
+			mockGlobalFetch = mock.fn(async () => { throw new Error("Network error"); });
 
 			const result = await fetchScreenshotTimestamps("https://example.com");
 

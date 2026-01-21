@@ -39,7 +39,7 @@ describe("oldest-newest.ts", () => {
 	describe("main", () => {
 		describe("successful queries", () => {
 			it("should fetch both oldest and newest captures by default (compact output)", async () => {
-				mockFetchWithCache.mock.mockImplementation(({ url }: { url: string }) => {
+				mockFetchWithCache = mock.fn(({ url }: { url: string }) => {
 					if (url.includes("fastLatest")) {
 						return [
 							["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
@@ -66,7 +66,7 @@ describe("oldest-newest.ts", () => {
 			});
 
 			it("should output full data with --full flag", async () => {
-				mockFetchWithCache.mock.mockImplementation(({ url }: { url: string }) => {
+				mockFetchWithCache = mock.fn(({ url }: { url: string }) => {
 					if (url.includes("fastLatest")) {
 						return [
 							["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
@@ -90,7 +90,7 @@ describe("oldest-newest.ts", () => {
 			});
 
 			it("should output JSON with --json flag", async () => {
-				mockFetchWithCache.mock.mockImplementation(({ url }: { url: string }) => {
+				mockFetchWithCache = mock.fn(({ url }: { url: string }) => {
 					if (url.includes("fastLatest")) {
 						return [
 							["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
@@ -118,7 +118,7 @@ describe("oldest-newest.ts", () => {
 			});
 
 			it("should fetch only oldest with --oldest-only", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => [
+				mockFetchWithCache = mock.fn(async () => [
 					["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
 					["com,example)/", "19981201080000", "https://example.com", "text/html", "200", "digest", "1000"],
 				]);
@@ -133,7 +133,7 @@ describe("oldest-newest.ts", () => {
 			});
 
 			it("should fetch only newest with --newest-only", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => [
+				mockFetchWithCache = mock.fn(async () => [
 					["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
 					["com,example)/", "20240115143000", "https://example.com", "text/html", "200", "digest", "1000"],
 				]);
@@ -148,7 +148,7 @@ describe("oldest-newest.ts", () => {
 			});
 
 			it("should bypass cache with --no-cache flag", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => [
+				mockFetchWithCache = mock.fn(async () => [
 					["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
 					["com,example)/", "20240115143000", "https://example.com", "text/html", "200", "digest", "1000"],
 				]);
@@ -164,7 +164,7 @@ describe("oldest-newest.ts", () => {
 			});
 
 			it("should handle no captures found", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => []);
+				mockFetchWithCache = mock.fn(async () => []);
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -174,7 +174,7 @@ describe("oldest-newest.ts", () => {
 			});
 
 			it("should handle only oldest found (newest missing)", async () => {
-				mockFetchWithCache.mock.mockImplementation(({ url }: { url: string }) => {
+				mockFetchWithCache = mock.fn(({ url }: { url: string }) => {
 					if (url.includes("fastLatest")) {
 						return [];
 					}
@@ -194,7 +194,7 @@ describe("oldest-newest.ts", () => {
 			});
 
 			it("should handle only newest found (oldest missing)", async () => {
-				mockFetchWithCache.mock.mockImplementation(({ url }: { url: string }) => {
+				mockFetchWithCache = mock.fn(({ url }: { url: string }) => {
 					if (url.includes("fastLatest")) {
 						return [
 							["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
@@ -227,7 +227,7 @@ describe("oldest-newest.ts", () => {
 
 		describe("error handling", () => {
 			it("should handle network errors", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("Network error"); });
+				mockFetchWithCache = mock.fn(async () => { throw new Error("Network error"); });
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -238,7 +238,7 @@ describe("oldest-newest.ts", () => {
 
 	describe("fetchOldest helper", () => {
 		it("should return oldest capture entry", async () => {
-			mockFetchWithCache.mock.mockImplementation(async () => [
+			mockFetchWithCache = mock.fn(async () => [
 				["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
 				["com,example)/", "19981201080000", "https://example.com", "text/html", "200", "digest", "1000"],
 			]);
@@ -253,7 +253,7 @@ describe("oldest-newest.ts", () => {
 		});
 
 		it("should return null when no captures found", async () => {
-			mockFetchWithCache.mock.mockImplementation(async () => []);
+			mockFetchWithCache = mock.fn(async () => []);
 
 			const result = await fetchOldest("https://example.com", mockFetchWithCache);
 
@@ -261,7 +261,7 @@ describe("oldest-newest.ts", () => {
 		});
 
 		it("should return null when only header row", async () => {
-			mockFetchWithCache.mock.mockImplementation(async () => [
+			mockFetchWithCache = mock.fn(async () => [
 				["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
 			]);
 
@@ -273,7 +273,7 @@ describe("oldest-newest.ts", () => {
 
 	describe("fetchNewest helper", () => {
 		it("should return newest capture entry", async () => {
-			mockFetchWithCache.mock.mockImplementation(async () => [
+			mockFetchWithCache = mock.fn(async () => [
 				["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
 				["com,example)/", "20240115143000", "https://example.com", "text/html", "200", "digest", "1000"],
 			]);
@@ -288,7 +288,7 @@ describe("oldest-newest.ts", () => {
 		});
 
 		it("should return null when no captures found", async () => {
-			mockFetchWithCache.mock.mockImplementation(async () => []);
+			mockFetchWithCache = mock.fn(async () => []);
 
 			const result = await fetchNewest("https://example.com", mockFetchWithCache);
 
@@ -296,7 +296,7 @@ describe("oldest-newest.ts", () => {
 		});
 
 		it("should use fastLatest parameter", async () => {
-			mockFetchWithCache.mock.mockImplementation(async () => [
+			mockFetchWithCache = mock.fn(async () => [
 				["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
 				["com,example)/", "20240115143000", "https://example.com", "text/html", "200", "digest", "1000"],
 			]);

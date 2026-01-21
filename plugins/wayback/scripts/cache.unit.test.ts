@@ -47,7 +47,7 @@ describe("cache.ts", () => {
 
 	describe("main", () => {
 		it("should execute clear command", async () => {
-			mockReaddir.mock.mockImplementation(async () => []);
+			mockReaddir = mock.fn(async () => []);
 			const args = { flags: new Set<string>(), positional: ["clear"] };
 
 			await main(args, deps);
@@ -56,7 +56,7 @@ describe("cache.ts", () => {
 		});
 
 		it("should execute status command", async () => {
-			mockReaddir.mock.mockImplementation(async () => []);
+			mockReaddir = mock.fn(async () => []);
 			const args = { flags: new Set<string>(), positional: ["status"] };
 
 			await main(args, deps);
@@ -81,7 +81,7 @@ describe("cache.ts", () => {
 		});
 
 		it("should handle --verbose flag", async () => {
-			mockReaddir.mock.mockImplementation(async () => []);
+			mockReaddir = mock.fn(async () => []);
 			const args = { flags: new Set<string>(["--verbose"]), positional: ["status"] };
 
 			await main(args, deps);
@@ -91,9 +91,9 @@ describe("cache.ts", () => {
 		});
 
 		it("should clear cache files", async () => {
-			mockReaddir.mock.mockImplementation(async () => ["file1.json", "file2.json"]);
-			mockStat.mock.mockImplementation(async () => ({ size: 1024 }));
-			mockUnlink.mock.mockImplementation(async () => undefined);
+			mockReaddir = mock.fn(async () => ["file1.json", "file2.json"]);
+			mockStat = mock.fn(async () => ({ size: 1024 }));
+			mockUnlink = mock.fn(async () => undefined);
 
 			const args = { flags: new Set<string>(), positional: ["clear"] };
 
@@ -103,7 +103,7 @@ describe("cache.ts", () => {
 		});
 
 		it("should show status with files", async () => {
-			mockReaddir.mock.mockImplementation(async () => ["file1.json", "file2.json"]);
+			mockReaddir = mock.fn(async () => ["file1.json", "file2.json"]);
 
 			const args = { flags: new Set<string>(), positional: ["status"] };
 
@@ -114,8 +114,8 @@ describe("cache.ts", () => {
 
 		it("should show verbose status with files", async () => {
 			const mockDate = new Date("2024-01-15T10:30:00Z");
-			mockReaddir.mock.mockImplementation(async () => ["file1.json", "file2.json"]);
-			mockStat.mock.mockImplementation(async () => ({
+			mockReaddir = mock.fn(async () => ["file1.json", "file2.json"]);
+			mockStat = mock.fn(async () => ({
 				size: 2048,
 				mtime: mockDate,
 			}));
@@ -130,8 +130,8 @@ describe("cache.ts", () => {
 
 		it("should show verbose status with age formatting", async () => {
 			const recentDate = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
-			mockReaddir.mock.mockImplementation(async () => ["recent.json"]);
-			mockStat.mock.mockImplementation(async () => ({
+			mockReaddir = mock.fn(async () => ["recent.json"]);
+			mockStat = mock.fn(async () => ({
 				size: 1024,
 				mtime: recentDate,
 			}));
@@ -146,7 +146,7 @@ describe("cache.ts", () => {
 		it("should handle ENOENT error in status", async () => {
 			const error: NodeJS.ErrnoException = new Error("Directory not found");
 			error.code = "ENOENT";
-			mockReaddir.mock.mockImplementation(async () => { throw error; });
+			mockReaddir = mock.fn(async () => { throw error; });
 
 			const args = { flags: new Set<string>(), positional: ["status"] };
 
@@ -156,9 +156,9 @@ describe("cache.ts", () => {
 		});
 
 		it("should show verbose clear output", async () => {
-			mockReaddir.mock.mockImplementation(async () => ["file1.json", "file2.json"]);
-			mockStat.mock.mockImplementation(async () => ({ size: 1024 }));
-			mockUnlink.mock.mockImplementation(async () => undefined);
+			mockReaddir = mock.fn(async () => ["file1.json", "file2.json"]);
+			mockStat = mock.fn(async () => ({ size: 1024 }));
+			mockUnlink = mock.fn(async () => undefined);
 
 			const args = { flags: new Set<string>(["--verbose"]), positional: ["clear"] };
 
@@ -170,7 +170,7 @@ describe("cache.ts", () => {
 		it("should handle ENOENT error in clear", async () => {
 			const error: NodeJS.ErrnoException = new Error("Directory not found");
 			error.code = "ENOENT";
-			mockReaddir.mock.mockImplementation(async () => { throw error; });
+			mockReaddir = mock.fn(async () => { throw error; });
 
 			const args = { flags: new Set<string>(), positional: ["clear"] };
 

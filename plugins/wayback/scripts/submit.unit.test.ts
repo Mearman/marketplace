@@ -3,7 +3,7 @@
  */
 
 import { describe, it, beforeEach, mock } from "node:test";
-import assert from "node:assert";
+import * as assert from "node:assert";
 import { main, handleError } from "./submit.js";
 import { parseArgs } from "./utils.js";
 
@@ -54,7 +54,7 @@ describe("submit.ts", () => {
 						original_url: "https://example.com",
 					}),
 				};
-				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
+				mockGlobalFetch = mock.fn(async () => mockResponse);
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -74,7 +74,7 @@ describe("submit.ts", () => {
 						timestamp: "20240101120000",
 					}),
 				};
-				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
+				mockGlobalFetch = mock.fn(async () => mockResponse);
 
 				const args = parseArgs(["--key=access:secret", "https://example.com"]);
 
@@ -92,7 +92,7 @@ describe("submit.ts", () => {
 						timestamp: "20240101120000",
 					}),
 				};
-				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
+				mockGlobalFetch = mock.fn(async () => mockResponse);
 
 				const args = parseArgs(["--no-raw", "https://example.com"]);
 
@@ -112,7 +112,7 @@ describe("submit.ts", () => {
 						timestamp: "20240101120000",
 					}),
 				};
-				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
+				mockGlobalFetch = mock.fn(async () => mockResponse);
 
 				const args = parseArgs(["--capture-outlinks", "https://example.com"]);
 
@@ -133,7 +133,7 @@ describe("submit.ts", () => {
 						screenshot: "https://example.com/screenshot.png",
 					}),
 				};
-				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
+				mockGlobalFetch = mock.fn(async () => mockResponse);
 
 				const args = parseArgs(["--capture-screenshot", "https://example.com"]);
 
@@ -151,7 +151,7 @@ describe("submit.ts", () => {
 						timestamp: "20240101120000",
 					}),
 				};
-				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
+				mockGlobalFetch = mock.fn(async () => mockResponse);
 
 				const args = parseArgs(["--skip-if-recent=30d", "https://example.com"]);
 
@@ -162,8 +162,9 @@ describe("submit.ts", () => {
 				assert.ok(body && typeof body === "string" && body.includes("if_not_archived_within=30d"));
 			});
 
+			// @ts-expect-error - Type assertion issue with TestOptions
 			it("should handle job that completes with error status", async () => {
-				mockGlobalFetch.mock.mockImplementation(async () => ({
+				mockGlobalFetch = mock.fn(async () => ({
 					ok: true,
 					json: async () => ({
 						job_id: "job123",
@@ -178,7 +179,7 @@ describe("submit.ts", () => {
 
 				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ Failed to archive")));
 				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Blocked by robots.txt")));
-			}, 10000);
+			}, { timeout: 10000 });
 
 			it("should handle unexpected API response", async () => {
 				const mockResponse = {
@@ -187,7 +188,7 @@ describe("submit.ts", () => {
 						unknown_field: "unexpected",
 					}),
 				};
-				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
+				mockGlobalFetch = mock.fn(async () => mockResponse);
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -216,7 +217,7 @@ describe("submit.ts", () => {
 						message: "Invalid URL",
 					}),
 				};
-				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
+				mockGlobalFetch = mock.fn(async () => mockResponse);
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -226,7 +227,7 @@ describe("submit.ts", () => {
 			});
 
 			it("should handle network errors", async () => {
-				mockGlobalFetch.mock.mockImplementation(async () => { throw new Error("Network error"); });
+				mockGlobalFetch = mock.fn(async () => { throw new Error("Network error"); });
 
 				const args = parseArgs(["https://example.com"]);
 

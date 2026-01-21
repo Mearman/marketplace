@@ -49,7 +49,7 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mock.mockImplementation(async () => mockData);
+				mockFetchWithCache = mock.fn(async () => mockData);
 				const args = parseArgs(["https://example.com"]);
 
 				await main(args, deps);
@@ -68,7 +68,7 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mock.mockImplementation(async () => mockData);
+				mockFetchWithCache = mock.fn(async () => mockData);
 				const args = parseArgs(["https://example.com"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
@@ -87,7 +87,7 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mock.mockImplementation(async () => mockData);
+				mockFetchWithCache = mock.fn(async () => mockData);
 				const args = parseArgs(["--no-raw", "https://example.com"]);
 
 				await main(args, deps);
@@ -107,7 +107,7 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mock.mockImplementation(async () => mockData);
+				mockFetchWithCache = mock.fn(async () => mockData);
 				const args = parseArgs(["--no-cache", "https://example.com"]);
 
 				await main(args, deps);
@@ -130,7 +130,7 @@ describe("check.ts", () => {
 
 		describe("error handling", () => {
 			it("should handle network errors", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("Network error"); });
+				mockFetchWithCache = mock.fn(async () => { throw new Error("Network error"); });
 				const args = parseArgs(["https://example.com"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
@@ -139,7 +139,7 @@ describe("check.ts", () => {
 			});
 
 			it("should handle non-Error errors", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => { throw "string error"; });
+				mockFetchWithCache = mock.fn(async () => { throw "string error"; });
 				const args = parseArgs(["https://example.com"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
@@ -159,7 +159,7 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mock.mockImplementation(async () => mockData);
+				mockFetchWithCache = mock.fn(async () => mockData);
 				const args = parseArgs(["https://example.com"]);
 
 				await main(args, deps);

@@ -2,8 +2,8 @@
  * Tests for bibliography generators
  */
 
-import { describe, it, beforeEach, mock } from "node:test";
-import assert from "node:assert";
+import { describe, it, beforeEach } from "node:test";
+import * as assert from "node:assert";
 import { BibLaTeXGenerator, createBibLaTeXGenerator } from "./generators/biblatex.js";
 import { CSLJSONGenerator, createCSLJSONGenerator } from "./generators/csl.js";
 import { EndNoteXMLGenerator, createEndNoteXMLGenerator } from "./generators/endnote.js";
@@ -11,65 +11,9 @@ import { RISGenerator, createRISGenerator } from "./generators/ris.js";
 import type { BibEntry, GeneratorOptions } from "./types.js";
 
 describe("Generators", () => {
-	let mockDenormalizeFromCslType: ReturnType<typeof mock.fn>;
-	let mockGetRisTag: ReturnType<typeof mock.fn>;
-	let mockSerializeName: ReturnType<typeof mock.fn>;
-	let mockSerializeRISDate: ReturnType<typeof mock.fn>;
-	let mockBibTeXGenerate: ReturnType<typeof mock.fn>;
 	let mockEntries: BibEntry[];
 
 	beforeEach(() => {
-		mock.reset();
-
-		// Create mock functions for dependencies
-		mockDenormalizeFromCslType = mock.fn((type: string, target: string) => {
-			if (target === "ris") {
-				const risMap: Record<string, string> = {
-					"article-journal": "JOUR",
-					"book": "BOOK",
-					"chapter": "CHAP",
-				};
-				return { type: risMap[type] || "GEN", lossy: false };
-			}
-			return { type: type.toUpperCase(), lossy: false };
-		});
-
-		mockGetRisTag = mock.fn((field: string) => {
-			const tagMap: Record<string, string> = {
-				author: "AU",
-				title: "TI",
-				"container-title": "T2",
-				issued: "PY",
-				volume: "VL",
-				issue: "IS",
-				page: "SP",
-				publisher: "PB",
-				DOI: "DO",
-				URL: "UR",
-				abstract: "AB",
-				keyword: "KW",
-			};
-			return tagMap[field] || field.toUpperCase();
-		});
-
-		mockSerializeName = mock.fn((person) => {
-			if (person.family && person.given) {
-				return `${person.family}, ${person.given}`;
-			}
-			return person.literal || "";
-		});
-
-		mockSerializeRISDate = mock.fn((date) => {
-			if (date["date-parts"]) {
-				return String(date["date-parts"][0][0]);
-			}
-			return "";
-		});
-
-		mockBibTeXGenerate = mock.fn((entries: BibEntry[]) => {
-			return entries.map((e) => `@${e.type}{${e.id},...}`).join("\n");
-		});
-
 		mockEntries = [
 			{
 				id: "smith2024",
@@ -125,7 +69,7 @@ describe("Generators", () => {
 			const options: GeneratorOptions = { sort: true };
 			const output = generator.generate(mockEntries, options);
 
-			// doej2023 should come before smith2024 alphabetically
+			// doe2023 should come before smith2024 alphabetically
 			const doeIndex = output.indexOf("doe2023");
 			const smithIndex = output.indexOf("smith2024");
 			assert.ok(doeIndex < smithIndex);
@@ -157,27 +101,21 @@ describe("Generators", () => {
 		let generator: BibLaTeXGenerator;
 
 		beforeEach(() => {
-			generator = new BibLaTeXGenerator(
-				// @ts-expect-error - accessing private property for testing
-				{ generate: mockBibTeXGenerate }
-			);
+			generator = new BibLaTeXGenerator();
 		});
 
-		it("should delegate to BibTeX generator", () => {
+		it("should generate BibLaTeX format output", () => {
 			const output = generator.generate(mockEntries);
 
-			assert.ok(output.includes("article-journal"));
+			assert.ok(output.includes("@article"));
 			assert.ok(output.includes("smith2024"));
 		});
 
-		it("should pass options to BibTeX generator", () => {
-			const options: GeneratorOptions = { sort: true };
-			generator.generate(mockEntries, options);
+		it("should include entry fields", () => {
+			const output = generator.generate(mockEntries);
 
-			// @ts-expect-error - accessing private property for testing
-			const bibTeXGenerate = generator.bibtexGenerator.generate;
-			assert.strictEqual(bibTeXGenerate.mock.calls.length, 1);
-			assert.deepStrictEqual(bibTeXGenerate.mock.calls[0][1], mockEntries);
+			assert.ok(output.includes("Test Article"));
+			assert.ok(output.includes("Smith, John"));
 		});
 
 		it("should return format biblatex", () => {
@@ -189,15 +127,7 @@ describe("Generators", () => {
 		let generator: RISGenerator;
 
 		beforeEach(() => {
-			generator = new RISGenerator(
-				// @ts-expect-error - accessing private properties for testing
-				{
-					denormalizeFromCslType: mockDenormalizeFromCslType,
-					getRisTag: mockGetRisTag,
-					serializeName: mockSerializeName,
-					serializeRISDate: mockSerializeRISDate,
-				}
-			);
+			generator = new RISGenerator();
 		});
 
 		it("should generate RIS format", () => {
@@ -217,7 +147,7 @@ describe("Generators", () => {
 
 		it("should sort entries when requested", () => {
 			const options: GeneratorOptions = { sort: true };
-			generator.generate(mockEntries, options);
+			const output = generator.generate(mockEntries, options);
 
 			// RIS format doesn't include IDs, just verify both entries are present
 			assert.ok(output.includes("TY  - JOUR"));
@@ -253,12 +183,7 @@ describe("Generators", () => {
 		let generator: EndNoteXMLGenerator;
 
 		beforeEach(() => {
-			generator = new EndNoteXMLGenerator(
-				// @ts-expect-error - accessing private properties for testing
-				{
-					denormalizeFromCslType: mockDenormalizeFromCslType,
-				}
-			);
+			generator = new EndNoteXMLGenerator();
 		});
 
 		it("should generate EndNote XML format", () => {

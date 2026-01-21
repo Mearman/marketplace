@@ -48,7 +48,7 @@ describe("frequency.ts", () => {
 					["com,example)/", "20200401120000", "https://example.com", "text/html", "200", "jkl", "1000"],
 					["com,example)/", "20200501120000", "https://example.com", "text/html", "200", "mno", "1000"],
 				];
-				mockFetchWithCache.mock.mockImplementation(async () => mockData);
+				mockFetchWithCache = mock.fn(async () => mockData);
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -64,7 +64,7 @@ describe("frequency.ts", () => {
 					["com,example)/", "20200101120000", "https://example.com", "text/html", "200", "abc", "1000"],
 					["com,example)/", "20200201120000", "https://example.com", "text/html", "200", "def", "1000"],
 				];
-				mockFetchWithCache.mock.mockImplementation(async () => mockData);
+				mockFetchWithCache = mock.fn(async () => mockData);
 
 				const args = parseArgs(["https://example.com", "2020", "2020"]);
 
@@ -79,7 +79,7 @@ describe("frequency.ts", () => {
 					["com,example)/", "20190101120000", "https://example.com", "text/html", "200", "abc", "1000"],
 					["com,example)/", "20200101120000", "https://example.com", "text/html", "200", "def", "1000"],
 				];
-				mockFetchWithCache.mock.mockImplementation(async () => mockData);
+				mockFetchWithCache = mock.fn(async () => mockData);
 
 				const args = parseArgs(["--full", "https://example.com"]);
 
@@ -94,7 +94,7 @@ describe("frequency.ts", () => {
 					["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
 					["com,example)/", "20200101120000", "https://example.com", "text/html", "200", "abc", "1000"],
 				];
-				mockFetchWithCache.mock.mockImplementation(async () => mockData);
+				mockFetchWithCache = mock.fn(async () => mockData);
 
 				const args = parseArgs(["--json", "https://example.com"]);
 
@@ -110,7 +110,7 @@ describe("frequency.ts", () => {
 			});
 
 			it("should handle no captures found", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => []);
+				mockFetchWithCache = mock.fn(async () => []);
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -133,7 +133,7 @@ describe("frequency.ts", () => {
 
 		describe("error handling", () => {
 			it("should handle network errors", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("Network error"); });
+				mockFetchWithCache = mock.fn(async () => { throw new Error("Network error"); });
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -163,7 +163,7 @@ describe("frequency.ts", () => {
 				["com,example)/", "20200101120000", "https://example.com", "text/html", "200", "abc", "1000"],
 				["com,example)/", "20200201120000", "https://example.com", "text/html", "200", "def", "1000"],
 			];
-			mockFetchWithCache.mock.mockImplementation(async () => mockData);
+			mockFetchWithCache = mock.fn(async () => mockData);
 
 			const result = await fetchCaptures("https://example.com", "2020", "2021", mockFetchWithCache);
 
@@ -172,7 +172,7 @@ describe("frequency.ts", () => {
 		});
 
 		it("should return empty array when only header row", async () => {
-			mockFetchWithCache.mock.mockImplementation(async () => [
+			mockFetchWithCache = mock.fn(async () => [
 				["urlkey", "timestamp", "original", "mimetype", "statuscode", "digest", "length"],
 			]);
 
