@@ -8,9 +8,102 @@
  * - Generate target format from CSL JSON
  */
 
-import type { BibFormat, ConversionResult, BibEntry, GeneratorOptions } from "./types.js";
+import type { BibFormat, ConversionResult, BibEntry, GeneratorOptions, ConversionWarning } from "./types.js";
 import { createBibTeXParser, createBibLaTeXParser, createCSLJSONParser, createRISParser, createEndNoteXMLParser } from "./parsers/index.js";
 import { createBibTeXGenerator, createBibLaTeXGenerator, createCSLJSONGenerator, createRISGenerator, createEndNoteXMLGenerator } from "./generators/index.js";
+
+/**
+ * Parser interface for dependency injection
+ */
+export interface Parser {
+	parse(content: string): ConversionResult;
+	validate?(content: string): ConversionWarning[];
+	format: string;
+	mock?: {
+		calls: Array<{ arguments: [string] }>;
+	};
+}
+
+/**
+ * Generator interface for dependency injection
+ */
+export interface Generator {
+	generate(entries: BibEntry[], options?: GeneratorOptions): string;
+	format: string;
+	mock?: {
+		calls: Array<{ arguments: [BibEntry[], (GeneratorOptions | undefined)?] }>;
+	};
+}
+
+/**
+ * Dependencies for converter functions (for testing)
+ */
+export interface ConverterDependencies {
+	getParser: (format: BibFormat) => Parser;
+	getGenerator: (format: BibFormat) => Generator;
+}
+
+/**
+ * Default dependencies using real parsers and generators
+ */
+const defaultDeps: ConverterDependencies = {
+	getParser(format: BibFormat): Parser {
+		switch (format) {
+		case "bibtex":
+			return createBibTeXParser();
+		case "biblatex":
+			return createBibLaTeXParser();
+		case "csl-json":
+			return createCSLJSONParser();
+		case "ris":
+			return createRISParser();
+		case "endnote":
+			return createEndNoteXMLParser();
+		default:
+			throw new Error(`Unsupported source format: ${format}`);
+		}
+	},
+	getGenerator(format: BibFormat): Generator {
+		switch (format) {
+		case "bibtex":
+			return createBibTeXGenerator();
+		case "biblatex":
+			return createBibLaTeXGenerator();
+		case "csl-json":
+			return createCSLJSONGenerator();
+		case "ris":
+			return createRISGenerator();
+		case "endnote":
+			return createEndNoteXMLGenerator();
+		default:
+			throw new Error(`Unsupported target format: ${format}`);
+		}
+	},
+};
+
+/**
+ * Internal parse with dependencies
+ */
+function parseWithDeps(content: string, format: BibFormat, deps: ConverterDependencies): ConversionResult {
+	const parser = deps.getParser(format);
+	return parser.parse(content);
+}
+
+/**
+ * Internal generate with dependencies
+ */
+function generateWithDeps(entries: BibEntry[], format: BibFormat, options: GeneratorOptions | undefined, deps: ConverterDependencies): string {
+	const generator = deps.getGenerator(format);
+	return generator.generate(entries, options);
+}
+
+/**
+ * Internal validate with dependencies
+ */
+function validateWithDeps(content: string, format: BibFormat, deps: ConverterDependencies): ConversionWarning[] {
+	const parser = deps.getParser(format);
+	return parser.validate?.(content) || [];
+}
 
 /**
  * Convert bibliography from one format to another
@@ -19,19 +112,21 @@ import { createBibTeXGenerator, createBibLaTeXGenerator, createCSLJSONGenerator,
  * @param fromFormat - Source format
  * @param toFormat - Target format
  * @param options - Generator options
+ * @param deps - Dependencies (for testing)
  * @returns Conversion result with generated content and warnings
  */
 export function convert(
 	content: string,
 	fromFormat: BibFormat,
 	toFormat: BibFormat,
-	options?: GeneratorOptions
+	options?: GeneratorOptions,
+	deps: ConverterDependencies = defaultDeps
 ): { output: string; result: ConversionResult } {
 	// Step 1: Parse source format to intermediate format
-	const parseResult = parse(content, fromFormat);
+	const parseResult = parseWithDeps(content, fromFormat, deps);
 
 	// Step 2: Generate target format from intermediate
-	const output = generate(parseResult.entries, toFormat, options);
+	const output = generateWithDeps(parseResult.entries, toFormat, options, deps);
 
 	return {
 		output,
@@ -44,11 +139,11 @@ export function convert(
  *
  * @param content - Bibliography content
  * @param format - Source format
+ * @param deps - Dependencies (for testing)
  * @returns Parse result with entries and warnings
  */
-export function parse(content: string, format: BibFormat): ConversionResult {
-	const parser = getParser(format);
-	return parser.parse(content);
+export function parse(content: string, format: BibFormat, deps: ConverterDependencies = defaultDeps): ConversionResult {
+	return parseWithDeps(content, format, deps);
 }
 
 /**
@@ -57,11 +152,11 @@ export function parse(content: string, format: BibFormat): ConversionResult {
  * @param entries - Bibliography entries
  * @param format - Target format
  * @param options - Generator options
+ * @param deps - Dependencies (for testing)
  * @returns Generated bibliography content
  */
-export function generate(entries: BibEntry[], format: BibFormat, options?: GeneratorOptions): string {
-	const generator = getGenerator(format);
-	return generator.generate(entries, options);
+export function generate(entries: BibEntry[], format: BibFormat, options?: GeneratorOptions, deps: ConverterDependencies = defaultDeps): string {
+	return generateWithDeps(entries, format, options, deps);
 }
 
 /**
@@ -69,51 +164,11 @@ export function generate(entries: BibEntry[], format: BibFormat, options?: Gener
  *
  * @param content - Bibliography content
  * @param format - Format to validate
+ * @param deps - Dependencies (for testing)
  * @returns Validation warnings
  */
-export function validate(content: string, format: BibFormat) {
-	const parser = getParser(format);
-	return parser.validate?.(content) || [];
-}
-
-/**
- * Get parser for format
- */
-function getParser(format: BibFormat) {
-	switch (format) {
-	case "bibtex":
-		return createBibTeXParser();
-	case "biblatex":
-		return createBibLaTeXParser();
-	case "csl-json":
-		return createCSLJSONParser();
-	case "ris":
-		return createRISParser();
-	case "endnote":
-		return createEndNoteXMLParser();
-	default:
-		throw new Error(`Unsupported source format: ${format}`);
-	}
-}
-
-/**
- * Get generator for format
- */
-function getGenerator(format: BibFormat) {
-	switch (format) {
-	case "bibtex":
-		return createBibTeXGenerator();
-	case "biblatex":
-		return createBibLaTeXGenerator();
-	case "csl-json":
-		return createCSLJSONGenerator();
-	case "ris":
-		return createRISGenerator();
-	case "endnote":
-		return createEndNoteXMLGenerator();
-	default:
-		throw new Error(`Unsupported target format: ${format}`);
-	}
+export function validate(content: string, format: BibFormat, deps: ConverterDependencies = defaultDeps): ConversionWarning[] {
+	return validateWithDeps(content, format, deps);
 }
 
 /**

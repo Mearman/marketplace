@@ -2,258 +2,270 @@
  * Tests for bibliography converter
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import {
-	convert,
-	parse,
-	generate,
-	validate,
-	getSupportedFormats,
-	detectFormat,
-} from "./converter";
-import type { BibEntry, ConversionResult } from "./types";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import type { BibEntry, ConversionResult, ConversionWarning } from "./types.js";
+import type { ConverterDependencies, Parser, Generator } from "./converter.js";
+import { convert, parse, generate, validate, getSupportedFormats, detectFormat } from "./converter.js";
 
-// Mock the parsers and generators
-vi.mock("./parsers/index.js", () => ({
-	createBibTeXParser: () => mockBibTeXParser,
-	createBibLaTeXParser: () => mockBibLaTeXParser,
-	createCSLJSONParser: () => mockCSLJSONParser,
-	createRISParser: () => mockRISParser,
-	createEndNoteXMLParser: () => mockEndNoteXMLParser,
-}));
+const mockEntries: BibEntry[] = [
+	{
+		id: "doi:10.1234/test",
+		type: "article-journal",
+		title: "Test Article",
+		author: [{ family: "Smith", given: "John" }],
+		"container-title": "Test Journal",
+		issued: { "date-parts": [[2024, 1, 1]] },
+	},
+];
 
-vi.mock("./generators/index.js", () => ({
-	createBibTeXGenerator: () => mockBibTeXGenerator,
-	createBibLaTeXGenerator: () => mockBibLaTeXGenerator,
-	createCSLJSONGenerator: () => mockCSLJSONGenerator,
-	createRISGenerator: () => mockRISGenerator,
-	createEndNoteXMLGenerator: () => mockEndNoteXMLGenerator,
-}));
-
-// Mock parser implementations
-const mockBibTeXParser = {
-	parse: vi.fn(),
-	validate: vi.fn(),
+const mockParseResult: ConversionResult = {
+	entries: mockEntries,
+	warnings: [
+		{
+			entryId: "test",
+			severity: "warning",
+			type: "field-loss",
+			message: "Field not supported in target format",
+		},
+	],
+	stats: {
+		total: 1,
+		successful: 1,
+		withWarnings: 1,
+		failed: 0,
+	},
 };
 
-const mockBibLaTeXParser = {
-	parse: vi.fn(),
-	validate: vi.fn(),
-};
+// Create mock parser
+const createMockParser = (format: string): Parser => ({
+	parse: mock.fn(() => mockParseResult) as any,
+	validate: mock.fn(() => []) as any,
+	format,
+	mock: { calls: [] } as any,
+});
 
-const mockCSLJSONParser = {
-	parse: vi.fn(),
-};
+// Create mock generator
+const createMockGenerator = (format: string): Generator => ({
+	generate: mock.fn(() => {
+		if (format === "csl-json") return "[{\"id\":\"test\"}]";
+		if (format === "ris") return "TY  - JOUR\n...";
+		if (format === "endnote") return "<record>...</record>";
+		return "@article{test,...}";
+	}) as any,
+	format,
+	mock: { calls: [] } as any,
+});
 
-const mockRISParser = {
-	parse: vi.fn(),
-	validate: vi.fn(),
-};
+// Track current mocks
+let mockBibTeXParser: Parser;
+let mockBibLaTeXParser: Parser;
+let mockCSLJSONParser: Parser;
+let mockRISParser: Parser;
+let mockEndNoteXMLParser: Parser;
 
-const mockEndNoteXMLParser = {
-	parse: vi.fn(),
-};
+let mockBibTeXGenerator: Generator;
+let mockBibLaTeXGenerator: Generator;
+let mockCSLJSONGenerator: Generator;
+let mockRISGenerator: Generator;
+let mockEndNoteXMLGenerator: Generator;
 
-// Mock generator implementations
-const mockBibTeXGenerator = {
-	generate: vi.fn(),
-};
-
-const mockBibLaTeXGenerator = {
-	generate: vi.fn(),
-};
-
-const mockCSLJSONGenerator = {
-	generate: vi.fn(),
-};
-
-const mockRISGenerator = {
-	generate: vi.fn(),
-};
-
-const mockEndNoteXMLGenerator = {
-	generate: vi.fn(),
-};
+// Create mock dependencies
+const createMockDeps = (): ConverterDependencies => ({
+	getParser: mock.fn((format: string) => {
+		switch (format) {
+		case "bibtex":
+			return mockBibTeXParser;
+		case "biblatex":
+			return mockBibLaTeXParser;
+		case "csl-json":
+			return mockCSLJSONParser;
+		case "ris":
+			return mockRISParser;
+		case "endnote":
+			return mockEndNoteXMLParser;
+		default:
+			throw new Error(`Unsupported source format: ${format}`);
+		}
+	}) as any,
+	getGenerator: mock.fn((format: string) => {
+		switch (format) {
+		case "bibtex":
+			return mockBibTeXGenerator;
+		case "biblatex":
+			return mockBibLaTeXGenerator;
+		case "csl-json":
+			return mockCSLJSONGenerator;
+		case "ris":
+			return mockRISGenerator;
+		case "endnote":
+			return mockEndNoteXMLGenerator;
+		default:
+			throw new Error(`Unsupported target format: ${format}`);
+		}
+	}) as any,
+});
 
 describe("converter.ts", () => {
-	const mockEntries: BibEntry[] = [
-		{
-			id: "doi:10.1234/test",
-			type: "article-journal",
-			title: "Test Article",
-			author: [{ family: "Smith", given: "John" }],
-			"container-title": "Test Journal",
-			issued: { "date-parts": [[2024, 1, 1]] },
-		},
-	];
-
-	const mockParseResult: ConversionResult = {
-		entries: mockEntries,
-		warnings: [
-			{
-				entryId: "test",
-				severity: "warning",
-				type: "field-loss",
-				message: "Field not supported in target format",
-			},
-		],
-		stats: {
-			total: 1,
-			successful: 1,
-			withWarnings: 1,
-			failed: 0,
-		},
-	};
+	let mockDeps: ConverterDependencies;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.reset();
 
-		// Setup default parser behavior
-		mockBibTeXParser.parse.mockReturnValue(mockParseResult);
-		mockBibLaTeXParser.parse.mockReturnValue(mockParseResult);
-		mockCSLJSONParser.parse.mockReturnValue(mockParseResult);
-		mockRISParser.parse.mockReturnValue(mockParseResult);
-		mockEndNoteXMLParser.parse.mockReturnValue(mockParseResult);
+		// Create fresh mocks for each test
+		mockBibTeXParser = createMockParser("bibtex");
+		mockBibLaTeXParser = createMockParser("biblatex");
+		mockCSLJSONParser = createMockParser("csl-json");
+		mockRISParser = createMockParser("ris");
+		mockEndNoteXMLParser = createMockParser("endnote");
 
-		// Setup default generator behavior
-		mockBibTeXGenerator.generate.mockReturnValue("@article{test,...}");
-		mockBibLaTeXGenerator.generate.mockReturnValue("@article{test,...}");
-		mockCSLJSONGenerator.generate.mockReturnValue("[{\"id\":\"test\"}]");
-		mockRISGenerator.generate.mockReturnValue("TY  - JOUR\n...");
-		mockEndNoteXMLGenerator.generate.mockReturnValue("<record>...</record>");
+		mockBibTeXGenerator = createMockGenerator("bibtex");
+		mockBibLaTeXGenerator = createMockGenerator("biblatex");
+		mockCSLJSONGenerator = createMockGenerator("csl-json");
+		mockRISGenerator = createMockGenerator("ris");
+		mockEndNoteXMLGenerator = createMockGenerator("endnote");
+
+		mockDeps = createMockDeps();
 	});
 
 	describe("convert", () => {
 		it("should convert bibtex to csl-json", () => {
 			const content = "@article{test,...}";
-			const result = convert(content, "bibtex", "csl-json");
+			const result = convert(content, "bibtex", "csl-json", undefined, mockDeps);
 
-			expect(mockBibTeXParser.parse).toHaveBeenCalledWith(content);
-			expect(mockCSLJSONGenerator.generate).toHaveBeenCalledWith(mockEntries, undefined);
-			expect(result.output).toBe("[{\"id\":\"test\"}]");
-			expect(result.result).toEqual(mockParseResult);
+			assert.strictEqual(mockBibTeXParser.mock?.calls.length, 1);
+			assert.strictEqual(mockBibTeXParser.mock?.calls[0]?.arguments[0], content);
+			assert.strictEqual(mockCSLJSONGenerator.mock?.calls.length, 1);
+			assert.deepStrictEqual(mockCSLJSONGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual(result.output, "[{\"id\":\"test\"}]");
+			assert.deepStrictEqual(result.result, mockParseResult);
 		});
 
 		it("should convert biblatex to ris", () => {
 			const content = "@article{test,...}";
-			const result = convert(content, "biblatex", "ris");
+			const result = convert(content, "biblatex", "ris", undefined, mockDeps);
 
-			expect(mockBibLaTeXParser.parse).toHaveBeenCalledWith(content);
-			expect(mockRISGenerator.generate).toHaveBeenCalledWith(mockEntries, undefined);
-			expect(result.output).toBe("TY  - JOUR\n...");
+			assert.strictEqual(mockBibLaTeXParser.mock?.calls.length, 1);
+			assert.strictEqual(mockBibLaTeXParser.mock?.calls[0]?.arguments[0], content);
+			assert.strictEqual(mockRISGenerator.mock?.calls.length, 1);
+			assert.deepStrictEqual(mockRISGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual(result.output, "TY  - JOUR\n...");
 		});
 
 		it("should convert csl-json to endnote", () => {
 			const content = "[{\"id\":\"test\"}]";
-			const result = convert(content, "csl-json", "endnote");
+			const result = convert(content, "csl-json", "endnote", undefined, mockDeps);
 
-			expect(mockCSLJSONParser.parse).toHaveBeenCalledWith(content);
-			expect(mockEndNoteXMLGenerator.generate).toHaveBeenCalledWith(mockEntries, undefined);
-			expect(result.output).toBe("<record>...</record>");
+			assert.strictEqual(mockCSLJSONParser.mock?.calls.length, 1);
+			assert.strictEqual(mockCSLJSONParser.mock?.calls[0]?.arguments[0], content);
+			assert.strictEqual(mockEndNoteXMLGenerator.mock?.calls.length, 1);
+			assert.deepStrictEqual(mockEndNoteXMLGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual(result.output, "<record>...</record>");
 		});
 
 		it("should pass options to generator", () => {
-			const options = { sort: true, format: "html" };
+			const options = { sort: true, format: "html" } as const;
 			const content = "@article{test,...}";
 
-			convert(content, "bibtex", "csl-json", options);
+			convert(content, "bibtex", "csl-json", options, mockDeps);
 
-			expect(mockCSLJSONGenerator.generate).toHaveBeenCalledWith(mockEntries, options);
+			assert.strictEqual(mockCSLJSONGenerator.mock?.calls[0]?.arguments[1], options);
 		});
 
 		it("should throw error for unsupported source format", () => {
-			expect(() => convert("content", "invalid" as any, "bibtex")).toThrow(
-				"Unsupported source format: invalid"
-			);
+			assert.throws(() => convert("content", "invalid" as any, "bibtex", undefined, mockDeps), /Unsupported source format/);
 		});
 
 		it("should throw error for unsupported target format", () => {
-			mockBibTeXParser.parse.mockReturnValue(mockParseResult);
-
-			expect(() => convert("content", "bibtex", "invalid" as any)).toThrow(
-				"Unsupported target format: invalid"
-			);
+			assert.throws(() => convert("content", "bibtex", "invalid" as any, undefined, mockDeps), /Unsupported target format/);
 		});
 	});
 
 	describe("parse", () => {
 		it("should parse bibtex content", () => {
 			const content = "@article{test,...}";
-			const result = parse(content, "bibtex");
+			const result = parse(content, "bibtex", mockDeps);
 
-			expect(mockBibTeXParser.parse).toHaveBeenCalledWith(content);
-			expect(result).toEqual(mockParseResult);
+			assert.strictEqual(mockBibTeXParser.mock?.calls.length, 1);
+			assert.strictEqual(mockBibTeXParser.mock?.calls[0]?.arguments[0], content);
+			assert.deepStrictEqual(result, mockParseResult);
 		});
 
 		it("should parse ris content", () => {
 			const content = "TY  - JOUR\n...";
-			const result = parse(content, "ris");
+			const result = parse(content, "ris", mockDeps);
 
-			expect(mockRISParser.parse).toHaveBeenCalledWith(content);
-			expect(result).toEqual(mockParseResult);
+			assert.strictEqual(mockRISParser.mock?.calls.length, 1);
+			assert.strictEqual(mockRISParser.mock?.calls[0]?.arguments[0], content);
+			assert.deepStrictEqual(result, mockParseResult);
 		});
 
 		it("should throw error for unsupported format", () => {
-			expect(() => parse("content", "invalid" as any)).toThrow("Unsupported source format: invalid");
+			assert.throws(() => parse("content", "invalid" as any, mockDeps), /Unsupported source format/);
 		});
 	});
 
 	describe("generate", () => {
 		it("should generate bibtex from entries", () => {
-			const output = generate(mockEntries, "bibtex");
+			const output = generate(mockEntries, "bibtex", undefined, mockDeps);
 
-			expect(mockBibTeXGenerator.generate).toHaveBeenCalledWith(mockEntries, undefined);
-			expect(output).toBe("@article{test,...}");
+			assert.strictEqual(mockBibTeXGenerator.mock?.calls.length, 1);
+			assert.deepStrictEqual(mockBibTeXGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual(output, "@article{test,...}");
 		});
 
 		it("should generate endnote from entries", () => {
-			const output = generate(mockEntries, "endnote");
+			const output = generate(mockEntries, "endnote", undefined, mockDeps);
 
-			expect(mockEndNoteXMLGenerator.generate).toHaveBeenCalledWith(mockEntries, undefined);
-			expect(output).toBe("<record>...</record>");
+			assert.strictEqual(mockEndNoteXMLGenerator.mock?.calls.length, 1);
+			assert.deepStrictEqual(mockEndNoteXMLGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual(output, "<record>...</record>");
 		});
 
 		it("should pass options to generator", () => {
-			const options = { sort: true };
-			generate(mockEntries, "csl-json", options);
+			const options = { sort: true } as const;
+			generate(mockEntries, "csl-json", options, mockDeps);
 
-			expect(mockCSLJSONGenerator.generate).toHaveBeenCalledWith(mockEntries, options);
+			assert.strictEqual(mockCSLJSONGenerator.mock?.calls[0]?.arguments[1], options);
 		});
 
 		it("should throw error for unsupported format", () => {
-			expect(() => generate(mockEntries, "invalid" as any)).toThrow("Unsupported target format: invalid");
+			assert.throws(() => generate(mockEntries, "invalid" as any, undefined, mockDeps), /Unsupported target format/);
 		});
 	});
 
 	describe("validate", () => {
 		it("should validate bibtex content", () => {
-			const warnings = ["Missing year"];
-			mockBibTeXParser.validate.mockReturnValue(warnings as any);
+			const warnings: ConversionWarning[] = [{ entryId: "test", severity: "error", type: "validation-error", message: "Missing year" }];
+			mockBibTeXParser.validate = mock.fn(() => warnings) as any;
 
-			const result = validate("@article{test,...}", "bibtex");
+			const result = validate("@article{test,...}", "bibtex", mockDeps);
 
-			expect(mockBibTeXParser.validate).toHaveBeenCalledWith("@article{test,...}");
-			expect(result).toEqual(warnings);
+			assert.strictEqual((mockBibTeXParser.validate as any).mock?.calls.length, 1);
+			assert.strictEqual((mockBibTeXParser.validate as any).mock?.calls[0]?.arguments[0], "@article{test,...}");
+			assert.deepStrictEqual(result, warnings);
 		});
 
 		it("should validate biblatex content", () => {
-			const warnings = ["Unknown field"];
-			mockBibLaTeXParser.validate.mockReturnValue(warnings as any);
+			const warnings: ConversionWarning[] = [{ entryId: "test", severity: "error", type: "validation-error", message: "Unknown field" }];
+			mockBibLaTeXParser.validate = mock.fn(() => warnings) as any;
 
-			const result = validate("@article{test,...}", "biblatex");
+			const result = validate("@article{test,...}", "biblatex", mockDeps);
 
-			expect(mockBibLaTeXParser.validate).toHaveBeenCalledWith("@article{test,...}");
-			expect(result).toEqual(warnings);
+			assert.strictEqual((mockBibLaTeXParser.validate as any).mock?.calls.length, 1);
+			assert.strictEqual((mockBibLaTeXParser.validate as any).mock?.calls[0]?.arguments[0], "@article{test,...}");
+			assert.deepStrictEqual(result, warnings);
 		});
 
 		it("should return empty array for parsers without validate", () => {
-			const result = validate("[{\"id\":\"test\"}]", "endnote");
+			mockEndNoteXMLParser.validate = undefined;
+			const result = validate("[{\"id\":\"test\"}]", "endnote", mockDeps);
 
-			expect(result).toEqual([]);
+			assert.deepStrictEqual(result, []);
 		});
 
 		it("should throw error for unsupported format", () => {
-			expect(() => validate("content", "invalid" as any)).toThrow("Unsupported source format: invalid");
+			assert.throws(() => validate("content", "invalid" as any, mockDeps), /Unsupported source format/);
 		});
 	});
 
@@ -261,7 +273,7 @@ describe("converter.ts", () => {
 		it("should return all supported formats", () => {
 			const formats = getSupportedFormats();
 
-			expect(formats).toEqual(["bibtex", "biblatex", "csl-json", "ris", "endnote"]);
+			assert.deepStrictEqual(formats, ["bibtex", "biblatex", "csl-json", "ris", "endnote"]);
 		});
 	});
 
@@ -270,84 +282,84 @@ describe("converter.ts", () => {
 			const content = "[{\"id\":\"test\",\"type\":\"article\"}]";
 			const format = detectFormat(content);
 
-			expect(format).toBe("csl-json");
+			assert.strictEqual(format, "csl-json");
 		});
 
 		it("should detect csl-json object format", () => {
 			const content = "{\"id\":\"test\",\"type\":\"article\"}";
 			const format = detectFormat(content);
 
-			expect(format).toBe("csl-json");
+			assert.strictEqual(format, "csl-json");
 		});
 
 		it("should detect biblatex format", () => {
 			const content = "@dataset{test,...}";
 			const format = detectFormat(content);
 
-			expect(format).toBe("biblatex");
+			assert.strictEqual(format, "biblatex");
 		});
 
 		it("should detect bibtex format", () => {
 			const content = "@article{test,...}";
 			const format = detectFormat(content);
 
-			expect(format).toBe("bibtex");
+			assert.strictEqual(format, "bibtex");
 		});
 
 		it("should detect ris format", () => {
 			const content = "TY  - JOUR\nER  - \n";
 			const format = detectFormat(content);
 
-			expect(format).toBe("ris");
+			assert.strictEqual(format, "ris");
 		});
 
 		it("should detect endnote XML format", () => {
 			const content = "<?xml version=\"1.0\"?>\n<records><record>...</record></records>";
 			const format = detectFormat(content);
 
-			expect(format).toBe("endnote");
+			assert.strictEqual(format, "endnote");
 		});
 
 		it("should return null for unknown format", () => {
 			const content = "just random text";
 			const format = detectFormat(content);
 
-			expect(format).toBeNull();
+			assert.strictEqual(format, null);
 		});
 
 		it("should return null for invalid JSON", () => {
 			const content = "[{invalid json}]";
 			const format = detectFormat(content);
 
-			expect(format).toBeNull();
+			assert.strictEqual(format, null);
 		});
 
 		it("should handle whitespace", () => {
 			const content = "  \n  @article{test,...}  \n";
 			const format = detectFormat(content);
 
-			expect(format).toBe("bibtex");
+			assert.strictEqual(format, "bibtex");
 		});
 
 		it("should detect online type as biblatex", () => {
 			const content = "@online{test,...}";
 			const format = detectFormat(content);
 
-			expect(format).toBe("biblatex");
+			assert.strictEqual(format, "biblatex");
 		});
 
 		it("should detect patent type as biblatex", () => {
 			const content = "@patent{test,...}";
 			const format = detectFormat(content);
 
-			expect(format).toBe("biblatex");
+			assert.strictEqual(format, "biblatex");
 		});
 
 		it("should detect software type as biblatex", () => {
 			const content = "@software{test,...}";
 			const format = detectFormat(content);
 
-			expect(format).toBe("biblatex");
+			assert.strictEqual(format, "biblatex");
 		});
 	});
 });
