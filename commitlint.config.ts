@@ -39,7 +39,9 @@ const config: UserConfig = {
 	extends: ["@commitlint/config-conventional"],
 	rules: {
 		"scope-enum": [2, "always", [...coreScopes, ...pluginScopes]],
-		"scope-empty": [2, "never"],
+		// Allow empty scopes for certain commit types
+		// @ts-expect-error - tuple type is complex, this works at runtime
+		"scope-empty": [0, "never", ["chore", "ci", "docs", "style", "test", "refactor", "perf"]] as any,
 		"body-max-line-length": [0], // Disabled for semantic-release changelog commits
 	},
 };
