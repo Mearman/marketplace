@@ -2,39 +2,24 @@
  * Tests for npm-registry search.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError } from "./search";
-import { parseArgs } from "./utils";
-import type { NpmSearchResponse } from "./utils";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert/strict";
+import { main, handleError } from "./search.js";
+import { parseArgs } from "./utils.js";
+import type { NpmSearchResponse } from "./utils.js";
+import { callsToArray, createAsyncMock, createMockConsole, createMockProcess } from "./test-helpers.js";
 
 describe("search.ts", () => {
-	let mockConsole: any;
-	let mockProcess: any;
-	let mockFetchWithCache: any;
+	let mockConsole: ReturnType<typeof createMockConsole>;
+	let mockProcess: ReturnType<typeof createMockProcess>;
+	let mockFetchWithCache: ReturnType<typeof createAsyncMock>;
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
-
-		// Mock console
-		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
-			warn: vi.fn(),
-			info: vi.fn(),
-			debug: vi.fn(),
-			trace: vi.fn(),
-		};
-
-		// Mock process
-		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
-				throw new Error("process.exit called");
-			}),
-		};
-
-		// Mock dependencies
-		mockFetchWithCache = vi.fn();
+		mock.reset();
+		mockConsole = createMockConsole();
+		mockProcess = createMockProcess();
+		mockFetchWithCache = createAsyncMock();
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
@@ -103,11 +88,12 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Searching: \"express\"");
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Found 50,000 package(s)"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("1. express (4.18.2)"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Fast, unopinionated"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Score: 95%"));
+			const calls = callsToArray(mockConsole.log);
+			assert.strictEqual(calls[0][0], 'Searching: "express"');
+			assert.ok(calls.some(call => call[0]?.includes("Found 50,000 package(s)")));
+			assert.ok(calls.some(call => call[0]?.includes("1. express (4.18.2)")));
+			assert.ok(calls.some(call => call[0]?.includes("Fast, unopinionated")));
+			assert.ok(calls.some(call => call[0]?.includes("Score: 95%")));
 		});
 
 		it("should handle search with no results", async () => {
@@ -119,10 +105,12 @@ describe("search.ts", () => {
 			mockFetchWithCache.mockResolvedValue(noResultsData);
 			const args = parseArgs(["nonexistentpackage12345"]);
 
-			await expect(main(args, deps)).rejects.toThrow("process.exit called");
+			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("No packages found for \"nonexistentpackage12345\""));
-			expect(mockProcess.exit).toHaveBeenCalledWith(0);
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes('No packages found for "nonexistentpackage12345"')));
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 0);
 		});
 
 		it("should handle pagination with --from flag", async () => {
@@ -131,9 +119,10 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Searching: \"express\"");
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("21. express (4.18.2)"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("22. react (18.2.0)"));
+			const calls = callsToArray(mockConsole.log);
+			assert.strictEqual(calls[0][0], 'Searching: "express"');
+			assert.ok(calls.some(call => call[0]?.includes("21. express (4.18.2)")));
+			assert.ok(calls.some(call => call[0]?.includes("22. react (18.2.0)")));
 		});
 
 		it("should limit results with --size flag", async () => {
@@ -147,12 +136,10 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Searching: \"express\"");
-			expect(mockFetchWithCache).toHaveBeenCalledWith(
-				expect.objectContaining({
-					cacheKey: "express-1-0",
-				})
-			);
+			const calls = callsToArray(mockConsole.log);
+			assert.strictEqual(calls[0][0], 'Searching: "express"');
+			const fetchCalls = callsToArray(mockFetchWithCache);
+			assert.strictEqual(fetchCalls[0][0].cacheKey, "express-1-0");
 		});
 
 		it("should cap size at 250", async () => {
@@ -161,18 +148,9 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			// The cacheKey uses the original size (500), but the URL uses the capped value (250)
-			expect(mockFetchWithCache).toHaveBeenCalledWith(
-				expect.objectContaining({
-					cacheKey: "express-500-0",
-				})
-			);
-			// Verify the URL has size=250 (capped)
-			expect(mockFetchWithCache).toHaveBeenCalledWith(
-				expect.objectContaining({
-					url: expect.stringContaining("size=250"),
-				})
-			);
+			const fetchCalls = callsToArray(mockFetchWithCache);
+			assert.strictEqual(fetchCalls[0][0].cacheKey, "express-500-0");
+			assert.ok(fetchCalls[0][0].url.includes("size=250"));
 		});
 
 		it("should pass --no-cache flag to fetchWithCache", async () => {
@@ -181,11 +159,8 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			expect(mockFetchWithCache).toHaveBeenCalledWith(
-				expect.objectContaining({
-					bypassCache: true,
-				})
-			);
+			const fetchCalls = callsToArray(mockFetchWithCache);
+			assert.strictEqual(fetchCalls[0][0].bypassCache, true);
 		});
 
 		it("should show pagination hint when more results available", async () => {
@@ -199,8 +174,9 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Showing 1-1 of 100 results"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Use --from=1 to see more results"));
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("Showing 1-1 of 100 results")));
+			assert.ok(calls.some(call => call[0]?.includes("Use --from=1 to see more results")));
 		});
 
 		it("should handle package with no description", async () => {
@@ -223,11 +199,10 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("1. test (4.18.2)"));
-			// Should not crash or show description line
-			const calls = mockConsole.log.mock.calls.flat();
-			const descLine = calls.find((call: string) => call.includes("Fast, unopinionated"));
-			expect(descLine).toBeUndefined();
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("1. test (4.18.2)")));
+			const flatCalls = calls.flat();
+			assert.strictEqual(flatCalls.find((call: string) => call.includes("Fast, unopinionated")), undefined);
 		});
 
 		it("should handle package with no npm link", async () => {
@@ -250,28 +225,32 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			// Should not crash when links.npm is missing
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("1. test"));
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("1. test")));
 		});
 
 		it("should show usage and exit when no query provided", async () => {
 			const args = parseArgs([]);
 
-			await expect(main(args, deps)).rejects.toThrow("process.exit called");
+			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Options:"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Examples:"));
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("Usage:")));
+			assert.ok(calls.some(call => call[0]?.includes("Options:")));
+			assert.ok(calls.some(call => call[0]?.includes("Examples:")));
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 
 		it("should handle fetchWithCache rejection", async () => {
 			mockFetchWithCache.mockRejectedValue(new Error("Network error"));
 			const args = parseArgs(["express"]);
 
-			await expect(main(args, deps)).rejects.toThrow("process.exit called");
+			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Network error");
+			const errorCalls = callsToArray(mockConsole.error);
+			assert.strictEqual(errorCalls[0][0], "Error:");
+			assert.strictEqual(errorCalls[0][1], "Network error");
 		});
 
 		it("should handle multiple results with proper formatting", async () => {
@@ -280,11 +259,12 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("1. express"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("2. react"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("quality: 90%"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("popularity: 98%"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("maintenance: 97%"));
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("1. express")));
+			assert.ok(calls.some(call => call[0]?.includes("2. react")));
+			assert.ok(calls.some(call => call[0]?.includes("quality: 90%")));
+			assert.ok(calls.some(call => call[0]?.includes("popularity: 98%")));
+			assert.ok(calls.some(call => call[0]?.includes("maintenance: 97%")));
 		});
 
 		it("should not show pagination hint when all results shown", async () => {
@@ -298,58 +278,68 @@ describe("search.ts", () => {
 
 			await main(args, deps);
 
-			// Should not contain pagination hint
-			const calls = mockConsole.log.mock.calls;
+			const calls = callsToArray(mockConsole.log);
 			const paginationCalls = calls.filter((call: string[]) =>
 				call[0]?.includes("Showing") || call[0]?.includes("Use --from=")
 			);
-			expect(paginationCalls.length).toBe(0);
+			assert.strictEqual(paginationCalls.length, 0);
 		});
 	});
 
 	describe("handleError", () => {
 		it("should log error message and exit", () => {
 			const error = new Error("API rate limit exceeded");
-			expect(() => handleError(error, "express", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "express", { console: mockConsole, process: mockProcess }));
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "API rate limit exceeded");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const errorCalls = callsToArray(mockConsole.error);
+			assert.strictEqual(errorCalls[0][0], "Error:");
+			assert.strictEqual(errorCalls[0][1], "API rate limit exceeded");
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 
 		it("should log generic error message for other errors", () => {
 			const error = new Error("Network timeout");
-			expect(() => handleError(error, "express", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "express", { console: mockConsole, process: mockProcess }));
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Network timeout");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const errorCalls = callsToArray(mockConsole.error);
+			assert.strictEqual(errorCalls[0][0], "Error:");
+			assert.strictEqual(errorCalls[0][1], "Network timeout");
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 
 		it("should handle non-Error errors", () => {
-			expect(() => handleError("string error", "express", {
+			assert.throws(() => handleError("string error", "express", {
 				console: mockConsole,
 				process: mockProcess,
-			})).toThrow("process.exit called");
+			}));
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "string error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const errorCalls = callsToArray(mockConsole.error);
+			assert.strictEqual(errorCalls[0][0], "Error:");
+			assert.strictEqual(errorCalls[0][1], "string error");
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 
 		it("should handle null errors", () => {
-			expect(() => handleError(null, "express", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(null, "express", { console: mockConsole, process: mockProcess }));
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "null");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const errorCalls = callsToArray(mockConsole.error);
+			assert.strictEqual(errorCalls[0][0], "Error:");
+			assert.strictEqual(errorCalls[0][1], "null");
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 
 		it("should handle undefined errors", () => {
-			expect(() => handleError(undefined, "express", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(undefined, "express", { console: mockConsole, process: mockProcess }));
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "undefined");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const errorCalls = callsToArray(mockConsole.error);
+			assert.strictEqual(errorCalls[0][0], "Error:");
+			assert.strictEqual(errorCalls[0][1], "undefined");
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 	});
 });

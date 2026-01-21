@@ -2,34 +2,23 @@
  * Tests for npm-registry downloads.ts
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError } from "./downloads";
-import type { NpmDownloadsResponse } from "./utils";
-import { parseArgs } from "./utils";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert/strict";
+import { main, handleError } from "./downloads.js";
+import type { NpmDownloadsResponse } from "./utils.js";
+import { parseArgs } from "./utils.js";
+import { callsToArray, createAsyncMock, createMockConsole, createMockProcess } from "./test-helpers.js";
 
 describe("downloads.ts", () => {
-	let mockConsole: any;
-	let mockProcess: any;
-	let mockFetchWithCache: any;
+	let mockConsole: ReturnType<typeof createMockConsole>;
+	let mockProcess: ReturnType<typeof createMockProcess>;
+	let mockFetchWithCache: ReturnType<typeof createAsyncMock>;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
-
-		// Mock console
-		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
-		};
-
-		// Mock process
-		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
-				throw new Error("process.exit called");
-			}),
-		};
-
-		// Mock fetchWithCache
-		mockFetchWithCache = vi.fn();
+		mock.reset();
+		mockConsole = createMockConsole();
+		mockProcess = createMockProcess();
+		mockFetchWithCache = createAsyncMock();
 	});
 
 	describe("handleError", () => {
@@ -37,52 +26,64 @@ describe("downloads.ts", () => {
 			const error = new Error("Resource not found");
 			const packageName = "nonexistent-package";
 
-			expect(() => {
+			assert.throws(() => {
 				handleError(error, packageName, { console: mockConsole, process: mockProcess });
-			}).toThrow();
+			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
+			const calls = callsToArray(mockConsole.log);
+			assert.strictEqual(
+				calls[0][0],
 				`Package "${packageName}" not found or no download data available`
 			);
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 
 		it("should handle generic errors with error message", () => {
 			const error = new Error("Network connection failed");
 			const packageName = "react";
 
-			expect(() => {
+			assert.throws(() => {
 				handleError(error, packageName, { console: mockConsole, process: mockProcess });
-			}).toThrow();
+			});
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Network connection failed");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const calls = callsToArray(mockConsole.error);
+			assert.strictEqual(calls[0][0], "Error:");
+			assert.strictEqual(calls[0][1], "Network connection failed");
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 
 		it("should handle non-Error objects", () => {
 			const error = "String error message";
 			const packageName = "express";
 
-			expect(() => {
+			assert.throws(() => {
 				handleError(error, packageName, { console: mockConsole, process: mockProcess });
-			}).toThrow();
+			});
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "String error message");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const calls = callsToArray(mockConsole.error);
+			assert.strictEqual(calls[0][0], "Error:");
+			assert.strictEqual(calls[0][1], "String error message");
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 
 		it("should handle error with 'Resource not found' in message", () => {
 			const error = new Error("Error: Resource not found for package");
 			const packageName = "vue";
 
-			expect(() => {
+			assert.throws(() => {
 				handleError(error, packageName, { console: mockConsole, process: mockProcess });
-			}).toThrow();
+			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
+			const calls = callsToArray(mockConsole.log);
+			assert.strictEqual(
+				calls[0][0],
 				`Package "${packageName}" not found or no download data available`
 			);
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 	});
 
@@ -119,12 +120,12 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			};
 
-			await expect(main(args, deps)).rejects.toThrow();
+			await assert.rejects(() => main(args, deps));
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("Usage: npx tsx downloads.ts <package-name>")
-			);
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("Usage: npx tsx downloads.ts <package-name>")));
+			const exitCalls = callsToArray(mockProcess.exit);
+			assert.strictEqual(exitCalls[0][0], 1);
 		});
 
 		it("should fetch and display downloads for last-week period", async () => {
@@ -139,15 +140,15 @@ describe("downloads.ts", () => {
 
 			await main(args, deps);
 
-			expect(mockFetchWithCache).toHaveBeenCalledWith({
+			const fetchCalls = callsToArray(mockFetchWithCache);
+			assert.deepStrictEqual(fetchCalls[0][0], {
 				url: "https://api.npmjs.org/downloads/range/last-week/react",
 				ttl: 86400,
 				cacheKey: "downloads-last-week-react",
 				bypassCache: false,
 			});
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("Downloads for react (last-week)")
-			);
+			const logCalls = callsToArray(mockConsole.log);
+			assert.ok(logCalls.some(call => call[0]?.includes("Downloads for react (last-week)")));
 		});
 
 		it("should fetch and display downloads for last-month period (default)", async () => {
@@ -166,15 +167,15 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockFetchWithCache).toHaveBeenCalledWith({
+			const fetchCalls = callsToArray(mockFetchWithCache);
+			assert.deepStrictEqual(fetchCalls[0][0], {
 				url: "https://api.npmjs.org/downloads/range/last-month/express",
 				ttl: 86400,
 				cacheKey: "downloads-last-month-express",
 				bypassCache: false,
 			});
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("Downloads for express (last-month)")
-			);
+			const logCalls = callsToArray(mockConsole.log);
+			assert.ok(logCalls.some(call => call[0]?.includes("Downloads for express (last-month)")));
 		});
 
 		it("should fetch and display downloads for last-year period", async () => {
@@ -193,7 +194,8 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockFetchWithCache).toHaveBeenCalledWith({
+			const fetchCalls = callsToArray(mockFetchWithCache);
+			assert.deepStrictEqual(fetchCalls[0][0], {
 				url: "https://api.npmjs.org/downloads/range/last-year/vue",
 				ttl: 86400,
 				cacheKey: "downloads-last-year-vue",
@@ -217,7 +219,8 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockFetchWithCache).toHaveBeenCalledWith({
+			const fetchCalls = callsToArray(mockFetchWithCache);
+			assert.deepStrictEqual(fetchCalls[0][0], {
 				url: "https://api.npmjs.org/downloads/range/last-month/lodash",
 				ttl: 86400,
 				cacheKey: "downloads-last-month-lodash",
@@ -250,13 +253,10 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Total downloads: 6.0K"));
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("Average per day: 2.0K")
-			);
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("Peak day: 2023-01-03 (3.0K downloads)")
-			);
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("Total downloads: 6.0K")));
+			assert.ok(calls.some(call => call[0]?.includes("Average per day: 2.0K")));
+			assert.ok(calls.some(call => call[0]?.includes("Peak day: 2023-01-03 (3.0K downloads)")));
 		});
 
 		it("should display full daily breakdown for short periods (< 14 days)", async () => {
@@ -288,14 +288,10 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Daily breakdown:"));
-			// Should show all 7 days
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("2023-01-01: 100")
-			);
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("2023-01-07: 700")
-			);
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("Daily breakdown:")));
+			assert.ok(calls.some(call => call[0]?.includes("2023-01-01: 100")));
+			assert.ok(calls.some(call => call[0]?.includes("2023-01-07: 700")));
 		});
 
 		it("should display truncated view for long periods (> 14 days)", async () => {
@@ -322,11 +318,10 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			// Should show "First 7 days:" and "Last 7 days:"
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("First 7 days:"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Last 7 days:"));
-			// Should show "more days" message
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("more days)"));
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("First 7 days:")));
+			assert.ok(calls.some(call => call[0]?.includes("Last 7 days:")));
+			assert.ok(calls.some(call => call[0]?.includes("more days)")));
 		});
 
 		it("should handle single day of data correctly", async () => {
@@ -350,13 +345,10 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("Period: 2023-01-01 to 2023-01-01 (1 days)")
-			);
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Average per day: 500"));
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("Peak day: 2023-01-01 (500 downloads)")
-			);
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("Period: 2023-01-01 to 2023-01-01 (1 days)")));
+			assert.ok(calls.some(call => call[0]?.includes("Average per day: 500")));
+			assert.ok(calls.some(call => call[0]?.includes("Peak day: 2023-01-01 (500 downloads)")));
 		});
 
 		it("should handle zero downloads correctly", async () => {
@@ -384,8 +376,9 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Total downloads: 0"));
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Average per day: 0"));
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("Total downloads: 0")));
+			assert.ok(calls.some(call => call[0]?.includes("Average per day: 0")));
 		});
 
 		it("should identify peak day correctly", async () => {
@@ -395,7 +388,7 @@ describe("downloads.ts", () => {
 				end: "2023-01-05",
 				downloads: [
 					{ day: "2023-01-01", downloads: 100 },
-					{ day: "2023-01-02", downloads: 5000 }, // peak
+					{ day: "2023-01-02", downloads: 5000 },
 					{ day: "2023-01-03", downloads: 200 },
 					{ day: "2023-01-04", downloads: 300 },
 					{ day: "2023-01-05", downloads: 400 },
@@ -415,9 +408,8 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("Peak day: 2023-01-02 (5.0K downloads)")
-			);
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("Peak day: 2023-01-02 (5.0K downloads)")));
 		});
 
 		it("should handle fetch errors and call handleError", async () => {
@@ -430,17 +422,16 @@ describe("downloads.ts", () => {
 				positional: ["nonexistent"],
 			};
 
-			await expect(
+			await assert.rejects(() =>
 				main(args, {
 					fetchWithCache: mockFetchWithCache,
 					console: mockConsole,
 					process: mockProcess,
 				})
-			).rejects.toThrow();
-
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("Package \"nonexistent\" not found")
 			);
+
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes('Package "nonexistent" not found')));
 		});
 
 		it("should calculate correct day count across month boundaries", async () => {
@@ -472,9 +463,8 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				expect.stringContaining("(7 days)")
-			);
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(calls.some(call => call[0]?.includes("(7 days)")));
 		});
 
 		it("should handle custom period option", async () => {
@@ -493,11 +483,8 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockFetchWithCache).toHaveBeenCalledWith(
-				expect.objectContaining({
-					url: "https://api.npmjs.org/downloads/range/last-month/axios",
-				})
-			);
+			const fetchCalls = callsToArray(mockFetchWithCache);
+			assert.strictEqual(fetchCalls[0][0].url, "https://api.npmjs.org/downloads/range/last-month/axios");
 		});
 
 		it("should display fetching message", async () => {
@@ -516,8 +503,11 @@ describe("downloads.ts", () => {
 				process: mockProcess,
 			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				"Fetching downloads for: typescript (last-month)"
+			const calls = callsToArray(mockConsole.log);
+			assert.ok(
+				calls.some(
+					call => call[0] === "Fetching downloads for: typescript (last-month)"
+				)
 			);
 		});
 	});
