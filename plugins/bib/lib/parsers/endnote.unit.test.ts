@@ -45,7 +45,7 @@ describe("EndNote XML Parser", () => {
 			assert.strictEqual(result.entries[0].title, "Test Article Title");
 			assert.strictEqual(result.entries[0]["container-title"], "Journal Name");
 			assert.deepStrictEqual(result.entries[0].author, [{ family: "Smith", given: "John" }]);
-			assert.deepStrictEqual(result.entries[0].issued, { "date-parts": [[2024]] });
+			assert.deepStrictEqual(result.entries[0].issued, { "date-parts": [[2024]], raw: "2024" });
 			assert.strictEqual(result.entries[0].volume, "10");
 			assert.strictEqual(result.entries[0].issue, "2");
 			assert.strictEqual(result.entries[0].page, "1-10");

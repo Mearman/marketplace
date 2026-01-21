@@ -133,10 +133,10 @@ describe("converter.ts", () => {
 			const content = "@article{test,...}";
 			const result = convert(content, "bibtex", "csl-json", undefined, mockDeps);
 
-			assert.strictEqual(mockBibTeXParser.mock?.calls.length, 1);
-			assert.strictEqual(mockBibTeXParser.mock?.calls[0]?.arguments[0], content);
-			assert.strictEqual(mockCSLJSONGenerator.mock?.calls.length, 1);
-			assert.deepStrictEqual(mockCSLJSONGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual((mockBibTeXParser.parse as any).mock.calls.length, 1);
+			assert.strictEqual((mockBibTeXParser.parse as any).mock.calls[0]?.arguments[0], content);
+			assert.strictEqual((mockCSLJSONGenerator.generate as any).mock.calls.length, 1);
+			assert.deepStrictEqual((mockCSLJSONGenerator.generate as any).mock.calls[0]?.arguments[0], mockEntries);
 			assert.strictEqual(result.output, "[{\"id\":\"test\"}]");
 			assert.deepStrictEqual(result.result, mockParseResult);
 		});
@@ -145,10 +145,10 @@ describe("converter.ts", () => {
 			const content = "@article{test,...}";
 			const result = convert(content, "biblatex", "ris", undefined, mockDeps);
 
-			assert.strictEqual(mockBibLaTeXParser.mock?.calls.length, 1);
-			assert.strictEqual(mockBibLaTeXParser.mock?.calls[0]?.arguments[0], content);
-			assert.strictEqual(mockRISGenerator.mock?.calls.length, 1);
-			assert.deepStrictEqual(mockRISGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual((mockBibLaTeXParser.parse as any).mock.calls.length, 1);
+			assert.strictEqual((mockBibLaTeXParser.parse as any).mock.calls[0]?.arguments[0], content);
+			assert.strictEqual((mockRISGenerator.generate as any).mock.calls.length, 1);
+			assert.deepStrictEqual((mockRISGenerator.generate as any).mock.calls[0]?.arguments[0], mockEntries);
 			assert.strictEqual(result.output, "TY  - JOUR\n...");
 		});
 
@@ -156,10 +156,10 @@ describe("converter.ts", () => {
 			const content = "[{\"id\":\"test\"}]";
 			const result = convert(content, "csl-json", "endnote", undefined, mockDeps);
 
-			assert.strictEqual(mockCSLJSONParser.mock?.calls.length, 1);
-			assert.strictEqual(mockCSLJSONParser.mock?.calls[0]?.arguments[0], content);
-			assert.strictEqual(mockEndNoteXMLGenerator.mock?.calls.length, 1);
-			assert.deepStrictEqual(mockEndNoteXMLGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual((mockCSLJSONParser.parse as any).mock.calls.length, 1);
+			assert.strictEqual((mockCSLJSONParser.parse as any).mock.calls[0]?.arguments[0], content);
+			assert.strictEqual((mockEndNoteXMLGenerator.generate as any).mock.calls.length, 1);
+			assert.deepStrictEqual((mockEndNoteXMLGenerator.generate as any).mock.calls[0]?.arguments[0], mockEntries);
 			assert.strictEqual(result.output, "<record>...</record>");
 		});
 
@@ -169,7 +169,7 @@ describe("converter.ts", () => {
 
 			convert(content, "bibtex", "csl-json", options, mockDeps);
 
-			assert.strictEqual(mockCSLJSONGenerator.mock?.calls[0]?.arguments[1], options);
+			assert.strictEqual((mockCSLJSONGenerator.generate as any).mock.calls[0]?.arguments[1], options);
 		});
 
 		it("should throw error for unsupported source format", () => {
@@ -186,8 +186,8 @@ describe("converter.ts", () => {
 			const content = "@article{test,...}";
 			const result = parse(content, "bibtex", mockDeps);
 
-			assert.strictEqual(mockBibTeXParser.mock?.calls.length, 1);
-			assert.strictEqual(mockBibTeXParser.mock?.calls[0]?.arguments[0], content);
+			assert.strictEqual((mockBibTeXParser.parse as any).mock.calls.length, 1);
+			assert.strictEqual((mockBibTeXParser.parse as any).mock.calls[0]?.arguments[0], content);
 			assert.deepStrictEqual(result, mockParseResult);
 		});
 
@@ -195,8 +195,8 @@ describe("converter.ts", () => {
 			const content = "TY  - JOUR\n...";
 			const result = parse(content, "ris", mockDeps);
 
-			assert.strictEqual(mockRISParser.mock?.calls.length, 1);
-			assert.strictEqual(mockRISParser.mock?.calls[0]?.arguments[0], content);
+			assert.strictEqual((mockRISParser.parse as any).mock.calls.length, 1);
+			assert.strictEqual((mockRISParser.parse as any).mock.calls[0]?.arguments[0], content);
 			assert.deepStrictEqual(result, mockParseResult);
 		});
 
@@ -209,16 +209,16 @@ describe("converter.ts", () => {
 		it("should generate bibtex from entries", () => {
 			const output = generate(mockEntries, "bibtex", undefined, mockDeps);
 
-			assert.strictEqual(mockBibTeXGenerator.mock?.calls.length, 1);
-			assert.deepStrictEqual(mockBibTeXGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual((mockBibTeXGenerator.generate as any).mock.calls.length, 1);
+			assert.deepStrictEqual((mockBibTeXGenerator.generate as any).mock.calls[0]?.arguments[0], mockEntries);
 			assert.strictEqual(output, "@article{test,...}");
 		});
 
 		it("should generate endnote from entries", () => {
 			const output = generate(mockEntries, "endnote", undefined, mockDeps);
 
-			assert.strictEqual(mockEndNoteXMLGenerator.mock?.calls.length, 1);
-			assert.deepStrictEqual(mockEndNoteXMLGenerator.mock?.calls[0]?.arguments[0], mockEntries);
+			assert.strictEqual((mockEndNoteXMLGenerator.generate as any).mock.calls.length, 1);
+			assert.deepStrictEqual((mockEndNoteXMLGenerator.generate as any).mock.calls[0]?.arguments[0], mockEntries);
 			assert.strictEqual(output, "<record>...</record>");
 		});
 
@@ -226,7 +226,7 @@ describe("converter.ts", () => {
 			const options = { sort: true } as const;
 			generate(mockEntries, "csl-json", options, mockDeps);
 
-			assert.strictEqual(mockCSLJSONGenerator.mock?.calls[0]?.arguments[1], options);
+			assert.strictEqual((mockCSLJSONGenerator.generate as any).mock.calls[0]?.arguments[1], options);
 		});
 
 		it("should throw error for unsupported format", () => {
@@ -241,8 +241,8 @@ describe("converter.ts", () => {
 
 			const result = validate("@article{test,...}", "bibtex", mockDeps);
 
-			assert.strictEqual((mockBibTeXParser.validate as any).mock?.calls.length, 1);
-			assert.strictEqual((mockBibTeXParser.validate as any).mock?.calls[0]?.arguments[0], "@article{test,...}");
+			assert.strictEqual((mockBibTeXParser.validate as any).mock.calls.length, 1);
+			assert.strictEqual((mockBibTeXParser.validate as any).mock.calls[0].arguments[0], "@article{test,...}");
 			assert.deepStrictEqual(result, warnings);
 		});
 
@@ -252,8 +252,8 @@ describe("converter.ts", () => {
 
 			const result = validate("@article{test,...}", "biblatex", mockDeps);
 
-			assert.strictEqual((mockBibLaTeXParser.validate as any).mock?.calls.length, 1);
-			assert.strictEqual((mockBibLaTeXParser.validate as any).mock?.calls[0]?.arguments[0], "@article{test,...}");
+			assert.strictEqual((mockBibLaTeXParser.validate as any).mock.calls.length, 1);
+			assert.strictEqual((mockBibLaTeXParser.validate as any).mock.calls[0].arguments[0], "@article{test,...}");
 			assert.deepStrictEqual(result, warnings);
 		});
 
