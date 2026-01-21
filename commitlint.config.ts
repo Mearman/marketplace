@@ -35,13 +35,41 @@ const coreScopes = [
 // Plugin scopes (auto-detected from plugins/ directory)
 const pluginScopes = getPluginScopes();
 
+// Commit types that allow empty scopes
+const typesAllowedEmptyScope = ["chore", "ci", "docs", "style", "test", "refactor", "perf"];
+
 const config: UserConfig = {
 	extends: ["@commitlint/config-conventional"],
+	plugins: [
+		{
+			rules: {
+				"scope-empty-conditional": (parsed) => {
+					const { type, scope } = parsed;
+
+					// For types that allow empty scope, always pass
+					if (type && typesAllowedEmptyScope.includes(type)) {
+						return [true];
+					}
+
+					// For other types (feat, fix, etc.), scope must not be empty
+					// Check if scope is missing or null
+					if (scope === null || scope === undefined) {
+						return [false, "scope may not be empty for type '" + type + "'"];
+					}
+					// Also check for empty string (though this shouldn't happen with parsed commits)
+					if (scope === "") {
+						return [false, "scope may not be empty for type '" + type + "'"];
+					}
+					return [true];
+				},
+			},
+		},
+	],
 	rules: {
 		"scope-enum": [2, "always", [...coreScopes, ...pluginScopes]],
-		// Allow empty scopes for certain commit types
-		// @ts-expect-error - tuple type is complex, this works at runtime
-		"scope-empty": [0, "never", ["chore", "ci", "docs", "style", "test", "refactor", "perf"]] as any,
+		// Override the default scope-empty rule with our conditional version
+		"scope-empty": [0], // Disable default rule
+		"scope-empty-conditional": [2, "always"], // Use our custom rule
 		"body-max-line-length": [0], // Disabled for semantic-release changelog commits
 	},
 };

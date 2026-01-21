@@ -134,6 +134,8 @@ chore(wayback): update dependencies
 - **Plugin scopes**: Auto-discovered from `plugins/` directory (e.g., `wayback`, `github-api`, `gravatar`)
 - **Adding new scopes**: When introducing new infrastructure or areas not covered by existing scopes, add to `coreScopes` in `commitlint.config.ts`
 
+> **⚠️ REMINDER:** If commitlint rejects your commit message for invalid scope, add the scope to `coreScopes` array in `commitlint.config.ts` and try again. Common additions: `scripts`, `config`, `types`, `tools`.
+
 Use appropriate scope for the change. If no existing scope fits, add a new one rather than force-fitting into an unrelated scope.
 
 ## Testing Plugin Scripts
