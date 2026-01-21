@@ -461,20 +461,20 @@ describe("main() function with dependency injection", () => {
 
 		main(args, deps);
 
-		assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("## Hello World")));
+		assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("## Hello World")));
 	});
 
 	it("should read LaTeX from file when --file flag is used", async () => {
 		const { main } = await import("./latex-to-md.js");
-		mockReadFileSync.mockReturnValue("\\textbf{Bold text}");
+		mockReadFileSync.mock.mockImplementation(() => "\\textbf{Bold text}");
 
 		const args = parseArgs(["--file", "input.tex"]);
 
 		main(args, deps);
 
-		assert.strictEqual(mockReadFileSync.mock.calls[0][0], "input.tex");
-		assert.strictEqual(mockReadFileSync.mock.calls[0][1], "utf-8");
-		assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("**Bold text**")));
+		assert.strictEqual(mockReadFileSync.mock.calls[0].arguments[0], "input.tex");
+		assert.strictEqual(mockReadFileSync.mock.calls[0].arguments[1], "utf-8");
+		assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("**Bold text**")));
 	});
 
 	it("should write output to file when --output option is provided", async () => {
@@ -484,10 +484,10 @@ describe("main() function with dependency injection", () => {
 
 		main(args, deps);
 
-		assert.strictEqual(mockWriteFileSync.mock.calls[0][0], "output.md");
-		assert.ok(typeof mockWriteFileSync.mock.calls[0][1] === "string" && mockWriteFileSync.mock.calls[0][1].includes("## Test"));
-		assert.strictEqual(mockWriteFileSync.mock.calls[0][2], "utf-8");
-		assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "Converted Markdown written to output.md"));
+		assert.strictEqual(mockWriteFileSync.mock.calls[0].arguments[0], "output.md");
+		assert.ok(typeof mockWriteFileSync.mock.calls[0].arguments[1] === "string" && mockWriteFileSync.mock.calls[0].arguments[1].includes("## Test"));
+		assert.strictEqual(mockWriteFileSync.mock.calls[0].arguments[2], "utf-8");
+		assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments[0] === "Converted Markdown written to output.md"));
 	});
 
 	it("should show error when --file flag but no file path", async () => {
@@ -496,7 +496,7 @@ describe("main() function with dependency injection", () => {
 		const args = parseArgs(["--file"]);
 
 		assert.throws(() => main(args, deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: No input file specified"));
+		assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: No input file specified"));
 	});
 
 	it("should show error when no input text provided", async () => {
@@ -505,7 +505,7 @@ describe("main() function with dependency injection", () => {
 		const args = parseArgs([]);
 
 		assert.throws(() => main(args, deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: No input text specified"));
+		assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: No input text specified"));
 	});
 
 	it("should show error when --file but empty positional args", async () => {
@@ -514,7 +514,7 @@ describe("main() function with dependency injection", () => {
 		const args = parseArgs(["--file"]);
 
 		assert.throws(() => main(args, deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: No input file specified"));
+		assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: No input file specified"));
 	});
 });
 
@@ -547,14 +547,14 @@ describe("handleError", () => {
 		const error = new Error("Test error");
 
 		assert.throws(() => handleError(error, deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: Test error"));
-		assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+		assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: Test error"));
+		assert.strictEqual(mockProcess.exit.mock.calls[0].arguments[0], 1);
 	});
 
 	it("should handle string errors", async () => {
 		const { handleError } = await import("./latex-to-md.js");
 
 		assert.throws(() => handleError("String error", deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: String error"));
+		assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: String error"));
 	});
 });

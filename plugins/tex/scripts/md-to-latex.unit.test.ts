@@ -239,9 +239,9 @@ describe("markdownToLatex", () => {
 			assert.ok(!output.includes("\\{"));
 		});
 
-	describe("Complex Documents", () => {
-		it("handles mixed content", () => {
-			const input = `# Title
+		describe("Complex Documents", () => {
+			it("handles mixed content", () => {
+				const input = `# Title
 
 This is **bold** and *italic* text.
 
@@ -256,191 +256,191 @@ This is **bold** and *italic* text.
 code block
 \`\`\``;
 
-			const output = markdownToLatex(input);
-			assert.ok(output.includes("\\chapter{Title}"));
-			assert.ok(output.includes("\\textbf{bold}"));
-			assert.ok(output.includes("\\emph{italic}"));
-			assert.ok(output.includes("\\section{Section}"));
-			assert.ok(output.includes("\\begin{itemize}"));
-			assert.ok(output.includes("\\href{https://example.com}{Link}"));
-			assert.ok(output.includes("\\begin{verbatim}"));
+				const output = markdownToLatex(input);
+				assert.ok(output.includes("\\chapter{Title}"));
+				assert.ok(output.includes("\\textbf{bold}"));
+				assert.ok(output.includes("\\emph{italic}"));
+				assert.ok(output.includes("\\section{Section}"));
+				assert.ok(output.includes("\\begin{itemize}"));
+				assert.ok(output.includes("\\href{https://example.com}{Link}"));
+				assert.ok(output.includes("\\begin{verbatim}"));
+			});
+
+			it("maintains text without special markdown", () => {
+				const input = "Plain text paragraph.";
+				const output = markdownToLatex(input);
+				assert.ok(output.includes("Plain text paragraph."));
+			});
 		});
 
-		it("maintains text without special markdown", () => {
-			const input = "Plain text paragraph.";
-			const output = markdownToLatex(input);
-			assert.ok(output.includes("Plain text paragraph."));
-		});
-	});
+		describe("Edge Cases", () => {
+			it("handles empty input", () => {
+				const input = "";
+				const output = markdownToLatex(input);
+				assert.strictEqual(output, "");
+			});
 
-	describe("Edge Cases", () => {
-		it("handles empty input", () => {
-			const input = "";
-			const output = markdownToLatex(input);
-			assert.strictEqual(output, "");
-		});
+			it("handles input with only whitespace", () => {
+				const input = "   \n\n   ";
+				const output = markdownToLatex(input);
+				assert.strictEqual(output.trim(), "");
+			});
 
-		it("handles input with only whitespace", () => {
-			const input = "   \n\n   ";
-			const output = markdownToLatex(input);
-			assert.strictEqual(output.trim(), "");
-		});
-
-		it("handles inline code with special characters", () => {
-			const input = "Use `$variable` here";
-			const output = markdownToLatex(input);
-			assert.ok(output.includes("\\texttt{$variable}"));
+			it("handles inline code with special characters", () => {
+				const input = "Use `$variable` here";
+				const output = markdownToLatex(input);
+				assert.ok(output.includes("\\texttt{$variable}"));
 			// Special chars inside code should be preserved
+			});
+
+			it("preserves multiple consecutive blank lines as double newline", () => {
+				const input = "Line 1\n\n\n\nLine 2";
+				const output = markdownToLatex(input);
+				// Should have content but not necessarily preserve exact whitespace
+				assert.ok(output.includes("Line 1"));
+				assert.ok(output.includes("Line 2"));
+			});
+		});
+	});
+
+	describe("main() function with dependency injection", () => {
+		let mockConsole: any;
+		let mockProcess: any;
+		let mockReadFileSync: any;
+		let mockWriteFileSync: any;
+		let deps: any;
+		let parseArgs: any;
+
+		beforeEach(async () => {
+			mock.reset();
+
+			mockConsole = {
+				log: mock.fn(),
+				error: mock.fn(),
+			};
+
+			mockProcess = {
+				exit: mock.fn(() => {
+					throw new Error("process.exit called");
+				}),
+			};
+
+			mockReadFileSync = mock.fn();
+			mockWriteFileSync = mock.fn();
+
+			deps = {
+				console: mockConsole,
+				process: mockProcess,
+				readFileSync: mockReadFileSync,
+				writeFileSync: mockWriteFileSync,
+			};
+
+			// Import parseArgs dynamically
+			const mod = await import("../../../lib/args/index.js");
+			parseArgs = mod.parseArgs;
 		});
 
-		it("preserves multiple consecutive blank lines as double newline", () => {
-			const input = "Line 1\n\n\n\nLine 2";
-			const output = markdownToLatex(input);
-			// Should have content but not necessarily preserve exact whitespace
-			assert.ok(output.includes("Line 1"));
-			assert.ok(output.includes("Line 2"));
+		it("should convert Markdown text from positional arguments", async () => {
+			const { main } = await import("./md-to-latex.js");
+			const args = parseArgs(["## Hello World"]);
+
+			main(args, deps);
+
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("\\section{Hello World}")));
+		});
+
+		it("should read Markdown from file when --file flag is used", async () => {
+			const { main } = await import("./md-to-latex.js");
+			mockReadFileSync.mock.mockImplementation(() => "**Bold text**");
+
+			const args = parseArgs(["--file", "input.md"]);
+
+			main(args, deps);
+
+			assert.strictEqual(mockReadFileSync.mock.calls[0].arguments[0], "input.md");
+			assert.strictEqual(mockReadFileSync.mock.calls[0].arguments[1], "utf-8");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments[0] === "string" && call.arguments[0].includes("\\textbf{Bold text}")));
+		});
+
+		it("should write output to file when --output option is provided", async () => {
+			const { main } = await import("./md-to-latex.js");
+
+			const args = parseArgs(["## Test", "--output=output.tex"]);
+
+			main(args, deps);
+
+			assert.strictEqual(mockWriteFileSync.mock.calls[0].arguments[0], "output.tex");
+			assert.ok(typeof mockWriteFileSync.mock.calls[0].arguments[1] === "string" && mockWriteFileSync.mock.calls[0].arguments[1].includes("\\section{Test}"));
+			assert.strictEqual(mockWriteFileSync.mock.calls[0].arguments[2], "utf-8");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments[0] === "Converted LaTeX written to output.tex"));
+		});
+
+		it("should show error when --file flag but no file path", async () => {
+			const { main } = await import("./md-to-latex.js");
+
+			const args = parseArgs(["--file"]);
+
+			assert.throws(() => main(args, deps), { message: "process.exit called" });
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: No input file specified"));
+		});
+
+		it("should show error when no input text provided", async () => {
+			const { main } = await import("./md-to-latex.js");
+
+			const args = parseArgs([]);
+
+			assert.throws(() => main(args, deps), { message: "process.exit called" });
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: No input text specified"));
+		});
+
+		it("should show error when --file but empty positional args", async () => {
+			const { main } = await import("./md-to-latex.js");
+
+			const args = parseArgs(["--file"]);
+
+			assert.throws(() => main(args, deps), { message: "process.exit called" });
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: No input file specified"));
 		});
 	});
-});
 
-describe("main() function with dependency injection", () => {
-	let mockConsole: any;
-	let mockProcess: any;
-	let mockReadFileSync: any;
-	let mockWriteFileSync: any;
-	let deps: any;
-	let parseArgs: any;
+	describe("handleError", () => {
+		let mockConsole: any;
+		let mockProcess: any;
+		let deps: any;
 
-	beforeEach(async () => {
-		mock.reset();
+		beforeEach(() => {
+			mock.reset();
 
-		mockConsole = {
-			log: mock.fn(),
-			error: mock.fn(),
-		};
+			mockConsole = {
+				error: mock.fn(),
+			};
 
-		mockProcess = {
-			exit: mock.fn(() => {
-				throw new Error("process.exit called");
-			}),
-		};
+			mockProcess = {
+				exit: mock.fn(() => {
+					throw new Error("process.exit called");
+				}),
+			};
 
-		mockReadFileSync = mock.fn();
-		mockWriteFileSync = mock.fn();
+			deps = {
+				console: mockConsole,
+				process: mockProcess,
+			};
+		});
 
-		deps = {
-			console: mockConsole,
-			process: mockProcess,
-			readFileSync: mockReadFileSync,
-			writeFileSync: mockWriteFileSync,
-		};
+		it("should log error message and exit", async () => {
+			const { handleError } = await import("./md-to-latex.js");
+			const error = new Error("Test error");
 
-		// Import parseArgs dynamically
-		const mod = await import("../../../lib/args/index.js");
-		parseArgs = mod.parseArgs;
+			assert.throws(() => handleError(error, deps), { message: "process.exit called" });
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: Test error"));
+			assert.strictEqual(mockProcess.exit.mock.calls[0].arguments[0], 1);
+		});
+
+		it("should handle string errors", async () => {
+			const { handleError } = await import("./md-to-latex.js");
+
+			assert.throws(() => handleError("String error", deps), { message: "process.exit called" });
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments[0] === "Error: String error"));
+		});
 	});
-
-	it("should convert Markdown text from positional arguments", async () => {
-		const { main } = await import("./md-to-latex.js");
-		const args = parseArgs(["## Hello World"]);
-
-		main(args, deps);
-
-		assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("\\section{Hello World}")));
-	});
-
-	it("should read Markdown from file when --file flag is used", async () => {
-		const { main } = await import("./md-to-latex.js");
-		mockReadFileSync.mockReturnValue("**Bold text**");
-
-		const args = parseArgs(["--file", "input.md"]);
-
-		main(args, deps);
-
-		assert.strictEqual(mockReadFileSync.mock.calls[0][0], "input.md");
-		assert.strictEqual(mockReadFileSync.mock.calls[0][1], "utf-8");
-		assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("\\textbf{Bold text}")));
-	});
-
-	it("should write output to file when --output option is provided", async () => {
-		const { main } = await import("./md-to-latex.js");
-
-		const args = parseArgs(["## Test", "--output=output.tex"]);
-
-		main(args, deps);
-
-		assert.strictEqual(mockWriteFileSync.mock.calls[0][0], "output.tex");
-		assert.ok(typeof mockWriteFileSync.mock.calls[0][1] === "string" && mockWriteFileSync.mock.calls[0][1].includes("\\section{Test}"));
-		assert.strictEqual(mockWriteFileSync.mock.calls[0][2], "utf-8");
-		assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "Converted LaTeX written to output.tex"));
-	});
-
-	it("should show error when --file flag but no file path", async () => {
-		const { main } = await import("./md-to-latex.js");
-
-		const args = parseArgs(["--file"]);
-
-		assert.throws(() => main(args, deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: No input file specified"));
-	});
-
-	it("should show error when no input text provided", async () => {
-		const { main } = await import("./md-to-latex.js");
-
-		const args = parseArgs([]);
-
-		assert.throws(() => main(args, deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: No input text specified"));
-	});
-
-	it("should show error when --file but empty positional args", async () => {
-		const { main } = await import("./md-to-latex.js");
-
-		const args = parseArgs(["--file"]);
-
-		assert.throws(() => main(args, deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: No input file specified"));
-	});
-});
-
-describe("handleError", () => {
-	let mockConsole: any;
-	let mockProcess: any;
-	let deps: any;
-
-	beforeEach(() => {
-		mock.reset();
-
-		mockConsole = {
-			error: mock.fn(),
-		};
-
-		mockProcess = {
-			exit: mock.fn(() => {
-				throw new Error("process.exit called");
-			}),
-		};
-
-		deps = {
-			console: mockConsole,
-			process: mockProcess,
-		};
-	});
-
-	it("should log error message and exit", async () => {
-		const { handleError } = await import("./md-to-latex.js");
-		const error = new Error("Test error");
-
-		assert.throws(() => handleError(error, deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: Test error"));
-		assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
-	});
-
-	it("should handle string errors", async () => {
-		const { handleError } = await import("./md-to-latex.js");
-
-		assert.throws(() => handleError("String error", deps), { message: "process.exit called" });
-		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: String error"));
-	});
-});
 });
