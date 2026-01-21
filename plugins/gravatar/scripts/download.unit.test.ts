@@ -2,15 +2,17 @@
  * Tests for gravatar download.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { writeFile } from "fs/promises";
-import { main, handleError } from "./download";
-import { parseArgs } from "./utils";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { main, handleError } from "./download.js";
+import { parseArgs } from "./utils.js";
 
 // Mock writeFile
-vi.mock("fs/promises", () => ({
-	writeFile: vi.fn(),
-}));
+let mockWriteFile: any;
+beforeEach(() => {
+	mockWriteFile = mock.fn(async () => {});
+	mock.method(global, "writeFile", mockWriteFile, { global: true });
+});
 
 describe("download.ts", () => {
 	let mockConsole: any;
@@ -19,21 +21,22 @@ describe("download.ts", () => {
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
-		vi.mocked(writeFile).mockResolvedValue(undefined);
+		mock.reset();
+		mockWriteFile = mock.fn(async () => {});
+		mock.method(global, "writeFile", mockWriteFile, { global: true });
 
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
 		};
 
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 		};
 
-		mockFetchWithCache = vi.fn();
+		mockFetchWithCache = mock.fn(async () => new ArrayBuffer(5000));
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
@@ -46,174 +49,187 @@ describe("download.ts", () => {
 		describe("successful download scenarios", () => {
 			it("should download gravatar with default size", async () => {
 				const mockBuffer = new ArrayBuffer(10240);
-				mockFetchWithCache.mockResolvedValue(mockBuffer);
+				mockFetchWithCache = mock.fn(async () => mockBuffer);
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg"]);
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Email: user@example.com");
-				expect(mockConsole.log).toHaveBeenCalledWith("Output: avatar.jpg");
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Hash:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✓ Downloaded successfully"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Size: 10.0 KB"));
-				expect(mockConsole.log).toHaveBeenCalledWith("  File: avatar.jpg");
-				expect(writeFile).toHaveBeenCalledWith("avatar.jpg", Buffer.from(mockBuffer));
+				assert.strictEqual(mockConsole.log.mock.calls[0][0], "Email: user@example.com");
+				assert.strictEqual(mockConsole.log.mock.calls[1][0], "Output: avatar.jpg");
+				assert.match(mockConsole.log.mock.calls[2][0], /Hash:/);
+				assert.match(mockConsole.log.mock.calls[4][0], /✓ Downloaded successfully/);
+				assert.match(mockConsole.log.mock.calls[5][0], /Size: 10\.0 KB/);
+				assert.strictEqual(mockConsole.log.mock.calls[6][0], "  File: avatar.jpg");
+				assert.deepStrictEqual(mockWriteFile.mock.calls[0], ["avatar.jpg", Buffer.from(mockBuffer)]);
 			});
 
 			it("should download gravatar with custom size", async () => {
 				const mockBuffer = new ArrayBuffer(20480);
-				mockFetchWithCache.mockResolvedValue(mockBuffer);
+				mockFetchWithCache = mock.fn(async () => mockBuffer);
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.png", "--size=400"]);
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.stringContaining("size=400"),
-					})
-				);
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Size: 20.0 KB"));
+				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				assert.match(callArgs.url, /size=400/);
+				assert.match(mockConsole.log.mock.calls[5][0], /Size: 20\.0 KB/);
 			});
 
 			it("should download gravatar with default image type", async () => {
 				const mockBuffer = new ArrayBuffer(5120);
-				mockFetchWithCache.mockResolvedValue(mockBuffer);
+				mockFetchWithCache = mock.fn(async () => mockBuffer);
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg", "--default=identicon"]);
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.stringContaining("d=identicon"),
-					})
-				);
+				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				assert.match(callArgs.url, /d=identicon/);
 			});
 
 			it("should download gravatar with rating level", async () => {
 				const mockBuffer = new ArrayBuffer(8192);
-				mockFetchWithCache.mockResolvedValue(mockBuffer);
+				mockFetchWithCache = mock.fn(async () => mockBuffer);
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg", "--rating=pg"]);
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.stringContaining("r=pg"),
-					})
-				);
+				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				assert.match(callArgs.url, /r=pg/);
 			});
 
 			it("should handle different image sizes in KB formatting", async () => {
 				const mockBuffer = new ArrayBuffer(1048576); // 1 MB
-				mockFetchWithCache.mockResolvedValue(mockBuffer);
+				mockFetchWithCache = mock.fn(async () => mockBuffer);
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "large.jpg"]);
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Size: 1024.0 KB"));
+				assert.match(mockConsole.log.mock.calls[5][0], /Size: 1024\.0 KB/);
 			});
 		});
 
 		describe("option validation", () => {
 			it("should validate size option (max 2048)", async () => {
-				mockFetchWithCache.mockResolvedValue(new ArrayBuffer(1000));
+				mockFetchWithCache = mock.fn(async () => new ArrayBuffer(1000));
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg", "--size=2048"]);
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.stringContaining("size=2048"),
-					})
-				);
+				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				assert.match(callArgs.url, /size=2048/);
 			});
 
 			it("should reject size over 2048", async () => {
-				mockFetchWithCache.mockResolvedValue(new ArrayBuffer(1000));
+				mockFetchWithCache = mock.fn(async () => new ArrayBuffer(1000));
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg", "--size=2049"]);
 
 				await main(args, deps);
 
 				// Size > 2048 should be ignored (not set in URL)
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.not.stringContaining("size=2049"),
-					})
-				);
+				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				assert.doesNotMatch(callArgs.url, /size=2049/);
 			});
 
 			it("should reject negative size", async () => {
-				mockFetchWithCache.mockResolvedValue(new ArrayBuffer(1000));
+				mockFetchWithCache = mock.fn(async () => new ArrayBuffer(1000));
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg", "--size=-100"]);
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.not.stringContaining("size=-100"),
-					})
-				);
+				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				assert.doesNotMatch(callArgs.url, /size=-100/);
 			});
 
 			it("should validate default image types", async () => {
 				const validDefaults = ["mp", "identicon", "monsterid", "wavatar", "retro", "robohash", "blank"];
 				const mockBuffer = new ArrayBuffer(1000);
-				mockFetchWithCache.mockResolvedValue(mockBuffer);
 
 				for (const defaultType of validDefaults) {
-					vi.clearAllMocks();
-					const args = parseArgs(["user@example.com", "avatar.jpg", `--default=${defaultType}`]);
+					mock.reset();
+					mockWriteFile = mock.fn(async () => {});
+					mock.method(global, "writeFile", mockWriteFile, { global: true });
 
+					mockConsole = { log: mock.fn(), error: mock.fn() };
+					mockProcess = {
+						exit: mock.fn(() => {
+							throw new Error("process.exit called");
+						}),
+					};
+					mockFetchWithCache = mock.fn(async () => mockBuffer);
+					deps = {
+						fetchWithCache: mockFetchWithCache,
+						console: mockConsole,
+						process: mockProcess,
+					};
+
+					const args = parseArgs(["user@example.com", "avatar.jpg", `--default=${defaultType}`]);
 					await main(args, deps);
 
-					expect(mockFetchWithCache).toHaveBeenCalledWith(
-						expect.objectContaining({
-							url: expect.stringContaining(`d=${defaultType}`),
-						})
-					);
+					const callArgs = mockFetchWithCache.mock.calls[0][0];
+					assert.match(callArgs.url, new RegExp(`d=${defaultType}`));
 				}
 			});
 
 			it("should reject invalid default image type", async () => {
 				const args = parseArgs(["user@example.com", "avatar.jpg", "--default=invalid"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Invalid default type"));
-				expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("mp, identicon, monsterid, wavatar, retro, robohash, blank"));
+				assert.match(mockConsole.error.mock.calls[0][0], /Invalid default type/);
+				assert.match(mockConsole.error.mock.calls[1][0], /mp, identicon, monsterid, wavatar, retro, robohash, blank/);
 			});
 
 			it("should validate rating levels", async () => {
 				const validRatings = ["g", "pg", "r", "x"];
 				const mockBuffer = new ArrayBuffer(1000);
-				mockFetchWithCache.mockResolvedValue(mockBuffer);
 
 				for (const rating of validRatings) {
-					vi.clearAllMocks();
-					const args = parseArgs(["user@example.com", "avatar.jpg", `--rating=${rating}`]);
+					mock.reset();
+					mockWriteFile = mock.fn(async () => {});
+					mock.method(global, "writeFile", mockWriteFile, { global: true });
 
+					mockConsole = { log: mock.fn(), error: mock.fn() };
+					mockProcess = {
+						exit: mock.fn(() => {
+							throw new Error("process.exit called");
+						}),
+					};
+					mockFetchWithCache = mock.fn(async () => mockBuffer);
+					deps = {
+						fetchWithCache: mockFetchWithCache,
+						console: mockConsole,
+						process: mockProcess,
+					};
+
+					const args = parseArgs(["user@example.com", "avatar.jpg", `--rating=${rating}`]);
 					await main(args, deps);
 
-					expect(mockFetchWithCache).toHaveBeenCalledWith(
-						expect.objectContaining({
-							url: expect.stringContaining(`r=${rating}`),
-						})
-					);
+					const callArgs = mockFetchWithCache.mock.calls[0][0];
+					assert.match(callArgs.url, new RegExp(`r=${rating}`));
 				}
 			});
 
 			it("should reject invalid rating level", async () => {
 				const args = parseArgs(["user@example.com", "avatar.jpg", "--rating=nc17"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Invalid rating level"));
-				expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("g, pg, r, x"));
+				assert.match(mockConsole.error.mock.calls[0][0], /Invalid rating level/);
+				assert.match(mockConsole.error.mock.calls[1][0], /g, pg, r, x/);
 			});
 
 			it("should combine multiple options", async () => {
 				const mockBuffer = new ArrayBuffer(15000);
-				mockFetchWithCache.mockResolvedValue(mockBuffer);
+				mockFetchWithCache = mock.fn(async () => mockBuffer);
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs([
 					"user@example.com",
 					"avatar.jpg",
@@ -224,49 +240,34 @@ describe("download.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.stringContaining("size=300"),
-					})
-				);
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.stringContaining("d=robohash"),
-					})
-				);
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.stringContaining("r=pg"),
-					})
-				);
+				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				assert.match(callArgs.url, /size=300/);
+				assert.match(callArgs.url, /d=robohash/);
+				assert.match(callArgs.url, /r=pg/);
 			});
 		});
 
 		describe("cache control", () => {
 			it("should use cache by default", async () => {
-				mockFetchWithCache.mockResolvedValue(new ArrayBuffer(5000));
+				mockFetchWithCache = mock.fn(async () => new ArrayBuffer(5000));
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg"]);
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: false,
-					})
-				);
+				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				assert.strictEqual(callArgs.bypassCache, false);
 			});
 
 			it("should bypass cache when --no-cache flag is provided", async () => {
-				mockFetchWithCache.mockResolvedValue(new ArrayBuffer(5000));
+				mockFetchWithCache = mock.fn(async () => new ArrayBuffer(5000));
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["--no-cache", "user@example.com", "avatar.jpg"]);
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: true,
-					})
-				);
+				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				assert.strictEqual(callArgs.bypassCache, true);
 			});
 		});
 
@@ -274,106 +275,123 @@ describe("download.ts", () => {
 			it("should show usage message when no email provided", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("npx tsx download.ts <email> <output-file>"));
+				assert.match(mockConsole.log.mock.calls[0][0], /Usage:/);
+				assert.match(mockConsole.log.mock.calls[1][0], /npx tsx download\.ts <email> <output-file>/);
 			});
 
 			it("should show usage message when no output file provided", async () => {
 				const args = parseArgs(["user@example.com"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
+				assert.match(mockConsole.log.mock.calls[0][0], /Usage:/);
 			});
 
 			it("should include examples in usage message", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join("\n");
-				expect(logCalls).toContain("Examples:");
-				expect(logCalls).toContain("npx tsx download.ts user@example.com avatar.jpg");
-				expect(logCalls).toContain("npx tsx download.ts user@example.com avatar.png --size=400");
+				assert.match(logCalls, /Examples:/);
+				assert.match(logCalls, /npx tsx download\.ts user@example\.com avatar\.jpg/);
+				assert.match(logCalls, /npx tsx download\.ts user@example\.com avatar\.png --size=400/);
 			});
 
 			it("should include --no-cache option in usage message", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join("\n");
-				expect(logCalls).toContain("--no-cache");
-				expect(logCalls).toContain("Bypass cache and fetch fresh data");
+				assert.match(logCalls, /--no-cache/);
+				assert.match(logCalls, /Bypass cache and fetch fresh data/);
 			});
 		});
 
 		describe("error handling", () => {
 			it("should handle network errors", async () => {
-				mockFetchWithCache.mockRejectedValue(new Error("Network error"));
+				mockFetchWithCache = mock.fn(async () => {
+					throw new Error("Network error");
+				});
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Network error");
+				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Network error"]);
 			});
 
 			it("should handle timeout errors", async () => {
-				mockFetchWithCache.mockRejectedValue(new Error("Request timeout"));
+				mockFetchWithCache = mock.fn(async () => {
+					throw new Error("Request timeout");
+				});
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Request timeout");
+				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Request timeout"]);
 			});
 
 			it("should handle 404 errors", async () => {
-				mockFetchWithCache.mockRejectedValue(new Error("Resource not found"));
+				mockFetchWithCache = mock.fn(async () => {
+					throw new Error("Resource not found");
+				});
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Resource not found");
+				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Resource not found"]);
 			});
 
 			it("should handle file write errors", async () => {
-				vi.mocked(writeFile).mockRejectedValue(new Error("Permission denied"));
-				mockFetchWithCache.mockResolvedValue(new ArrayBuffer(1000));
+				mockWriteFile = mock.fn(async () => {
+					throw new Error("Permission denied");
+				});
+				mock.method(global, "writeFile", mockWriteFile, { global: true });
+				mockFetchWithCache = mock.fn(async () => new ArrayBuffer(1000));
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Permission denied");
+				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Permission denied"]);
 			});
 
 			it("should handle non-Error errors", async () => {
-				mockFetchWithCache.mockRejectedValue("string error");
+				mockFetchWithCache = mock.fn(async () => {
+					throw "string error";
+				});
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "string error");
+				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "string error"]);
 			});
 		});
 
 		describe("output formatting", () => {
 			it("should include blank line before success message", async () => {
-				mockFetchWithCache.mockResolvedValue(new ArrayBuffer(5000));
+				mockFetchWithCache = mock.fn(async () => new ArrayBuffer(5000));
+				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com", "avatar.jpg"]);
 
 				await main(args, deps);
 
 				const logCalls = mockConsole.log.mock.calls;
-				expect(logCalls[0]).toEqual(["Email: user@example.com"]);
-				expect(logCalls[1]).toEqual(["Output: avatar.jpg"]);
-				expect(logCalls[2][0]).toEqual(expect.stringContaining("Hash:"));
-				expect(logCalls[3]).toEqual([]); // blank line
-				expect(logCalls[4]).toEqual(["✓ Downloaded successfully"]);
-				expect(logCalls[5]).toEqual(expect.arrayContaining([expect.stringContaining("Size:")]));
-				expect(logCalls[6]).toEqual(expect.arrayContaining([expect.stringContaining("File:")]));
-				expect(logCalls[7]).toEqual([]); // blank line at end
+				assert.deepStrictEqual(logCalls[0], ["Email: user@example.com"]);
+				assert.deepStrictEqual(logCalls[1], ["Output: avatar.jpg"]);
+				assert.match(logCalls[2][0], /Hash:/);
+				assert.deepStrictEqual(logCalls[3], []); // blank line
+				assert.deepStrictEqual(logCalls[4], ["✓ Downloaded successfully"]);
+				assert.match(logCalls[5][0], /Size:/);
+				assert.strictEqual(logCalls[6][0], "  File: avatar.jpg");
+				assert.deepStrictEqual(logCalls[7], []); // blank line at end
 			});
 		});
 	});
@@ -381,52 +399,45 @@ describe("download.ts", () => {
 	describe("handleError", () => {
 		it("should log Error instance message", () => {
 			const error = new Error("Download failed");
-			expect(() => handleError(error, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Download failed");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Download failed"]);
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should log non-Error errors as strings", () => {
-			expect(() => handleError("string error", "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError("string error", "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "string error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "string error"]);
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should handle null errors", () => {
-			expect(() => handleError(null, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(null, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "null");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "null"]);
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should handle undefined errors", () => {
-			expect(() => handleError(undefined, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(undefined, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "undefined");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "undefined"]);
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should include blank line before error message", () => {
 			const error = new Error("Test error");
-			expect(() => handleError(error, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "user@example.com", "avatar.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Test error");
+			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Test error"]);
 		});
 
 		it("should ignore parameters in error (present for interface consistency)", () => {
 			const error = new Error("Test error");
-			expect(() => handleError(error, "any-email@example.com", "any-file.jpg", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "any-email@example.com", "any-file.jpg", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			// The email and outputFile are not used in the error handling
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Test error");
+			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Test error"]);
 		});
 	});
 });
