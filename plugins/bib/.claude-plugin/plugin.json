@@ -1,6 +1,6 @@
 {
   "name": "bib",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Bibliography manipulation plugin supporting BibTeX, BibLaTeX, RIS, EndNote XML, and CSL JSON formats. Convert, validate, merge, filter, and perform CRUD operations on bibliography files.",
   "skills": [
     "./skills/bib-convert",

@@ -1,3 +1,29 @@
+## <small>1.17.3 (2026-01-21)</small>
+
+* chore: add git commit --no-verify ban to permissions ([72d0f3b](https://github.com/Mearman/marketplace/commit/72d0f3b))
+* chore: remove unused vitest config ([fd091f6](https://github.com/Mearman/marketplace/commit/fd091f6))
+* chore(deps): add c8 for coverage and remove vite-tsconfig-paths ([071285a](https://github.com/Mearman/marketplace/commit/071285a))
+* chore(deps): migrate from vitest to Node.js native test runner ([59bf197](https://github.com/Mearman/marketplace/commit/59bf197))
+* chore(deps): update lockfile after vitest removal ([616610d](https://github.com/Mearman/marketplace/commit/616610d))
+* fix(bib): correct mock assertions for Node.js test runner ([0f41e39](https://github.com/Mearman/marketplace/commit/0f41e39))
+* fix(gravatar): migrate tests from Vitest to Node.js test runner ([07d028d](https://github.com/Mearman/marketplace/commit/07d028d))
+* fix(pypi-json): correct mock assertions for Node.js test runner ([a96142e](https://github.com/Mearman/marketplace/commit/a96142e))
+* fix(tex): correct mock assertions for Node.js test runner ([157ca13](https://github.com/Mearman/marketplace/commit/157ca13))
+* fix(wayback): migrate tests from Vitest to Node.js test runner ([20010b4](https://github.com/Mearman/marketplace/commit/20010b4))
+* test: add global test setup utilities for Node.js test runner ([6603fdb](https://github.com/Mearman/marketplace/commit/6603fdb))
+* test(bib): migrate bib tests to Node.js native test runner ([7283711](https://github.com/Mearman/marketplace/commit/7283711))
+* test(bib): migrate integration tests and remove vitest ([418e89a](https://github.com/Mearman/marketplace/commit/418e89a))
+* test(github-api): migrate tests to Node.js native test runner ([bfab693](https://github.com/Mearman/marketplace/commit/bfab693))
+* test(gravatar): migrate tests to Node.js native test runner ([d65c150](https://github.com/Mearman/marketplace/commit/d65c150))
+* test(lib): migrate lib tests to Node.js native test runner ([6a7bf07](https://github.com/Mearman/marketplace/commit/6a7bf07))
+* test(npm-registry): migrate tests to Node.js native test runner ([5b1f2c1](https://github.com/Mearman/marketplace/commit/5b1f2c1))
+* test(npms-io): migrate tests to Node.js native test runner ([eb64d42](https://github.com/Mearman/marketplace/commit/eb64d42))
+* test(pypi-json): migrate tests to Node.js native test runner ([756d6d6](https://github.com/Mearman/marketplace/commit/756d6d6))
+* test(scripts): migrate generate-readme-plugins tests ([b11cd69](https://github.com/Mearman/marketplace/commit/b11cd69))
+* test(tex): migrate tests to Node.js native test runner ([90360a2](https://github.com/Mearman/marketplace/commit/90360a2))
+* test(wayback): migrate tests to Node.js native test runner ([9191d5c](https://github.com/Mearman/marketplace/commit/9191d5c))
+* refactor(bib): add dependency injection to converter ([a8c5d88](https://github.com/Mearman/marketplace/commit/a8c5d88))
+
 ## <small>1.17.2 (2026-01-20)</small>
 
 * test(lib): add unit tests for README generator ([bd5de36](https://github.com/Mearman/marketplace/commit/bd5de36))

@@ -32,7 +32,7 @@ Ask: "Check if example.com is archived in the Wayback Machine"
 <!-- AUTO-GENERATED PLUGINS START -->
 ## Available Plugins
 
-### [bib](plugins/bib/) — v0.2.0
+### [bib](plugins/bib/) — v0.2.1
 
 Bibliography manipulation plugin supporting BibTeX, BibLaTeX, RIS, EndNote XML, and CSL JSON formats: Convert, validate, merge, filter, and perform CRUD operations on bibliography files.
 
@@ -62,7 +62,7 @@ GitHub REST API: Tools for repository metadata, READMEs, user profiles, and rate
 /plugin install github-api@mearman
 ```
 
-### [gravatar](plugins/gravatar/) — v0.2.0
+### [gravatar](plugins/gravatar/) — v0.2.1
 
 Gravatar Avatar URLs: Tools for generating avatar URLs from email addresses
 
@@ -92,7 +92,7 @@ NPMS Package Analysis: Tools for package quality analysis, comparison, and name 
 /plugin install npms-io@mearman
 ```
 
-### [pypi-json](plugins/pypi-json/) — v0.2.2
+### [pypi-json](plugins/pypi-json/) — v0.2.3
 
 PyPI JSON API: Tools for querying Python package metadata, release information, and statistics from the Python Package Index
 
@@ -102,7 +102,7 @@ PyPI JSON API: Tools for querying Python package metadata, release information, 
 /plugin install pypi-json@mearman
 ```
 
-### [tex](plugins/tex/) — v0.2.0
+### [tex](plugins/tex/) — v0.2.1
 
 texLaTeX manipulation, generation, and conversion tools
 
@@ -112,7 +112,7 @@ texLaTeX manipulation, generation, and conversion tools
 /plugin install tex@mearman
 ```
 
-### [wayback](plugins/wayback/) — v0.10.0
+### [wayback](plugins/wayback/) — v0.10.1
 
 Wayback Machine Archive: Tools for checking, submitting, listing, screenshotting, and cache management for archived URLs
 

@@ -12,7 +12,7 @@
 			"name": "wayback",
 			"source": "./plugins/wayback",
 			"description": "Wayback Machine Archive: Tools for checking, submitting, listing, screenshotting, and cache management for archived URLs",
-			"version": "0.10.0"
+			"version": "0.10.1"
 		},
 		{
 			"name": "npm-registry",
@@ -24,13 +24,13 @@
 			"name": "pypi-json",
 			"source": "./plugins/pypi-json",
 			"description": "PyPI JSON API: Tools for querying Python package metadata, release information, and statistics from the Python Package Index",
-			"version": "0.2.2"
+			"version": "0.2.3"
 		},
 		{
 			"name": "gravatar",
 			"source": "./plugins/gravatar",
 			"description": "Gravatar Avatar URLs: Tools for generating avatar URLs from email addresses",
-			"version": "0.2.0"
+			"version": "0.2.1"
 		},
 		{
 			"name": "github-api",
@@ -54,13 +54,13 @@
 			"name": "bib",
 			"source": "./plugins/bib",
 			"description": "Bibliography manipulation plugin supporting BibTeX, BibLaTeX, RIS, EndNote XML, and CSL JSON formats. Convert, validate, merge, filter, and perform CRUD operations on bibliography files.",
-			"version": "0.2.0"
+			"version": "0.2.1"
 		},
 		{
 			"name": "tex",
 			"source": "./plugins/tex",
 			"description": "LaTeX manipulation, generation, and conversion tools",
-			"version": "0.2.0"
+			"version": "0.2.1"
 		}
 	]
 }

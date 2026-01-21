@@ -1,5 +1,5 @@
 {
   "name": "gravatar",
   "description": "Gravatar Avatar URLs: Tools for generating avatar URLs from email addresses",
-  "version": "0.2.0"
+  "version": "0.2.1"
 }
