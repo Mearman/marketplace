@@ -33,8 +33,6 @@
 		"@types/unist": "3.0.3",
 		"@typescript-eslint/eslint-plugin": "8.53.0",
 		"@typescript-eslint/parser": "8.53.0",
-		"@vitest/coverage-v8": "^4.0.17",
-		"@vitest/ui": "4.0.17",
 		"eslint": "9.39.2",
 		"eslint-plugin-jsonc": "2.21.0",
 		"husky": "9.1.7",
@@ -50,8 +48,7 @@
 		"unist-util-is": "6.0.1",
 		"unist-util-visit": "5.0.0",
 		"vfile": "6.0.3",
-		"vite-tsconfig-paths": "6.0.4",
-		"vitest": "4.0.17"
+		"vite-tsconfig-paths": "6.0.4"
 	},
 	"packageManager": "pnpm@9.15.9",
 	"engines": {
