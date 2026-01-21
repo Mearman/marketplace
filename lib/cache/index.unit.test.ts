@@ -2,8 +2,9 @@
  * Tests for lib/cache utilities
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createCacheManager } from "./index";
+import { describe, it, beforeEach, afterEach, mock } from "node:test";
+import assert from "node:assert";
+import { createCacheManager } from "./index.js";
 import { rimraf } from "rimraf";
 
 describe("createCacheManager", () => {
@@ -28,8 +29,8 @@ describe("createCacheManager", () => {
 			const key1 = cacheManager.getCacheKey(url);
 			const key2 = cacheManager.getCacheKey(url);
 
-			expect(key1).toBe(key2);
-			expect(key1).toHaveLength(16);
+			assert.strictEqual(key1, key2);
+			assert.strictEqual(key1.length, 16);
 		});
 
 		it("should include sorted parameters in key generation", () => {
@@ -37,14 +38,14 @@ describe("createCacheManager", () => {
 			const key1 = cacheManager.getCacheKey(url, { b: "2", a: "1" });
 			const key2 = cacheManager.getCacheKey(url, { a: "1", b: "2" });
 
-			expect(key1).toBe(key2);
+			assert.strictEqual(key1, key2);
 		});
 
 		it("should generate different keys for different URLs", () => {
 			const key1 = cacheManager.getCacheKey("https://api.example.com/data");
 			const key2 = cacheManager.getCacheKey("https://api.example.com/other");
 
-			expect(key1).not.toBe(key2);
+			assert.notStrictEqual(key1, key2);
 		});
 
 		it("should generate different keys for different parameters", () => {
@@ -52,7 +53,7 @@ describe("createCacheManager", () => {
 			const key1 = cacheManager.getCacheKey(url, { foo: "bar" });
 			const key2 = cacheManager.getCacheKey(url, { foo: "baz" });
 
-			expect(key1).not.toBe(key2);
+			assert.notStrictEqual(key1, key2);
 		});
 	});
 
@@ -64,14 +65,14 @@ describe("createCacheManager", () => {
 			await cacheManager.setCached(key, testData);
 			const cached = await cacheManager.getCached<typeof testData>(key, 3600);
 
-			expect(cached).not.toBeNull();
-			expect(cached?.data).toEqual(testData);
+			assert.notStrictEqual(cached, null);
+			assert.deepStrictEqual(cached?.data, testData);
 		});
 
 		it("should return null for non-existent cache entries", async () => {
 			const cached = await cacheManager.getCached("nonexistent-key", 3600);
 
-			expect(cached).toBeNull();
+			assert.strictEqual(cached, null);
 		});
 
 		it("should return null for expired cache entries", async () => {
@@ -82,7 +83,7 @@ describe("createCacheManager", () => {
 			// Use a negative TTL to simulate expiration
 			const cached = await cacheManager.getCached(key, -1);
 
-			expect(cached).toBeNull();
+			assert.strictEqual(cached, null);
 		});
 
 		it("should handle different data types", async () => {
@@ -99,9 +100,9 @@ describe("createCacheManager", () => {
 			const cachedArray = await cacheManager.getCached<number[]>(key + "-array", 3600);
 			const cachedObject = await cacheManager.getCached<typeof objectData>(key + "-object", 3600);
 
-			expect(cachedString?.data).toBe(stringData);
-			expect(cachedArray?.data).toEqual(arrayData);
-			expect(cachedObject?.data).toEqual(objectData);
+			assert.strictEqual(cachedString?.data, stringData);
+			assert.deepStrictEqual(cachedArray?.data, arrayData);
+			assert.deepStrictEqual(cachedObject?.data, objectData);
 		});
 
 		it("should overwrite existing cache entries", async () => {
@@ -113,7 +114,7 @@ describe("createCacheManager", () => {
 			await cacheManager.setCached(key, data2);
 
 			const cached = await cacheManager.getCached<typeof data2>(key, 3600);
-			expect(cached?.data).toEqual(data2);
+			assert.deepStrictEqual(cached?.data, data2);
 		});
 	});
 
@@ -126,7 +127,7 @@ describe("createCacheManager", () => {
 
 			// Verify cache exists
 			let cached1 = await cacheManager.getCached("key1", 3600);
-			expect(cached1).not.toBeNull();
+			assert.notStrictEqual(cached1, null);
 
 			// Clear cache
 			await cacheManager.clearCache();
@@ -136,38 +137,37 @@ describe("createCacheManager", () => {
 			const cached2 = await cacheManager.getCached("key2", 3600);
 			const cached3 = await cacheManager.getCached("key3", 3600);
 
-			expect(cached1).toBeNull();
-			expect(cached2).toBeNull();
-			expect(cached3).toBeNull();
+			assert.strictEqual(cached1, null);
+			assert.strictEqual(cached2, null);
+			assert.strictEqual(cached3, null);
 		});
 	});
 
 	describe("fetchWithCache", () => {
 		it("should fetch and cache data", async () => {
 			const mockData = { result: "success" };
-
-			// Mock fetch
-			global.fetch = vi.fn(() =>
+			const mockFetch = mock.fn(() =>
 				Promise.resolve({
 					ok: true,
 					json: () => Promise.resolve(mockData),
 				} as Response)
 			);
+			globalThis.fetch = mockFetch as any;
 
 			const result = await cacheManager.fetchWithCache({
 				url: "https://api.example.com/test",
 				ttl: 3600,
 			});
 
-			expect(result).toEqual(mockData);
-			expect(fetch).toHaveBeenCalledTimes(1);
+			assert.deepStrictEqual(result, mockData);
+			assert.strictEqual(mockFetch.mock.calls.length, 1);
 		});
 
 		it("should return cached data on second call", async () => {
 			const mockData = { result: "cached" };
 			let callCount = 0;
 
-			global.fetch = vi.fn(() =>
+			const mockFetch = mock.fn(() =>
 				Promise.resolve({
 					ok: true,
 					json: () => {
@@ -176,6 +176,7 @@ describe("createCacheManager", () => {
 					},
 				} as Response)
 			);
+			globalThis.fetch = mockFetch as any;
 
 			// First call
 			await cacheManager.fetchWithCache({
@@ -189,14 +190,14 @@ describe("createCacheManager", () => {
 				ttl: 3600,
 			});
 
-			expect(callCount).toBe(1); // Only called once
+			assert.strictEqual(callCount, 1); // Only called once
 		});
 
 		it("should bypass cache when bypassCache is true", async () => {
 			const mockData = { result: "fresh" };
 			let callCount = 0;
 
-			global.fetch = vi.fn(() =>
+			const mockFetch = mock.fn(() =>
 				Promise.resolve({
 					ok: true,
 					json: () => {
@@ -205,6 +206,7 @@ describe("createCacheManager", () => {
 					},
 				} as Response)
 			);
+			globalThis.fetch = mockFetch as any;
 
 			// First call
 			await cacheManager.fetchWithCache({
@@ -219,30 +221,33 @@ describe("createCacheManager", () => {
 				bypassCache: true,
 			});
 
-			expect(callCount).toBe(2); // Called twice
+			assert.strictEqual(callCount, 2); // Called twice
 		});
 
 		it("should throw on HTTP errors", async () => {
-			global.fetch = vi.fn(() =>
+			const mockFetch = mock.fn(() =>
 				Promise.resolve({
 					ok: false,
 					status: 404,
 					statusText: "Not Found",
 				} as Response)
 			);
+			globalThis.fetch = mockFetch as any;
 
-			await expect(
-				cacheManager.fetchWithCache({
-					url: "https://api.example.com/notfound",
-					ttl: 3600,
-				})
-			).rejects.toThrow("Resource not found");
+			await assert.rejects(
+				async () =>
+					cacheManager.fetchWithCache({
+						url: "https://api.example.com/notfound",
+						ttl: 3600,
+					}),
+				{ message: "Resource not found: https://api.example.com/notfound" }
+			);
 		});
 
 		it("should retry on retryable status codes", async () => {
 			let attemptCount = 0;
 
-			global.fetch = vi.fn(() => {
+			const mockFetch = mock.fn(() => {
 				attemptCount++;
 				if (attemptCount < 3) {
 					return Promise.resolve({
@@ -256,6 +261,7 @@ describe("createCacheManager", () => {
 					json: () => Promise.resolve({ success: true }),
 				} as Response);
 			});
+			globalThis.fetch = mockFetch as any;
 
 			const result = await cacheManager.fetchWithCache({
 				url: "https://api.example.com/test",
@@ -268,8 +274,8 @@ describe("createCacheManager", () => {
 				},
 			});
 
-			expect(attemptCount).toBe(3);
-			expect(result).toEqual({ success: true });
+			assert.strictEqual(attemptCount, 3);
+			assert.deepStrictEqual(result, { success: true });
 		});
 	});
 });

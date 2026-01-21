@@ -1,163 +1,164 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert";
 import { decodeLatex, encodeLatex, hasLatexCommands, stripLatex, protectText, unprotectText } from "./index.js";
 
 describe("decodeLatex", () => {
 	it("should decode umlaut", () => {
-		expect(decodeLatex("\\\"{a}")).toBe("ä");
-		expect(decodeLatex("\\\"{o}")).toBe("ö");
-		expect(decodeLatex("\\\"{u}")).toBe("ü");
+		assert.strictEqual(decodeLatex("\\\"{a}"), "ä");
+		assert.strictEqual(decodeLatex("\\\"{o}"), "ö");
+		assert.strictEqual(decodeLatex("\\\"{u}"), "ü");
 	});
 
 	it("should decode acute accent", () => {
-		expect(decodeLatex("\\'{e}")).toBe("é");
-		expect(decodeLatex("\\'{a}")).toBe("á");
+		assert.strictEqual(decodeLatex("\\'{e}"), "é");
+		assert.strictEqual(decodeLatex("\\'{a}"), "á");
 	});
 
 	it("should decode grave accent", () => {
-		expect(decodeLatex("\\`{e}")).toBe("è");
-		expect(decodeLatex("\\`{a}")).toBe("à");
+		assert.strictEqual(decodeLatex("\\`{e}"), "è");
+		assert.strictEqual(decodeLatex("\\`{a}"), "à");
 	});
 
 	it("should decode circumflex", () => {
-		expect(decodeLatex("\\^{e}")).toBe("ê");
-		expect(decodeLatex("\\^{o}")).toBe("ô");
+		assert.strictEqual(decodeLatex("\\^{e}"), "ê");
+		assert.strictEqual(decodeLatex("\\^{o}"), "ô");
 	});
 
 	it("should decode tilde", () => {
-		expect(decodeLatex("\\~{n}")).toBe("ñ");
-		expect(decodeLatex("\\~{a}")).toBe("ã");
+		assert.strictEqual(decodeLatex("\\~{n}"), "ñ");
+		assert.strictEqual(decodeLatex("\\~{a}"), "ã");
 	});
 
 	it("should decode cedilla", () => {
-		expect(decodeLatex("\\c{c}")).toBe("ç");
+		assert.strictEqual(decodeLatex("\\c{c}"), "ç");
 	});
 
 	it("should decode ligatures", () => {
-		expect(decodeLatex("\\ae")).toBe("æ");
-		expect(decodeLatex("\\oe")).toBe("œ");
-		expect(decodeLatex("\\ss")).toBe("ß");
+		assert.strictEqual(decodeLatex("\\ae"), "æ");
+		assert.strictEqual(decodeLatex("\\oe"), "œ");
+		assert.strictEqual(decodeLatex("\\ss"), "ß");
 	});
 
 	it("should decode special characters", () => {
-		expect(decodeLatex("\\&")).toBe("&");
-		expect(decodeLatex("\\%")).toBe("%");
-		expect(decodeLatex("\\$")).toBe("$");
+		assert.strictEqual(decodeLatex("\\&"), "&");
+		assert.strictEqual(decodeLatex("\\%"), "%");
+		assert.strictEqual(decodeLatex("\\$"), "$");
 	});
 
 	it("should decode dashes", () => {
-		expect(decodeLatex("---")).toBe("—");
-		expect(decodeLatex("--")).toBe("–");
+		assert.strictEqual(decodeLatex("---"), "—");
+		assert.strictEqual(decodeLatex("--"), "–");
 	});
 
 	it("should decode multiple commands", () => {
-		expect(decodeLatex("M\\\"{u}ller")).toBe("Müller");
+		assert.strictEqual(decodeLatex("M\\\"{u}ller"), "Müller");
 	});
 
 	it("should handle text without LaTeX commands", () => {
-		expect(decodeLatex("Hello World")).toBe("Hello World");
+		assert.strictEqual(decodeLatex("Hello World"), "Hello World");
 	});
 
 	it("should decode accents without braces", () => {
-		expect(decodeLatex("\\'e")).toBe("é");
-		expect(decodeLatex("\\\"a")).toBe("ä");
+		assert.strictEqual(decodeLatex("\\'e"), "é");
+		assert.strictEqual(decodeLatex("\\\"a"), "ä");
 	});
 });
 
 describe("encodeLatex", () => {
 	it("should encode umlaut", () => {
-		expect(encodeLatex("ä")).toContain("\\");
-		expect(encodeLatex("ö")).toContain("\\");
+		assert.ok(encodeLatex("ä").includes("\\"));
+		assert.ok(encodeLatex("ö").includes("\\"));
 	});
 
 	it("should encode special characters", () => {
 		const encoded = encodeLatex("5% & $10");
-		expect(encoded).toContain("\\%");
-		expect(encoded).toContain("\\&");
-		expect(encoded).toContain("\\$");
+		assert.ok(encoded.includes("\\%"));
+		assert.ok(encoded.includes("\\&"));
+		assert.ok(encoded.includes("\\$"));
 	});
 
 	it("should encode common accented characters", () => {
-		expect(encodeLatex("café")).toContain("\\");
-		expect(encodeLatex("naïve")).toContain("\\");
+		assert.ok(encodeLatex("café").includes("\\"));
+		assert.ok(encodeLatex("naïve").includes("\\"));
 	});
 
 	it("should handle text without special characters", () => {
-		expect(encodeLatex("Hello World")).toBe("Hello World");
+		assert.strictEqual(encodeLatex("Hello World"), "Hello World");
 	});
 
 	it("should encode German characters", () => {
 		const encoded = encodeLatex("Müller");
-		expect(encoded).toContain("\\");
+		assert.ok(encoded.includes("\\"));
 	});
 });
 
 describe("hasLatexCommands", () => {
 	it("should detect LaTeX commands", () => {
-		expect(hasLatexCommands("\\\"{a}")).toBe(true);
-		expect(hasLatexCommands("\\alpha")).toBe(true);
-		expect(hasLatexCommands("\\&")).toBe(true);
+		assert.strictEqual(hasLatexCommands("\\\"{a}"), true);
+		assert.strictEqual(hasLatexCommands("\\alpha"), true);
+		assert.strictEqual(hasLatexCommands("\\&"), true);
 	});
 
 	it("should return false for plain text", () => {
-		expect(hasLatexCommands("Hello World")).toBe(false);
+		assert.strictEqual(hasLatexCommands("Hello World"), false);
 	});
 
 	it("should return false for empty string", () => {
-		expect(hasLatexCommands("")).toBe(false);
+		assert.strictEqual(hasLatexCommands(""), false);
 	});
 });
 
 describe("stripLatex", () => {
 	it("should strip LaTeX commands and keep content", () => {
-		expect(stripLatex("\\textbf{bold}")).toBe("bold");
-		expect(stripLatex("\\emph{emphasized}")).toBe("emphasized");
+		assert.strictEqual(stripLatex("\\textbf{bold}"), "bold");
+		assert.strictEqual(stripLatex("\\emph{emphasized}"), "emphasized");
 	});
 
 	it("should strip accents and convert to Unicode", () => {
 		const result = stripLatex("M\\\"{u}ller");
-		expect(result).toBe("Müller");
+		assert.strictEqual(result, "Müller");
 	});
 
 	it("should handle nested commands", () => {
-		expect(stripLatex("\\textbf{\\emph{text}}")).toBe("text");
+		assert.strictEqual(stripLatex("\\textbf{\\emph{text}}"), "text");
 	});
 
 	it("should clean up whitespace", () => {
-		expect(stripLatex("\\command   text")).toBe("text");
+		assert.strictEqual(stripLatex("\\command   text"), "text");
 	});
 });
 
 describe("protectText", () => {
 	it("should protect uppercase acronyms", () => {
-		expect(protectText("The RNA World")).toBe("The {RNA} World");
-		expect(protectText("NASA Study")).toBe("{NASA} Study");
+		assert.strictEqual(protectText("The RNA World"), "The {RNA} World");
+		assert.strictEqual(protectText("NASA Study"), "{NASA} Study");
 	});
 
 	it("should not protect single uppercase letters", () => {
-		expect(protectText("A Study")).toBe("A Study");
+		assert.strictEqual(protectText("A Study"), "A Study");
 	});
 
 	it("should handle multiple acronyms", () => {
-		expect(protectText("DNA and RNA")).toBe("{DNA} and {RNA}");
+		assert.strictEqual(protectText("DNA and RNA"), "{DNA} and {RNA}");
 	});
 
 	it("should handle text without acronyms", () => {
-		expect(protectText("hello world")).toBe("hello world");
+		assert.strictEqual(protectText("hello world"), "hello world");
 	});
 });
 
 describe("unprotectText", () => {
 	it("should remove protective braces", () => {
-		expect(unprotectText("{RNA}")).toBe("RNA");
-		expect(unprotectText("The {RNA} World")).toBe("The RNA World");
+		assert.strictEqual(unprotectText("{RNA}"), "RNA");
+		assert.strictEqual(unprotectText("The {RNA} World"), "The RNA World");
 	});
 
 	it("should handle multiple protected words", () => {
-		expect(unprotectText("{DNA} and {RNA}")).toBe("DNA and RNA");
+		assert.strictEqual(unprotectText("{DNA} and {RNA}"), "DNA and RNA");
 	});
 
 	it("should handle text without braces", () => {
-		expect(unprotectText("hello world")).toBe("hello world");
+		assert.strictEqual(unprotectText("hello world"), "hello world");
 	});
 });
 
@@ -166,14 +167,14 @@ describe("Round-trip encoding/decoding", () => {
 		// Test with pre-encoded LaTeX (the format that parsers would produce)
 		const latex = "M\\\"{u}ller caf\\" + "'{e}";
 		const decoded = decodeLatex(latex);
-		expect(decoded).toBe("Müller café");
+		assert.strictEqual(decoded, "Müller café");
 	});
 
 	it("should encode unicode to latex commands", () => {
 		const original = "café";
 		const encoded = encodeLatex(original);
 		// Should produce something with LaTeX commands (exact format may vary)
-		expect(encoded).toMatch(/caf/);
-		expect(encoded.length).toBeGreaterThan(original.length);
+		assert.ok(encoded.match(/caf/));
+		assert.ok(encoded.length > original.length);
 	});
 });
