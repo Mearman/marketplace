@@ -2,130 +2,123 @@
  * Tests for bibliography generators
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { BibLaTeXGenerator, createBibLaTeXGenerator } from "./generators/biblatex";
-import { CSLJSONGenerator, createCSLJSONGenerator } from "./generators/csl";
-import { EndNoteXMLGenerator, createEndNoteXMLGenerator } from "./generators/endnote";
-import { RISGenerator, createRISGenerator } from "./generators/ris";
-import type { BibEntry, GeneratorOptions } from "./types";
-
-// Mock dependencies for RIS and EndNote generators
-vi.mock("./mappings/entry-types.js", () => ({
-	denormalizeFromCslType: vi.fn((type: string, target: string) => {
-		if (target === "ris") {
-			const risMap: Record<string, string> = {
-				"article-journal": "JOUR",
-				"book": "BOOK",
-				"chapter": "CHAP",
-			};
-			return { type: risMap[type] || "GEN" };
-		}
-		return { type: type.toUpperCase() };
-	}),
-}));
-
-vi.mock("./mappings/fields.js", () => ({
-	getRisTag: vi.fn((field: string) => {
-		const tagMap: Record<string, string> = {
-			author: "AU",
-			title: "TI",
-			"container-title": "T2",
-			issued: "PY",
-			volume: "VL",
-			issue: "IS",
-			page: "SP",
-			publisher: "PB",
-			DOI: "DO",
-			URL: "UR",
-			abstract: "AB",
-			keyword: "KW",
-		};
-		return tagMap[field] || field.toUpperCase();
-	}),
-}));
-
-vi.mock("./parsers/names.js", () => ({
-	serializeName: vi.fn((person) => {
-		if (person.family && person.given) {
-			return `${person.family}, ${person.given}`;
-		}
-		return person.literal || "";
-	}),
-}));
-
-vi.mock("./parsers/dates.js", () => ({
-	serializeRISDate: vi.fn((date) => {
-		if (date["date-parts"]) {
-			return String(date["date-parts"][0][0]);
-		}
-		return "";
-	}),
-	serializeDate: vi.fn((date) => {
-		if (date["date-parts"]) {
-			return String(date["date-parts"][0][0]);
-		}
-		return "";
-	}),
-}));
-
-vi.mock("./generators/bibtex.js", () => ({
-	BibTeXGenerator: class {
-		generate = vi.fn((entries: BibEntry[]) => {
-			return entries.map((e) => `@${e.type}{${e.id},...}`).join("\n");
-		});
-	},
-}));
-
-const mockEntries: BibEntry[] = [
-	{
-		id: "smith2024",
-		type: "article-journal",
-		title: "Test Article",
-		author: [{ family: "Smith", given: "John" }],
-		"container-title": "Test Journal",
-		issued: { "date-parts": [[2024]] },
-		volume: "10",
-		issue: "2",
-		page: "1-10",
-		DOI: "10.1234/test",
-		abstract: "This is a test abstract.",
-		_formatMetadata: {
-			source: "csl-json",
-		},
-	},
-	{
-		id: "doe2023",
-		type: "book",
-		title: "Test Book",
-		author: [{ family: "Doe", given: "Jane" }],
-		publisher: "Test Publisher",
-		issued: { "date-parts": [[2023]] },
-		_formatMetadata: {
-			source: "csl-json",
-		},
-	},
-];
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { BibLaTeXGenerator, createBibLaTeXGenerator } from "./generators/biblatex.js";
+import { CSLJSONGenerator, createCSLJSONGenerator } from "./generators/csl.js";
+import { EndNoteXMLGenerator, createEndNoteXMLGenerator } from "./generators/endnote.js";
+import { RISGenerator, createRISGenerator } from "./generators/ris.js";
+import type { BibEntry, GeneratorOptions } from "./types.js";
 
 describe("Generators", () => {
+	let mockDenormalizeFromCslType: ReturnType<typeof mock.fn>;
+	let mockGetRisTag: ReturnType<typeof mock.fn>;
+	let mockSerializeName: ReturnType<typeof mock.fn>;
+	let mockSerializeRISDate: ReturnType<typeof mock.fn>;
+	let mockBibTeXGenerate: ReturnType<typeof mock.fn>;
+	let mockEntries: BibEntry[];
+
+	beforeEach(() => {
+		mock.reset();
+
+		// Create mock functions for dependencies
+		mockDenormalizeFromCslType = mock.fn((type: string, target: string) => {
+			if (target === "ris") {
+				const risMap: Record<string, string> = {
+					"article-journal": "JOUR",
+					"book": "BOOK",
+					"chapter": "CHAP",
+				};
+				return { type: risMap[type] || "GEN", lossy: false };
+			}
+			return { type: type.toUpperCase(), lossy: false };
+		});
+
+		mockGetRisTag = mock.fn((field: string) => {
+			const tagMap: Record<string, string> = {
+				author: "AU",
+				title: "TI",
+				"container-title": "T2",
+				issued: "PY",
+				volume: "VL",
+				issue: "IS",
+				page: "SP",
+				publisher: "PB",
+				DOI: "DO",
+				URL: "UR",
+				abstract: "AB",
+				keyword: "KW",
+			};
+			return tagMap[field] || field.toUpperCase();
+		});
+
+		mockSerializeName = mock.fn((person) => {
+			if (person.family && person.given) {
+				return `${person.family}, ${person.given}`;
+			}
+			return person.literal || "";
+		});
+
+		mockSerializeRISDate = mock.fn((date) => {
+			if (date["date-parts"]) {
+				return String(date["date-parts"][0][0]);
+			}
+			return "";
+		});
+
+		mockBibTeXGenerate = mock.fn((entries: BibEntry[]) => {
+			return entries.map((e) => `@${e.type}{${e.id},...}`).join("\n");
+		});
+
+		mockEntries = [
+			{
+				id: "smith2024",
+				type: "article-journal",
+				title: "Test Article",
+				author: [{ family: "Smith", given: "John" }],
+				"container-title": "Test Journal",
+				issued: { "date-parts": [[2024]] },
+				volume: "10",
+				issue: "2",
+				page: "1-10",
+				DOI: "10.1234/test",
+				abstract: "This is a test abstract.",
+				_formatMetadata: {
+					source: "csl-json",
+				},
+			},
+			{
+				id: "doe2023",
+				type: "book",
+				title: "Test Book",
+				author: [{ family: "Doe", given: "Jane" }],
+				publisher: "Test Publisher",
+				issued: { "date-parts": [[2023]] },
+				_formatMetadata: {
+					source: "csl-json",
+				},
+			},
+		];
+	});
+
 	describe("CSLJSONGenerator", () => {
 		let generator: CSLJSONGenerator;
 
 		beforeEach(() => {
-			vi.clearAllMocks();
 			generator = new CSLJSONGenerator();
 		});
 
 		it("should generate JSON output", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("smith2024");
-			expect(output).toContain("Test Article");
+			assert.ok(output.includes("smith2024"));
+			assert.ok(output.includes("Test Article"));
 		});
 
 		it("should remove format metadata", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).not.toContain("_formatMetadata");
+			assert.ok(!output.includes("_formatMetadata"));
 		});
 
 		it("should sort entries when requested", () => {
@@ -135,7 +128,7 @@ describe("Generators", () => {
 			// doej2023 should come before smith2024 alphabetically
 			const doeIndex = output.indexOf("doe2023");
 			const smithIndex = output.indexOf("smith2024");
-			expect(doeIndex).toBeLessThan(smithIndex);
+			assert.ok(doeIndex < smithIndex);
 		});
 
 		it("should use custom indent", () => {
@@ -144,19 +137,19 @@ describe("Generators", () => {
 
 			// Check for 4-space indentation in JSON
 			const lines = output.split("\n");
-			const hasIndent = lines.some((line) => line.match(/^    /));
-			expect(hasIndent).toBe(true);
+			const hasIndent = lines.some((line) => /^    /.test(line));
+			assert.ok(hasIndent);
 		});
 
 		it("should handle empty entries", () => {
 			const output = generator.generate([]);
-			expect(output).toBe("[]");
+			assert.strictEqual(output, "[]");
 		});
 
 		it("should format as valid JSON", () => {
 			const output = generator.generate(mockEntries);
 			const parsed = JSON.parse(output);
-			expect(Array.isArray(parsed)).toBe(true);
+			assert.ok(Array.isArray(parsed));
 		});
 	});
 
@@ -164,15 +157,17 @@ describe("Generators", () => {
 		let generator: BibLaTeXGenerator;
 
 		beforeEach(() => {
-			vi.clearAllMocks();
-			generator = new BibLaTeXGenerator();
+			generator = new BibLaTeXGenerator(
+				// @ts-expect-error - accessing private property for testing
+				{ generate: mockBibTeXGenerate }
+			);
 		});
 
 		it("should delegate to BibTeX generator", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("article-journal");
-			expect(output).toContain("smith2024");
+			assert.ok(output.includes("article-journal"));
+			assert.ok(output.includes("smith2024"));
 		});
 
 		it("should pass options to BibTeX generator", () => {
@@ -181,11 +176,12 @@ describe("Generators", () => {
 
 			// @ts-expect-error - accessing private property for testing
 			const bibTeXGenerate = generator.bibtexGenerator.generate;
-			expect(bibTeXGenerate).toHaveBeenCalledWith(mockEntries, options);
+			assert.strictEqual(bibTeXGenerate.mock.calls.length, 1);
+			assert.deepStrictEqual(bibTeXGenerate.mock.calls[0][1], mockEntries);
 		});
 
 		it("should return format biblatex", () => {
-			expect(generator.format).toBe("biblatex");
+			assert.strictEqual(generator.format, "biblatex");
 		});
 	});
 
@@ -193,56 +189,63 @@ describe("Generators", () => {
 		let generator: RISGenerator;
 
 		beforeEach(() => {
-			vi.clearAllMocks();
-			generator = new RISGenerator();
+			generator = new RISGenerator(
+				// @ts-expect-error - accessing private properties for testing
+				{
+					denormalizeFromCslType: mockDenormalizeFromCslType,
+					getRisTag: mockGetRisTag,
+					serializeName: mockSerializeName,
+					serializeRISDate: mockSerializeRISDate,
+				}
+			);
 		});
 
 		it("should generate RIS format", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("TY  - JOUR");
-			expect(output).toContain("TI  - Test Article");
-			expect(output).toContain("ER  - ");
+			assert.ok(output.includes("TY  - JOUR"));
+			assert.ok(output.includes("TI  - Test Article"));
+			assert.ok(output.includes("ER  - "));
 		});
 
 		it("should generate multiple records", () => {
 			const output = generator.generate(mockEntries);
 
 			const tyCount = (output.match(/TY  - /g) || []).length;
-			expect(tyCount).toBe(2);
+			assert.strictEqual(tyCount, 2);
 		});
 
 		it("should sort entries when requested", () => {
 			const options: GeneratorOptions = { sort: true };
-			const output = generator.generate(mockEntries, options);
+			generator.generate(mockEntries, options);
 
 			// RIS format doesn't include IDs, just verify both entries are present
-			expect(output).toContain("TY  - JOUR");
-			expect(output).toContain("TY  - BOOK");
+			assert.ok(output.includes("TY  - JOUR"));
+			assert.ok(output.includes("TY  - BOOK"));
 		});
 
 		it("should include authors", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("AU  - Smith, John");
+			assert.ok(output.includes("AU  - Smith, John"));
 		});
 
 		it("should include DOI", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("DO  - 10.1234/test");
+			assert.ok(output.includes("DO  - 10.1234/test"));
 		});
 
 		it("should include abstract", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("AB  - This is a test abstract.");
+			assert.ok(output.includes("AB  - This is a test abstract."));
 		});
 
 		it("should handle empty entries", () => {
 			const output = generator.generate([]);
 			// Empty entries result in just a line ending
-			expect(output).toBe("\n");
+			assert.strictEqual(output, "\n");
 		});
 	});
 
@@ -250,75 +253,79 @@ describe("Generators", () => {
 		let generator: EndNoteXMLGenerator;
 
 		beforeEach(() => {
-			vi.clearAllMocks();
-			generator = new EndNoteXMLGenerator();
+			generator = new EndNoteXMLGenerator(
+				// @ts-expect-error - accessing private properties for testing
+				{
+					denormalizeFromCslType: mockDenormalizeFromCslType,
+				}
+			);
 		});
 
 		it("should generate EndNote XML format", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("<record>");
-			expect(output).toContain("</record>");
-			expect(output).toContain("<titles>");
-			expect(output).toContain("<title>Test Article</title>");
+			assert.ok(output.includes("<record>"));
+			assert.ok(output.includes("</record>"));
+			assert.ok(output.includes("<titles>"));
+			assert.ok(output.includes("<title>Test Article</title>"));
 		});
 
 		it("should generate multiple records", () => {
 			const output = generator.generate(mockEntries);
 
 			const recordCount = (output.match(/<record>/g) || []).length;
-			expect(recordCount).toBe(2);
+			assert.strictEqual(recordCount, 2);
 		});
 
 		it("should wrap in XML structure", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("<?xml");
-			expect(output).toContain("<records>");
-			expect(output).toContain("</records>");
+			assert.ok(output.includes("<?xml"));
+			assert.ok(output.includes("<records>"));
+			assert.ok(output.includes("</records>"));
 		});
 
 		it("should include authors", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("<authors>");
-			expect(output).toContain("<author>");
+			assert.ok(output.includes("<authors>"));
+			assert.ok(output.includes("<author>"));
 		});
 
 		it("should include ref-type", () => {
 			const output = generator.generate(mockEntries);
 
-			expect(output).toContain("<ref-type");
+			assert.ok(output.includes("<ref-type"));
 		});
 
 		it("should handle empty entries", () => {
 			const output = generator.generate([]);
 
-			expect(output).toContain("<?xml");
-			expect(output).toContain("<records>");
-			expect(output).toContain("</records>");
+			assert.ok(output.includes("<?xml"));
+			assert.ok(output.includes("<records>"));
+			assert.ok(output.includes("</records>"));
 		});
 	});
 
 	describe("create functions", () => {
 		it("should create CSLJSON generator", () => {
 			const generator = createCSLJSONGenerator();
-			expect(generator).toBeInstanceOf(CSLJSONGenerator);
+			assert.ok(generator instanceof CSLJSONGenerator);
 		});
 
 		it("should create BibLaTeX generator", () => {
 			const generator = createBibLaTeXGenerator();
-			expect(generator).toBeInstanceOf(BibLaTeXGenerator);
+			assert.ok(generator instanceof BibLaTeXGenerator);
 		});
 
 		it("should create RIS generator", () => {
 			const generator = createRISGenerator();
-			expect(generator).toBeInstanceOf(RISGenerator);
+			assert.ok(generator instanceof RISGenerator);
 		});
 
 		it("should create EndNote generator", () => {
 			const generator = createEndNoteXMLGenerator();
-			expect(generator).toBeInstanceOf(EndNoteXMLGenerator);
+			assert.ok(generator instanceof EndNoteXMLGenerator);
 		});
 	});
 });

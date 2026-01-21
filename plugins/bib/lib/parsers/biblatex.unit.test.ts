@@ -2,29 +2,28 @@
  * Tests for BibLaTeX parser
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { BibLaTeXParser, createBibLaTeXParser } from "./biblatex";
-import type { ConversionResult, BibEntry } from "../types";
-
-// Mock BibTeX parser - must use factory function to avoid hoisting issues
-const mockBibTeXParse = vi.fn();
-const mockBibTeXValidate = vi.fn();
-
-vi.mock("./bibtex", () => ({
-	BibTeXParser: class {
-		parse = mockBibTeXParse;
-		validate = mockBibTeXValidate;
-	},
-}));
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { BibLaTeXParser, createBibLaTeXParser } from "./biblatex.js";
+import type { ConversionResult, BibEntry } from "../types.js";
 
 describe("BibLaTeX Parser", () => {
 	let biblatexParser: BibLaTeXParser;
+	let mockBibTeXParse: ReturnType<typeof mock.fn>;
+	let mockBibTeXValidate: ReturnType<typeof mock.fn>;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.reset();
 
-		// Create a fresh parser for each test
-		biblatexParser = new BibLaTeXParser();
+		// Create mock functions for BibTeX parser
+		mockBibTeXParse = mock.fn();
+		mockBibTeXValidate = mock.fn();
+
+		// Create a fresh parser for each test with mocked dependencies
+		biblatexParser = new BibLaTeXParser(
+			// @ts-expect-error - accessing private property for testing
+			{ parse: mockBibTeXParse, validate: mockBibTeXValidate }
+		);
 	});
 
 	describe("parse", () => {
@@ -52,7 +51,7 @@ describe("BibLaTeX Parser", () => {
 		};
 
 		beforeEach(() => {
-			mockBibTeXParse.mockReturnValue(mockParseResult);
+			mockBibTeXParse.mock.mockReturnValue(mockParseResult);
 		});
 
 		it("should delegate to BibTeX parser", () => {
@@ -60,8 +59,9 @@ describe("BibLaTeX Parser", () => {
 
 			const result = biblatexParser.parse(content);
 
-			expect(mockBibTeXParse).toHaveBeenCalledWith(content);
-			expect(result).toEqual(mockParseResult);
+			assert.strictEqual(mockBibTeXParse.mock.calls.length, 1);
+			assert.strictEqual(mockBibTeXParse.mock.calls[0][0], content);
+			assert.deepStrictEqual(result, mockParseResult);
 		});
 
 		it("should update metadata source to biblatex", () => {
@@ -69,7 +69,7 @@ describe("BibLaTeX Parser", () => {
 
 			const result = biblatexParser.parse(content);
 
-			expect(result.entries[0]._formatMetadata?.source).toBe("biblatex");
+			assert.strictEqual(result.entries[0]._formatMetadata?.source, "biblatex");
 		});
 
 		it("should handle entries without metadata", () => {
@@ -81,7 +81,7 @@ describe("BibLaTeX Parser", () => {
 				},
 			];
 
-			mockBibTeXParse.mockReturnValue({
+			mockBibTeXParse.mock.mockReturnValue({
 				entries: entriesWithoutMetadata,
 				warnings: [],
 				stats: { total: 1, successful: 1, withWarnings: 0, failed: 0 },
@@ -90,8 +90,7 @@ describe("BibLaTeX Parser", () => {
 			const content = "@article{test2024,...}";
 			const result = biblatexParser.parse(content);
 
-			// Should not throw error
-			expect(result.entries[0]._formatMetadata).toBeUndefined();
+			assert.strictEqual(result.entries[0]._formatMetadata, undefined);
 		});
 
 		it("should handle multiple entries", () => {
@@ -108,7 +107,7 @@ describe("BibLaTeX Parser", () => {
 				},
 			];
 
-			mockBibTeXParse.mockReturnValue({
+			mockBibTeXParse.mock.mockReturnValue({
 				entries: multipleEntries,
 				warnings: [],
 				stats: { total: 2, successful: 2, withWarnings: 0, failed: 0 },
@@ -117,8 +116,8 @@ describe("BibLaTeX Parser", () => {
 			const content = "@article{entry1,...}\n@book{entry2,...}";
 			const result = biblatexParser.parse(content);
 
-			expect(result.entries[0]._formatMetadata?.source).toBe("biblatex");
-			expect(result.entries[1]._formatMetadata?.source).toBe("biblatex");
+			assert.strictEqual(result.entries[0]._formatMetadata?.source, "biblatex");
+			assert.strictEqual(result.entries[1]._formatMetadata?.source, "biblatex");
 		});
 
 		it("should preserve warnings from BibTeX parser", () => {
@@ -135,13 +134,13 @@ describe("BibLaTeX Parser", () => {
 				stats: { total: 1, successful: 1, withWarnings: 1, failed: 0 },
 			};
 
-			mockBibTeXParse.mockReturnValue(resultWithWarnings);
+			mockBibTeXParse.mock.mockReturnValue(resultWithWarnings);
 
 			const content = "@article{test2024,...}";
 			const result = biblatexParser.parse(content);
 
-			expect(result.warnings).toHaveLength(1);
-			expect(result.warnings[0].message).toBe("Unknown field ignored");
+			assert.strictEqual(result.warnings.length, 1);
+			assert.strictEqual(result.warnings[0].message, "Unknown field ignored");
 		});
 	});
 
@@ -156,31 +155,32 @@ describe("BibLaTeX Parser", () => {
 				},
 			];
 
-			mockBibTeXValidate.mockReturnValue(warnings);
+			mockBibTeXValidate.mock.mockReturnValue(warnings);
 
 			const content = "@article{test,...}";
 			const result = biblatexParser.validate(content);
 
-			expect(mockBibTeXValidate).toHaveBeenCalledWith(content);
-			expect(result).toEqual(warnings);
+			assert.strictEqual(mockBibTeXValidate.mock.calls.length, 1);
+			assert.strictEqual(mockBibTeXValidate.mock.calls[0][0], content);
+			assert.deepStrictEqual(result, warnings);
 		});
 
 		it("should return empty array when BibTeX has no warnings", () => {
-			mockBibTeXValidate.mockReturnValue([]);
+			mockBibTeXValidate.mock.mockReturnValue([]);
 
 			const content = "@article{test,...}";
 			const result = biblatexParser.validate(content);
 
-			expect(result).toEqual([]);
+			assert.deepStrictEqual(result, []);
 		});
 
 		it("should handle undefined validate method", () => {
-			mockBibTeXValidate.mockReturnValue(undefined as unknown as string[]);
+			mockBibTeXValidate.mock.mockReturnValue(undefined as unknown as string[]);
 
 			const content = "@article{test,...}";
 			const result = biblatexParser.validate(content);
 
-			expect(result).toEqual([]);
+			assert.deepStrictEqual(result, []);
 		});
 	});
 
@@ -188,8 +188,8 @@ describe("BibLaTeX Parser", () => {
 		it("should return a BibLaTeXParser instance", () => {
 			const parser = createBibLaTeXParser();
 
-			expect(parser).toBeInstanceOf(BibLaTeXParser);
-			expect(parser.format).toBe("biblatex");
+			assert.ok(parser instanceof BibLaTeXParser);
+			assert.strictEqual(parser.format, "biblatex");
 		});
 	});
 });

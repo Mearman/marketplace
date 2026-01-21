@@ -2,7 +2,8 @@
  * Tests for LaTeX parser encoding/decoding utilities
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert";
 import {
 	decodeLatex,
 	encodeLatex,
@@ -10,241 +11,241 @@ import {
 	stripLatex,
 	protectText,
 	unprotectText,
-} from "./latex";
+} from "./latex.js";
 
 describe("decodeLatex", () => {
 	it("should decode accented characters with braces", () => {
-		expect(decodeLatex("\\\"{a}")).toBe("ä");
-		expect(decodeLatex("\\'{e}")).toBe("é");
-		expect(decodeLatex("\\`{a}")).toBe("à");
-		expect(decodeLatex("\\^{o}")).toBe("ô");
-		expect(decodeLatex("\\~{n}")).toBe("ñ");
+		assert.strictEqual(decodeLatex("\\\"{a}"), "ä");
+		assert.strictEqual(decodeLatex("\\'{e}"), "é");
+		assert.strictEqual(decodeLatex("\\`{a}"), "à");
+		assert.strictEqual(decodeLatex("\\^{o}"), "ô");
+		assert.strictEqual(decodeLatex("\\~{n}"), "ñ");
 	});
 
 	it("should decode accented characters without braces", () => {
-		expect(decodeLatex("\\\"a")).toBe("ä");
-		expect(decodeLatex("\\'e")).toBe("é");
-		expect(decodeLatex("\\`a")).toBe("à");
-		expect(decodeLatex("\\^o")).toBe("ô");
-		expect(decodeLatex("\\~n")).toBe("ñ");
+		assert.strictEqual(decodeLatex("\\\"a"), "ä");
+		assert.strictEqual(decodeLatex("\\'e"), "é");
+		assert.strictEqual(decodeLatex("\\`a"), "à");
+		assert.strictEqual(decodeLatex("\\^o"), "ô");
+		assert.strictEqual(decodeLatex("\\~n"), "ñ");
 	});
 
 	it("should decode ligatures", () => {
-		expect(decodeLatex("\\ae")).toBe("æ");
-		expect(decodeLatex("\\AE")).toBe("Æ");
-		expect(decodeLatex("\\oe")).toBe("œ");
-		expect(decodeLatex("\\OE")).toBe("Œ");
-		expect(decodeLatex("\\ss")).toBe("ß");
+		assert.strictEqual(decodeLatex("\\ae"), "æ");
+		assert.strictEqual(decodeLatex("\\AE"), "Æ");
+		assert.strictEqual(decodeLatex("\\oe"), "œ");
+		assert.strictEqual(decodeLatex("\\OE"), "Œ");
+		assert.strictEqual(decodeLatex("\\ss"), "ß");
 	});
 
 	it("should decode special characters", () => {
-		expect(decodeLatex("\\&")).toBe("&");
-		expect(decodeLatex("\\%")).toBe("%");
-		expect(decodeLatex("\\$")).toBe("$");
-		expect(decodeLatex("\\#")).toBe("#");
-		expect(decodeLatex("\\_")).toBe("_");
-		expect(decodeLatex("\\{")).toBe("{");
-		expect(decodeLatex("\\}")).toBe("}");
+		assert.strictEqual(decodeLatex("\\&"), "&");
+		assert.strictEqual(decodeLatex("\\%"), "%");
+		assert.strictEqual(decodeLatex("\\$"), "$");
+		assert.strictEqual(decodeLatex("\\#"), "#");
+		assert.strictEqual(decodeLatex("\\_"), "_");
+		assert.strictEqual(decodeLatex("\\{"), "{");
+		assert.strictEqual(decodeLatex("\\}"), "}");
 	});
 
 	it("should decode quotation marks", () => {
-		expect(decodeLatex("``")).toBe("\u201C"); // opening double quote
-		expect(decodeLatex("''")).toBe("\u201D"); // closing double quote
-		expect(decodeLatex("`")).toBe("\u2018"); // opening single quote
-		expect(decodeLatex("'")).toBe("\u2019"); // closing single quote
+		assert.strictEqual(decodeLatex("``"), "\u201C"); // opening double quote
+		assert.strictEqual(decodeLatex("''"), "\u201D"); // closing double quote
+		assert.strictEqual(decodeLatex("`"), "\u2018"); // opening single quote
+		assert.strictEqual(decodeLatex("'"), "\u2019"); // closing single quote
 	});
 
 	it("should decode dashes", () => {
-		expect(decodeLatex("---")).toBe("—"); // em-dash
-		expect(decodeLatex("--")).toBe("–"); // en-dash
+		assert.strictEqual(decodeLatex("---"), "—"); // em-dash
+		assert.strictEqual(decodeLatex("--"), "–"); // en-dash
 	});
 
 	it("should decode Greek letters", () => {
-		expect(decodeLatex("\\alpha")).toBe("α");
-		expect(decodeLatex("\\beta")).toBe("β");
-		expect(decodeLatex("\\pi")).toBe("π");
+		assert.strictEqual(decodeLatex("\\alpha"), "α");
+		assert.strictEqual(decodeLatex("\\beta"), "β");
+		assert.strictEqual(decodeLatex("\\pi"), "π");
 	});
 
 	it("should decode math symbols", () => {
-		expect(decodeLatex("\\textregistered")).toBe("®");
-		expect(decodeLatex("\\texttrademark")).toBe("™");
-		expect(decodeLatex("\\textcopyright")).toBe("©");
-		expect(decodeLatex("\\pounds")).toBe("£");
-		expect(decodeLatex("\\euro")).toBe("€");
+		assert.strictEqual(decodeLatex("\\textregistered"), "®");
+		assert.strictEqual(decodeLatex("\\texttrademark"), "™");
+		assert.strictEqual(decodeLatex("\\textcopyright"), "©");
+		assert.strictEqual(decodeLatex("\\pounds"), "£");
+		assert.strictEqual(decodeLatex("\\euro"), "€");
 	});
 
 	it("should handle mixed LaTeX and plain text", () => {
-		expect(decodeLatex("M\\\"{u}ller")).toBe("Müller");
-		expect(decodeLatex("caf\\'{e}")).toBe("café");
+		assert.strictEqual(decodeLatex("M\\\"{u}ller"), "Müller");
+		assert.strictEqual(decodeLatex("caf\\'{e}"), "café");
 	});
 
 	it("should handle empty string", () => {
-		expect(decodeLatex("")).toBe("");
+		assert.strictEqual(decodeLatex(""), "");
 	});
 
 	it("should return text without changes when no LaTeX commands", () => {
-		expect(decodeLatex("Hello World")).toBe("Hello World");
+		assert.strictEqual(decodeLatex("Hello World"), "Hello World");
 	});
 });
 
 describe("encodeLatex", () => {
 	it("should encode accented characters", () => {
-		expect(encodeLatex("ä")).toContain("\\");
-		expect(encodeLatex("é")).toContain("\\");
-		expect(encodeLatex("ñ")).toContain("\\");
+		assert.ok(encodeLatex("ä").includes("\\"));
+		assert.ok(encodeLatex("é").includes("\\"));
+		assert.ok(encodeLatex("ñ").includes("\\"));
 	});
 
 	it("should escape special BibTeX characters", () => {
 		const encoded = encodeLatex("5% & $10 # _");
-		expect(encoded).toContain("\\%");
-		expect(encoded).toContain("\\&");
-		expect(encoded).toContain("\\$");
-		expect(encoded).toContain("\\#");
-		expect(encoded).toContain("\\_");
+		assert.ok(encoded.includes("\\%"));
+		assert.ok(encoded.includes("\\&"));
+		assert.ok(encoded.includes("\\$"));
+		assert.ok(encoded.includes("\\#"));
+		assert.ok(encoded.includes("\\_"));
 	});
 
 	it("should handle text without special characters", () => {
-		expect(encodeLatex("Hello World")).toBe("Hello World");
+		assert.strictEqual(encodeLatex("Hello World"), "Hello World");
 	});
 
 	it("should encode ligatures", () => {
-		expect(encodeLatex("æ")).toContain("\\");
-		expect(encodeLatex("œ")).toContain("\\");
-		expect(encodeLatex("ß")).toContain("\\");
+		assert.ok(encodeLatex("æ").includes("\\"));
+		assert.ok(encodeLatex("œ").includes("\\"));
+		assert.ok(encodeLatex("ß").includes("\\"));
 	});
 
 	it("should handle empty string", () => {
-		expect(encodeLatex("")).toBe("");
+		assert.strictEqual(encodeLatex(""), "");
 	});
 
 	it("should encode multiple special characters", () => {
 		const encoded = encodeLatex("100% of $10");
-		expect(encoded).toContain("\\%");
-		expect(encoded).toContain("\\$");
+		assert.ok(encoded.includes("\\%"));
+		assert.ok(encoded.includes("\\$"));
 	});
 });
 
 describe("hasLatexCommands", () => {
 	it("should detect backslash commands", () => {
-		expect(hasLatexCommands("\\textbf{bold}")).toBe(true);
-		expect(hasLatexCommands("\\alpha")).toBe(true);
-		expect(hasLatexCommands("\\\"o")).toBe(true);
+		assert.strictEqual(hasLatexCommands("\\textbf{bold}"), true);
+		assert.strictEqual(hasLatexCommands("\\alpha"), true);
+		assert.strictEqual(hasLatexCommands("\\\"o"), true);
 	});
 
 	it("should detect escaped characters", () => {
-		expect(hasLatexCommands("\\&")).toBe(true);
-		expect(hasLatexCommands("\\%")).toBe(true);
+		assert.strictEqual(hasLatexCommands("\\&"), true);
+		assert.strictEqual(hasLatexCommands("\\%"), true);
 	});
 
 	it("should return false for plain text", () => {
-		expect(hasLatexCommands("Hello World")).toBe(false);
-		expect(hasLatexCommands("Müller")).toBe(false);
+		assert.strictEqual(hasLatexCommands("Hello World"), false);
+		assert.strictEqual(hasLatexCommands("Müller"), false);
 	});
 
 	it("should return false for empty string", () => {
-		expect(hasLatexCommands("")).toBe(false);
+		assert.strictEqual(hasLatexCommands(""), false);
 	});
 
 	it("should return false for text without backslashes", () => {
-		expect(hasLatexCommands("normal text")).toBe(false);
+		assert.strictEqual(hasLatexCommands("normal text"), false);
 	});
 });
 
 describe("stripLatex", () => {
 	it("should strip LaTeX commands and keep content", () => {
-		expect(stripLatex("\\textbf{bold}")).toBe("bold");
-		expect(stripLatex("\\emph{emphasized}")).toBe("emphasized");
-		expect(stripLatex("\\textit{italic}")).toBe("italic");
+		assert.strictEqual(stripLatex("\\textbf{bold}"), "bold");
+		assert.strictEqual(stripLatex("\\emph{emphasized}"), "emphasized");
+		assert.strictEqual(stripLatex("\\textit{italic}"), "italic");
 	});
 
 	it("should decode LaTeX commands to Unicode", () => {
-		expect(stripLatex("M\\\"{u}ller")).toBe("Müller");
-		expect(stripLatex("caf\\'{e}")).toBe("café");
+		assert.strictEqual(stripLatex("M\\\"{u}ller"), "Müller");
+		assert.strictEqual(stripLatex("caf\\'{e}"), "café");
 	});
 
 	it("should handle nested commands", () => {
-		expect(stripLatex("\\textbf{\\emph{text}}")).toBe("text");
+		assert.strictEqual(stripLatex("\\textbf{\\emph{text}}"), "text");
 	});
 
 	it("should handle escaped characters", () => {
-		expect(stripLatex("\\&")).toBe("&");
-		expect(stripLatex("\\%")).toBe("%");
+		assert.strictEqual(stripLatex("\\&"), "&");
+		assert.strictEqual(stripLatex("\\%"), "%");
 	});
 
 	it("should clean up whitespace", () => {
-		expect(stripLatex("\\command   text")).toBe("text");
-		expect(stripLatex("text   with    spaces")).toBe("text with spaces");
+		assert.strictEqual(stripLatex("\\command   text"), "text");
+		assert.strictEqual(stripLatex("text   with    spaces"), "text with spaces");
 	});
 
 	it("should handle complex LaTeX", () => {
 		const result = stripLatex("\\textbf{\\textit{nested}} text");
-		expect(result).toBe("nested text");
+		assert.strictEqual(result, "nested text");
 	});
 
 	it("should return empty string for empty input", () => {
-		expect(stripLatex("")).toBe("");
+		assert.strictEqual(stripLatex(""), "");
 	});
 
 	it("should handle plain text without changes", () => {
-		expect(stripLatex("Hello World")).toBe("Hello World");
+		assert.strictEqual(stripLatex("Hello World"), "Hello World");
 	});
 });
 
 describe("protectText", () => {
 	it("should protect uppercase words", () => {
-		expect(protectText("The RNA World")).toBe("The {RNA} World");
-		expect(protectText("NASA Study")).toBe("{NASA} Study");
+		assert.strictEqual(protectText("The RNA World"), "The {RNA} World");
+		assert.strictEqual(protectText("NASA Study"), "{NASA} Study");
 	});
 
 	it("should not protect single uppercase letters", () => {
-		expect(protectText("A Study")).toBe("A Study");
-		expect(protectText("The A Test")).toBe("The A Test");
+		assert.strictEqual(protectText("A Study"), "A Study");
+		assert.strictEqual(protectText("The A Test"), "The A Test");
 	});
 
 	it("should handle multiple acronyms", () => {
-		expect(protectText("DNA and RNA")).toBe("{DNA} and {RNA}");
-		expect(protectText("The NASA and ESA projects")).toBe("The {NASA} and {ESA} projects");
+		assert.strictEqual(protectText("DNA and RNA"), "{DNA} and {RNA}");
+		assert.strictEqual(protectText("The NASA and ESA projects"), "The {NASA} and {ESA} projects");
 	});
 
 	it("should handle text without acronyms", () => {
-		expect(protectText("hello world")).toBe("hello world");
-		expect(protectText("Hello world")).toBe("Hello world");
+		assert.strictEqual(protectText("hello world"), "hello world");
+		assert.strictEqual(protectText("Hello world"), "Hello world");
 	});
 
 	it("should handle empty string", () => {
-		expect(protectText("")).toBe("");
+		assert.strictEqual(protectText(""), "");
 	});
 
 	it("should not protect lowercase words", () => {
-		expect(protectText("the text")).toBe("the text");
+		assert.strictEqual(protectText("the text"), "the text");
 	});
 
 	it("should protect acronyms at start of string", () => {
-		expect(protectText("NASA mission")).toBe("{NASA} mission");
+		assert.strictEqual(protectText("NASA mission"), "{NASA} mission");
 	});
 });
 
 describe("unprotectText", () => {
 	it("should remove protective braces", () => {
-		expect(unprotectText("{RNA}")).toBe("RNA");
-		expect(unprotectText("The {RNA} World")).toBe("The RNA World");
+		assert.strictEqual(unprotectText("{RNA}"), "RNA");
+		assert.strictEqual(unprotectText("The {RNA} World"), "The RNA World");
 	});
 
 	it("should handle multiple protected words", () => {
-		expect(unprotectText("{DNA} and {RNA}")).toBe("DNA and RNA");
-		expect(unprotectText("{NASA} {ESA}")).toBe("NASA ESA");
+		assert.strictEqual(unprotectText("{DNA} and {RNA}"), "DNA and RNA");
+		assert.strictEqual(unprotectText("{NASA} {ESA}"), "NASA ESA");
 	});
 
 	it("should handle text without braces", () => {
-		expect(unprotectText("hello world")).toBe("hello world");
+		assert.strictEqual(unprotectText("hello world"), "hello world");
 	});
 
 	it("should handle empty string", () => {
-		expect(unprotectText("")).toBe("");
+		assert.strictEqual(unprotectText(""), "");
 	});
 
 	it("should preserve spaces", () => {
-		expect(unprotectText("The {RNA} World")).toBe("The RNA World");
+		assert.strictEqual(unprotectText("The {RNA} World"), "The RNA World");
 	});
 });
 
@@ -253,28 +254,28 @@ describe("round-trip conversions", () => {
 		const original = "Müller café";
 		const encoded = encodeLatex(original);
 		// Should convert Unicode to LaTeX commands
-		expect(encoded).toContain("\\");
-		expect(encoded).toContain("{");
+		assert.ok(encoded.includes("\\"));
+		assert.ok(encoded.includes("{"));
 	});
 
 	it("should escape special BibTeX characters", () => {
 		const original = "5% of $10";
 		const encoded = encodeLatex(original);
 		// Should escape special characters
-		expect(encoded).toContain("\\%");
-		expect(encoded).toContain("\\$");
+		assert.ok(encoded.includes("\\%"));
+		assert.ok(encoded.includes("\\$"));
 	});
 
 	it("should protect and unprotect text", () => {
 		const original = "The RNA World";
 		const protectedText = protectText(original);
 		const unprotectedText = unprotectText(protectedText);
-		expect(unprotectedText).toBe(original);
+		assert.strictEqual(unprotectedText, original);
 	});
 
 	it("should strip LaTeX commands", () => {
 		const latex = "\\textbf{The RNA World}";
 		const stripped = stripLatex(latex);
-		expect(stripped).toBe("The RNA World");
+		assert.strictEqual(stripped, "The RNA World");
 	});
 });

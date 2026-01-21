@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert";
 import { RISParser } from "./ris.js";
 
 describe("RISParser", () => {
@@ -14,9 +15,9 @@ PY  - 2024
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries).toHaveLength(1);
-			expect(result.entries[0].type).toBe("article-journal");
-			expect(result.entries[0].title).toBe("Test Article");
+			assert.strictEqual(result.entries.length, 1);
+			assert.strictEqual(result.entries[0].type, "article-journal");
+			assert.strictEqual(result.entries[0].title, "Test Article");
 		});
 
 		it("should parse multiple entries", () => {
@@ -30,7 +31,7 @@ TI  - Second
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries).toHaveLength(2);
+			assert.strictEqual(result.entries.length, 2);
 		});
 	});
 
@@ -44,9 +45,9 @@ TI  - Test
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].author).toHaveLength(2);
-			expect(result.entries[0].author?.[0].family).toBe("Smith");
-			expect(result.entries[0].author?.[1].family).toBe("Doe");
+			assert.strictEqual(result.entries[0].author?.length, 2);
+			assert.strictEqual(result.entries[0].author?.[0].family, "Smith");
+			assert.strictEqual(result.entries[0].author?.[1].family, "Doe");
 		});
 
 		it("should parse editors", () => {
@@ -57,8 +58,8 @@ TI  - Test
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].editor).toHaveLength(1);
-			expect(result.entries[0].editor?.[0].family).toBe("Smith");
+			assert.strictEqual(result.entries[0].editor?.length, 1);
+			assert.strictEqual(result.entries[0].editor?.[0].family, "Smith");
 		});
 	});
 
@@ -72,8 +73,8 @@ IS  - 3
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].volume).toBe("10");
-			expect(result.entries[0].issue).toBe("3");
+			assert.strictEqual(result.entries[0].volume, "10");
+			assert.strictEqual(result.entries[0].issue, "3");
 		});
 
 		it("should parse page range", () => {
@@ -85,7 +86,7 @@ EP  - 110
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].page).toBe("100-110");
+			assert.strictEqual(result.entries[0].page, "100-110");
 		});
 
 		it("should parse keywords", () => {
@@ -97,7 +98,7 @@ KW  - AI
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].keyword).toBe("machine learning; AI");
+			assert.strictEqual(result.entries[0].keyword, "machine learning; AI");
 		});
 	});
 
@@ -109,7 +110,7 @@ PY  - 2024
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].issued?.["date-parts"]).toEqual([[2024]]);
+			assert.deepStrictEqual(result.entries[0].issued?.["date-parts"], [[2024]]);
 		});
 
 		it("should parse full date", () => {
@@ -119,7 +120,7 @@ PY  - 2024/03/15
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].issued?.["date-parts"]).toEqual([[2024, 3, 15]]);
+			assert.deepStrictEqual(result.entries[0].issued?.["date-parts"], [[2024, 3, 15]]);
 		});
 
 		it("should parse access date", () => {
@@ -129,7 +130,7 @@ Y2  - 2024/03/15
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].accessed?.["date-parts"]).toEqual([[2024, 3, 15]]);
+			assert.deepStrictEqual(result.entries[0].accessed?.["date-parts"], [[2024, 3, 15]]);
 		});
 	});
 
@@ -142,7 +143,7 @@ PY  - 2024
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].id).toBe("smith2024");
+			assert.strictEqual(result.entries[0].id, "smith2024");
 		});
 
 		it("should use index as fallback ID", () => {
@@ -152,7 +153,7 @@ TI  - No Author
 ER  -
       `;
 			const result = parser.parse(ris);
-			expect(result.entries[0].id).toBe("entry1");
+			assert.strictEqual(result.entries[0].id, "entry1");
 		});
 	});
 
@@ -163,7 +164,7 @@ TY  - JOUR
 ER  -
       `;
 			const warnings = parser.validate(ris);
-			expect(warnings.filter((w) => w.severity === "error")).toHaveLength(0);
+			assert.strictEqual(warnings.filter((w) => w.severity === "error").length, 0);
 		});
 
 		it("should detect missing ER tag", () => {
@@ -172,7 +173,7 @@ TY  - JOUR
 TI  - Test
       `;
 			const warnings = parser.validate(ris);
-			expect(warnings.some((w) => w.message.includes("Unclosed entry"))).toBe(true);
+			assert.strictEqual(warnings.some((w) => w.message.includes("Unclosed entry")), true);
 		});
 
 		it("should detect ER without TY", () => {
@@ -180,13 +181,13 @@ TI  - Test
 ER  -
       `;
 			const warnings = parser.validate(ris);
-			expect(warnings.some((w) => w.message.includes("without matching TY"))).toBe(true);
+			assert.strictEqual(warnings.some((w) => w.message.includes("without matching TY")), true);
 		});
 
 		it("should warn on empty file", () => {
 			const ris = "";
 			const warnings = parser.validate(ris);
-			expect(warnings.some((w) => w.message.includes("No entries"))).toBe(true);
+			assert.strictEqual(warnings.some((w) => w.message.includes("No entries")), true);
 		});
 	});
 
@@ -194,19 +195,19 @@ ER  -
 		it("should normalize JOUR to article-journal", () => {
 			const ris = "TY  - JOUR\nER  -";
 			const result = parser.parse(ris);
-			expect(result.entries[0].type).toBe("article-journal");
+			assert.strictEqual(result.entries[0].type, "article-journal");
 		});
 
 		it("should normalize BOOK to book", () => {
 			const ris = "TY  - BOOK\nER  -";
 			const result = parser.parse(ris);
-			expect(result.entries[0].type).toBe("book");
+			assert.strictEqual(result.entries[0].type, "book");
 		});
 
 		it("should normalize CONF to paper-conference", () => {
 			const ris = "TY  - CONF\nER  -";
 			const result = parser.parse(ris);
-			expect(result.entries[0].type).toBe("paper-conference");
+			assert.strictEqual(result.entries[0].type, "paper-conference");
 		});
 	});
 
@@ -214,8 +215,8 @@ ER  -
 		it("should set format metadata", () => {
 			const ris = "TY  - JOUR\nER  -";
 			const result = parser.parse(ris);
-			expect(result.entries[0]._formatMetadata?.source).toBe("ris");
-			expect(result.entries[0]._formatMetadata?.originalType).toBe("JOUR");
+			assert.strictEqual(result.entries[0]._formatMetadata?.source, "ris");
+			assert.strictEqual(result.entries[0]._formatMetadata?.originalType, "JOUR");
 		});
 	});
 });

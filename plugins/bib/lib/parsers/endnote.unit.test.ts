@@ -2,51 +2,15 @@
  * Tests for EndNote XML parser
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { EndNoteXMLParser, createEndNoteXMLParser } from "./endnote";
-
-// Mock dependencies
-vi.mock("../mappings/entry-types.js", () => ({
-	normalizeToCslType: vi.fn((type: string) => {
-		const typeMap: Record<string, string> = {
-			"Journal Article": "article-journal",
-			"Book": "book",
-			"Book Section": "chapter",
-		};
-		return typeMap[type] || "document";
-	}),
-}));
-
-vi.mock("./names.js", () => ({
-	parseName: vi.fn((name: string) => {
-		// Simple name parser for testing
-		const parts = name.split(",");
-		if (parts.length === 2) {
-			return {
-				family: parts[0].trim(),
-				given: parts[1].trim(),
-			};
-		}
-		return { literal: name };
-	}),
-}));
-
-vi.mock("./dates.js", () => ({
-	parseDate: vi.fn((date: string) => {
-		// Simple date parser for testing
-		const year = parseInt(date, 10);
-		if (!isNaN(year)) {
-			return { "date-parts": [[year]] };
-		}
-		return {};
-	}),
-}));
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { EndNoteXMLParser, createEndNoteXMLParser } from "./endnote.js";
 
 describe("EndNote XML Parser", () => {
 	let parser: EndNoteXMLParser;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.reset();
 		parser = new EndNoteXMLParser();
 	});
 
@@ -76,15 +40,15 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries).toHaveLength(1);
-			expect(result.entries[0].type).toBe("article-journal");
-			expect(result.entries[0].title).toBe("Test Article Title");
-			expect(result.entries[0]["container-title"]).toBe("Journal Name");
-			expect(result.entries[0].author).toEqual([{ family: "Smith", given: "John" }]);
-			expect(result.entries[0].issued).toEqual({ "date-parts": [[2024]] });
-			expect(result.entries[0].volume).toBe("10");
-			expect(result.entries[0].issue).toBe("2");
-			expect(result.entries[0].page).toBe("1-10");
+			assert.strictEqual(result.entries.length, 1);
+			assert.strictEqual(result.entries[0].type, "article-journal");
+			assert.strictEqual(result.entries[0].title, "Test Article Title");
+			assert.strictEqual(result.entries[0]["container-title"], "Journal Name");
+			assert.deepStrictEqual(result.entries[0].author, [{ family: "Smith", given: "John" }]);
+			assert.deepStrictEqual(result.entries[0].issued, { "date-parts": [[2024]] });
+			assert.strictEqual(result.entries[0].volume, "10");
+			assert.strictEqual(result.entries[0].issue, "2");
+			assert.strictEqual(result.entries[0].page, "1-10");
 		});
 
 		it("should parse multiple records", () => {
@@ -104,10 +68,10 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries).toHaveLength(2);
-			expect(result.entries[0].type).toBe("article-journal");
+			assert.strictEqual(result.entries.length, 2);
+			assert.strictEqual(result.entries[0].type, "article-journal");
 			// Note: The actual type mapping depends on the normalizeToCslType mock
-			expect(result.entries[1].type).toBeTruthy();
+			assert.ok(result.entries[1].type);
 		});
 
 		it("should handle missing optional fields", () => {
@@ -121,10 +85,10 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries).toHaveLength(1);
-			expect(result.entries[0].title).toBe("Test");
-			expect(result.entries[0].author).toBeUndefined();
-			expect(result.entries[0].issued).toBeUndefined();
+			assert.strictEqual(result.entries.length, 1);
+			assert.strictEqual(result.entries[0].title, "Test");
+			assert.strictEqual(result.entries[0].author, undefined);
+			assert.strictEqual(result.entries[0].issued, undefined);
 		});
 
 		it("should extract DOI", () => {
@@ -139,7 +103,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].DOI).toBe("10.1234/test");
+			assert.strictEqual(result.entries[0].DOI, "10.1234/test");
 		});
 
 		it("should extract URL", () => {
@@ -154,7 +118,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].URL).toBe("https://example.com");
+			assert.strictEqual(result.entries[0].URL, "https://example.com");
 		});
 
 		it("should extract abstract", () => {
@@ -169,7 +133,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].abstract).toBe("This is an abstract.");
+			assert.strictEqual(result.entries[0].abstract, "This is an abstract.");
 		});
 
 		it("should extract keywords", () => {
@@ -184,7 +148,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].keyword).toBe("keyword1, keyword2");
+			assert.strictEqual(result.entries[0].keyword, "keyword1, keyword2");
 		});
 
 		it("should generate ID from title and year", () => {
@@ -199,7 +163,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].id).toBe("testarticle2024");
+			assert.strictEqual(result.entries[0].id, "testarticle2024");
 		});
 
 		it("should generate fallback ID when no title", () => {
@@ -213,7 +177,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].id).toBe("entry1");
+			assert.strictEqual(result.entries[0].id, "entry1");
 		});
 
 		it("should parse editors", () => {
@@ -232,7 +196,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].editor).toEqual([{ family: "Doe", given: "Jane" }]);
+			assert.deepStrictEqual(result.entries[0].editor, [{ family: "Doe", given: "Jane" }]);
 		});
 
 		it("should handle malformed record gracefully", () => {
@@ -247,7 +211,7 @@ describe("EndNote XML Parser", () => {
 			const result = parser.parse(content);
 
 			// Should still return result, possibly with warnings
-			expect(result.entries).toHaveLength(1);
+			assert.strictEqual(result.entries.length, 1);
 		});
 
 		it("should set correct format metadata", () => {
@@ -261,8 +225,8 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0]._formatMetadata?.source).toBe("endnote");
-			expect(result.entries[0]._formatMetadata?.originalType).toBe("Journal Article");
+			assert.strictEqual(result.entries[0]._formatMetadata?.source, "endnote");
+			assert.strictEqual(result.entries[0]._formatMetadata?.originalType, "Journal Article");
 		});
 
 		it("should handle electronic-resource-num as DOI", () => {
@@ -277,7 +241,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].DOI).toBe("10.5678/test");
+			assert.strictEqual(result.entries[0].DOI, "10.5678/test");
 		});
 
 		it("should decode HTML entities", () => {
@@ -291,7 +255,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].title).toBe("Test & More");
+			assert.strictEqual(result.entries[0].title, "Test & More");
 		});
 
 		it("should strip tags from text content", () => {
@@ -305,7 +269,7 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.entries[0].title).toBe("Bold Title");
+			assert.strictEqual(result.entries[0].title, "Bold Title");
 		});
 	});
 
@@ -321,7 +285,7 @@ describe("EndNote XML Parser", () => {
 
 			const warnings = parser.validate(content);
 
-			expect(warnings).toHaveLength(0);
+			assert.strictEqual(warnings.length, 0);
 		});
 
 		it("should warn when no records found", () => {
@@ -332,8 +296,8 @@ describe("EndNote XML Parser", () => {
 			const warnings = parser.validate(content);
 
 			// Should have two warnings: no record elements and no records found
-			expect(warnings.length).toBeGreaterThanOrEqual(1);
-			expect(warnings.some((w) => w.message.includes("No <record> elements found") || w.message.includes("No records found"))).toBe(true);
+			assert.ok(warnings.length >= 1);
+			assert.strictEqual(warnings.some((w) => w.message.includes("No <record> elements found") || w.message.includes("No records found")), true);
 		});
 
 		it("should pass validation for multiple records", () => {
@@ -347,7 +311,7 @@ describe("EndNote XML Parser", () => {
 			const warnings = parser.validate(content);
 
 			// Should not have warnings for valid records
-			expect(warnings.length).toBe(0);
+			assert.strictEqual(warnings.length, 0);
 		});
 	});
 
@@ -363,10 +327,10 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.stats.total).toBe(1);
-			expect(result.stats.successful).toBe(1);
-			expect(result.stats.withWarnings).toBe(0);
-			expect(result.stats.failed).toBe(0);
+			assert.strictEqual(result.stats.total, 1);
+			assert.strictEqual(result.stats.successful, 1);
+			assert.strictEqual(result.stats.withWarnings, 0);
+			assert.strictEqual(result.stats.failed, 0);
 		});
 
 		it("should include all records in total count", () => {
@@ -388,8 +352,8 @@ describe("EndNote XML Parser", () => {
 
 			const result = parser.parse(content);
 
-			expect(result.stats.total).toBe(3);
-			expect(result.stats.successful).toBe(3);
+			assert.strictEqual(result.stats.total, 3);
+			assert.strictEqual(result.stats.successful, 3);
 		});
 	});
 
@@ -397,8 +361,8 @@ describe("EndNote XML Parser", () => {
 		it("should return an EndNoteXMLParser instance", () => {
 			const parser = createEndNoteXMLParser();
 
-			expect(parser).toBeInstanceOf(EndNoteXMLParser);
-			expect(parser.format).toBe("endnote");
+			assert.ok(parser instanceof EndNoteXMLParser);
+			assert.strictEqual(parser.format, "endnote");
 		});
 	});
 });

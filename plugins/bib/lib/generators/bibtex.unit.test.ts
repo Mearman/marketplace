@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert";
 import { BibTeXGenerator } from "./bibtex.js";
 import type { BibEntry } from "../types.js";
 
@@ -16,10 +17,10 @@ describe("BibTeXGenerator", () => {
 			};
 
 			const output = generator.generate([entry]);
-			expect(output).toContain("@article{smith2024,");
-			expect(output).toMatch(/author = \{Smith, John\}/);
-			expect(output).toMatch(/title = \{Test Article\}/);
-			expect(output).toContain("year = {2024}");
+			assert.ok(output.includes("@article{smith2024,"));
+			assert.ok(output.match(/author = \{Smith, John\}/));
+			assert.ok(output.match(/title = \{Test Article\}/));
+			assert.ok(output.includes("year = {2024}"));
 		});
 
 		it("should generate multiple entries", () => {
@@ -29,8 +30,8 @@ describe("BibTeXGenerator", () => {
 			];
 
 			const output = generator.generate(entries);
-			expect(output).toContain("@article{entry1,");
-			expect(output).toContain("@book{entry2,");
+			assert.ok(output.includes("@article{entry1,"));
+			assert.ok(output.includes("@book{entry2,"));
 		});
 	});
 
@@ -46,7 +47,7 @@ describe("BibTeXGenerator", () => {
 			};
 
 			const output = generator.generate([entry]);
-			expect(output).toContain("author = {Smith, John and Doe, Jane}");
+			assert.ok(output.includes("author = {Smith, John and Doe, Jane}"));
 		});
 
 		it("should generate date fields", () => {
@@ -57,9 +58,9 @@ describe("BibTeXGenerator", () => {
 			};
 
 			const output = generator.generate([entry]);
-			expect(output).toContain("year = {2024}");
-			expect(output).toContain("month = mar");
-			expect(output).toContain("day = {15}");
+			assert.ok(output.includes("year = {2024}"));
+			assert.ok(output.includes("month = mar"));
+			assert.ok(output.includes("day = {15}"));
 		});
 
 		it("should generate common fields", () => {
@@ -75,12 +76,12 @@ describe("BibTeXGenerator", () => {
 			};
 
 			const output = generator.generate([entry]);
-			expect(output).toContain("title = {Title}");
-			expect(output).toContain("journal = {Journal}");
-			expect(output).toContain("volume = {10}");
-			expect(output).toContain("number = {3}");
-			expect(output).toContain("pages = {100-110}");
-			expect(output).toContain("doi = {10.1234/test}");
+			assert.ok(output.includes("title = {Title}"));
+			assert.ok(output.includes("journal = {Journal}"));
+			assert.ok(output.includes("volume = {10}"));
+			assert.ok(output.includes("number = {3}"));
+			assert.ok(output.includes("pages = {100-110}"));
+			assert.ok(output.includes("doi = {10.1234/test}"));
 		});
 	});
 
@@ -93,8 +94,8 @@ describe("BibTeXGenerator", () => {
 			};
 
 			const output = generator.generate([entry]);
-			expect(output).toContain("\\");
-			expect(output).toMatch(/title = \{.*\}/);
+			assert.ok(output.includes("\\"));
+			assert.ok(output.match(/title = \{.*\}/));
 		});
 
 		it("should encode author names with special characters", () => {
@@ -105,7 +106,7 @@ describe("BibTeXGenerator", () => {
 			};
 
 			const output = generator.generate([entry]);
-			expect(output).toContain("\\");
+			assert.ok(output.includes("\\"));
 		});
 	});
 
@@ -119,7 +120,7 @@ describe("BibTeXGenerator", () => {
 			const output = generator.generate(entries, { sort: true });
 			const alphaIndex = output.indexOf("@article{alpha,");
 			const zebraIndex = output.indexOf("@article{zebra,");
-			expect(alphaIndex).toBeLessThan(zebraIndex);
+			assert.ok(alphaIndex < zebraIndex);
 		});
 
 		it("should use custom indentation", () => {
@@ -130,7 +131,7 @@ describe("BibTeXGenerator", () => {
 			};
 
 			const output = generator.generate([entry], { indent: "\t" });
-			expect(output).toContain("\ttitle = {Test}");
+			assert.ok(output.includes("\ttitle = {Test}"));
 		});
 	});
 
@@ -138,19 +139,19 @@ describe("BibTeXGenerator", () => {
 		it("should map book to @book", () => {
 			const entry: BibEntry = { id: "test", type: "book" };
 			const output = generator.generate([entry]);
-			expect(output).toContain("@book{test,");
+			assert.ok(output.includes("@book{test,"));
 		});
 
 		it("should map paper-conference to @inproceedings", () => {
 			const entry: BibEntry = { id: "test", type: "paper-conference" };
 			const output = generator.generate([entry]);
-			expect(output).toContain("@inproceedings{test,");
+			assert.ok(output.includes("@inproceedings{test,"));
 		});
 
 		it("should map dataset to @misc (lossy conversion)", () => {
 			const entry: BibEntry = { id: "test", type: "dataset" };
 			const output = generator.generate([entry]);
-			expect(output).toContain("@misc{test,");
+			assert.ok(output.includes("@misc{test,"));
 		});
 	});
 });

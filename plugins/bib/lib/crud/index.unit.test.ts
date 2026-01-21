@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert";
 import {
 	filterEntries,
 	createEntry,
@@ -39,43 +40,43 @@ describe("CRUD Operations", () => {
 	describe("filterEntries", () => {
 		it("should filter by ID", () => {
 			const result = filterEntries(sampleEntries, { id: "smith2024" });
-			expect(result).toHaveLength(1);
-			expect(result[0].id).toBe("smith2024");
+			assert.strictEqual(result.length, 1);
+			assert.strictEqual(result[0].id, "smith2024");
 		});
 
 		it("should filter by author", () => {
 			const result = filterEntries(sampleEntries, { author: "Smith" });
-			expect(result).toHaveLength(1);
-			expect(result[0].author?.[0].family).toBe("Smith");
+			assert.strictEqual(result.length, 1);
+			assert.strictEqual(result[0].author?.[0].family, "Smith");
 		});
 
 		it("should filter by year", () => {
 			const result = filterEntries(sampleEntries, { year: 2024 });
-			expect(result).toHaveLength(2);
-			expect(result.every((e) => e.issued?.["date-parts"]?.[0]?.[0] === 2024)).toBe(true);
+			assert.strictEqual(result.length, 2);
+			assert.strictEqual(result.every((e) => e.issued?.["date-parts"]?.[0]?.[0] === 2024), true);
 		});
 
 		it("should filter by type", () => {
 			const result = filterEntries(sampleEntries, { type: "book" });
-			expect(result).toHaveLength(1);
-			expect(result[0].type).toBe("book");
+			assert.strictEqual(result.length, 1);
+			assert.strictEqual(result[0].type, "book");
 		});
 
 		it("should filter by keyword", () => {
 			const result = filterEntries(sampleEntries, { keyword: "ML" });
-			expect(result).toHaveLength(1);
-			expect(result[0].keyword).toContain("ML");
+			assert.strictEqual(result.length, 1);
+			assert.ok(result[0].keyword?.includes("ML"));
 		});
 
 		it("should combine multiple criteria (AND)", () => {
 			const result = filterEntries(sampleEntries, { author: "Jones", year: 2024 });
-			expect(result).toHaveLength(1);
-			expect(result[0].id).toBe("jones2024");
+			assert.strictEqual(result.length, 1);
+			assert.strictEqual(result[0].id, "jones2024");
 		});
 
 		it("should return empty array when no matches", () => {
 			const result = filterEntries(sampleEntries, { author: "Nonexistent" });
-			expect(result).toHaveLength(0);
+			assert.strictEqual(result.length, 0);
 		});
 	});
 
@@ -87,21 +88,21 @@ describe("CRUD Operations", () => {
 				title: "New Article",
 			});
 
-			expect(entry.id).toBe("new2024");
-			expect(entry.type).toBe("article-journal");
-			expect(entry.title).toBe("New Article");
+			assert.strictEqual(entry.id, "new2024");
+			assert.strictEqual(entry.type, "article-journal");
+			assert.strictEqual(entry.title, "New Article");
 		});
 
 		it("should throw error without ID", () => {
-			expect(() => {
+			assert.throws(() => {
 				createEntry({ type: "article-journal" } as any);
-			}).toThrow("id");
+			}, "id");
 		});
 
 		it("should throw error without type", () => {
-			expect(() => {
+			assert.throws(() => {
 				createEntry({ id: "test" } as any);
-			}).toThrow("type");
+			}, "type");
 		});
 
 		it("should include optional fields", () => {
@@ -112,8 +113,8 @@ describe("CRUD Operations", () => {
 				title: "Title",
 			});
 
-			expect(entry.author).toBeDefined();
-			expect(entry.title).toBe("Title");
+			assert.ok(entry.author);
+			assert.strictEqual(entry.title, "Title");
 		});
 	});
 
@@ -122,16 +123,16 @@ describe("CRUD Operations", () => {
 			const original = sampleEntries[0];
 			const updated = updateEntry(original, { title: "Updated Title" });
 
-			expect(updated.title).toBe("Updated Title");
-			expect(updated.id).toBe(original.id); // ID unchanged
-			expect(updated.author).toEqual(original.author); // Other fields unchanged
+			assert.strictEqual(updated.title, "Updated Title");
+			assert.strictEqual(updated.id, original.id); // ID unchanged
+			assert.deepStrictEqual(updated.author, original.author); // Other fields unchanged
 		});
 
 		it("should never change ID", () => {
 			const original = sampleEntries[0];
 			const updated = updateEntry(original, { id: "newid" } as any);
 
-			expect(updated.id).toBe(original.id); // ID forced to remain the same
+			assert.strictEqual(updated.id, original.id); // ID forced to remain the same
 		});
 
 		it("should update multiple fields", () => {
@@ -141,27 +142,27 @@ describe("CRUD Operations", () => {
 				abstract: "New abstract",
 			});
 
-			expect(updated.title).toBe("New Title");
-			expect(updated.abstract).toBe("New abstract");
+			assert.strictEqual(updated.title, "New Title");
+			assert.strictEqual(updated.abstract, "New abstract");
 		});
 	});
 
 	describe("deleteEntries", () => {
 		it("should delete single entry by ID", () => {
 			const result = deleteEntries(sampleEntries, ["smith2024"]);
-			expect(result).toHaveLength(2);
-			expect(result.every((e) => e.id !== "smith2024")).toBe(true);
+			assert.strictEqual(result.length, 2);
+			assert.strictEqual(result.every((e) => e.id !== "smith2024"), true);
 		});
 
 		it("should delete multiple entries", () => {
 			const result = deleteEntries(sampleEntries, ["smith2024", "jones2024"]);
-			expect(result).toHaveLength(1);
-			expect(result[0].id).toBe("doe2023");
+			assert.strictEqual(result.length, 1);
+			assert.strictEqual(result[0].id, "doe2023");
 		});
 
 		it("should handle non-existent IDs gracefully", () => {
 			const result = deleteEntries(sampleEntries, ["nonexistent"]);
-			expect(result).toHaveLength(3); // All entries remain
+			assert.strictEqual(result.length, 3); // All entries remain
 		});
 	});
 
@@ -175,7 +176,7 @@ describe("CRUD Operations", () => {
 			];
 
 			const merged = mergeEntries([set1, set2]);
-			expect(merged).toHaveLength(2);
+			assert.strictEqual(merged.length, 2);
 		});
 
 		it("should deduplicate by ID", () => {
@@ -187,8 +188,8 @@ describe("CRUD Operations", () => {
 			];
 
 			const merged = mergeEntries([set1, set2], "id");
-			expect(merged).toHaveLength(1);
-			expect(merged[0].title).toBe("First"); // First occurrence wins
+			assert.strictEqual(merged.length, 1);
+			assert.strictEqual(merged[0].title, "First"); // First occurrence wins
 		});
 
 		it("should deduplicate by DOI", () => {
@@ -210,41 +211,41 @@ describe("CRUD Operations", () => {
 			];
 
 			const merged = mergeEntries([set1, set2], "doi");
-			expect(merged).toHaveLength(1);
-			expect(merged[0].id).toBe("entry1"); // First occurrence wins
+			assert.strictEqual(merged.length, 1);
+			assert.strictEqual(merged[0].id, "entry1"); // First occurrence wins
 		});
 
 		it("should handle empty sets", () => {
 			const merged = mergeEntries([[], []]);
-			expect(merged).toHaveLength(0);
+			assert.strictEqual(merged.length, 0);
 		});
 	});
 
 	describe("sortEntries", () => {
 		it("should sort by ID", () => {
 			const result = sortEntries(sampleEntries, "id");
-			expect(result[0].id).toBe("doe2023");
-			expect(result[1].id).toBe("jones2024");
-			expect(result[2].id).toBe("smith2024");
+			assert.strictEqual(result[0].id, "doe2023");
+			assert.strictEqual(result[1].id, "jones2024");
+			assert.strictEqual(result[2].id, "smith2024");
 		});
 
 		it("should sort by author", () => {
 			const result = sortEntries(sampleEntries, "author");
-			expect(result[0].author?.[0].family).toBe("Doe");
-			expect(result[1].author?.[0].family).toBe("Jones");
-			expect(result[2].author?.[0].family).toBe("Smith");
+			assert.strictEqual(result[0].author?.[0].family, "Doe");
+			assert.strictEqual(result[1].author?.[0].family, "Jones");
+			assert.strictEqual(result[2].author?.[0].family, "Smith");
 		});
 
 		it("should sort by year (descending)", () => {
 			const result = sortEntries(sampleEntries, "year");
-			expect(result[0].issued?.["date-parts"]?.[0]?.[0]).toBe(2024);
-			expect(result[result.length - 1].issued?.["date-parts"]?.[0]?.[0]).toBe(2023);
+			assert.strictEqual(result[0].issued?.["date-parts"]?.[0]?.[0], 2024);
+			assert.strictEqual(result[result.length - 1].issued?.["date-parts"]?.[0]?.[0], 2023);
 		});
 
 		it("should not mutate original array", () => {
 			const original = [...sampleEntries];
 			sortEntries(sampleEntries, "id");
-			expect(sampleEntries).toEqual(original); // Original unchanged
+			assert.deepStrictEqual(sampleEntries, original); // Original unchanged
 		});
 	});
 });

@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert";
 import { BibTeXParser } from "./bibtex.js";
 
 describe("BibTeXParser", () => {
@@ -15,10 +16,10 @@ describe("BibTeXParser", () => {
       `;
 
 			const result = parser.parse(bibtex);
-			expect(result.entries).toHaveLength(1);
-			expect(result.entries[0].id).toBe("smith2024");
-			expect(result.entries[0].type).toBe("article-journal");
-			expect(result.entries[0].title).toBe("Test Article");
+			assert.strictEqual(result.entries.length, 1);
+			assert.strictEqual(result.entries[0].id, "smith2024");
+			assert.strictEqual(result.entries[0].type, "article-journal");
+			assert.strictEqual(result.entries[0].title, "Test Article");
 		});
 
 		it("should parse multiple entries", () => {
@@ -32,9 +33,9 @@ describe("BibTeXParser", () => {
       `;
 
 			const result = parser.parse(bibtex);
-			expect(result.entries).toHaveLength(2);
-			expect(result.entries[0].id).toBe("entry1");
-			expect(result.entries[1].id).toBe("entry2");
+			assert.strictEqual(result.entries.length, 2);
+			assert.strictEqual(result.entries[0].id, "entry1");
+			assert.strictEqual(result.entries[1].id, "entry2");
 		});
 	});
 
@@ -42,19 +43,19 @@ describe("BibTeXParser", () => {
 		it("should parse braced field values", () => {
 			const bibtex = "@article{test, title = {The Title}}";
 			const result = parser.parse(bibtex);
-			expect(result.entries[0].title).toBe("The Title");
+			assert.strictEqual(result.entries[0].title, "The Title");
 		});
 
 		it("should parse quoted field values", () => {
-			const bibtex = "@article{test, title = \"The Title\"}";
+			const bibtex = '@article{test, title = "The Title"}';
 			const result = parser.parse(bibtex);
-			expect(result.entries[0].title).toBe("The Title");
+			assert.strictEqual(result.entries[0].title, "The Title");
 		});
 
 		it("should handle nested braces", () => {
 			const bibtex = "@article{test, title = {The {RNA} World}}";
 			const result = parser.parse(bibtex);
-			expect(result.entries[0].title).toBe("The {RNA} World");
+			assert.strictEqual(result.entries[0].title, "The {RNA} World");
 		});
 	});
 
@@ -62,17 +63,17 @@ describe("BibTeXParser", () => {
 		it("should parse single author", () => {
 			const bibtex = "@article{test, author = {Smith, John}}";
 			const result = parser.parse(bibtex);
-			expect(result.entries[0].author).toHaveLength(1);
-			expect(result.entries[0].author?.[0].family).toBe("Smith");
-			expect(result.entries[0].author?.[0].given).toBe("John");
+			assert.strictEqual(result.entries[0].author?.length, 1);
+			assert.strictEqual(result.entries[0].author?.[0].family, "Smith");
+			assert.strictEqual(result.entries[0].author?.[0].given, "John");
 		});
 
 		it("should parse multiple authors with 'and'", () => {
 			const bibtex = "@article{test, author = {Smith, John and Doe, Jane}}";
 			const result = parser.parse(bibtex);
-			expect(result.entries[0].author).toHaveLength(2);
-			expect(result.entries[0].author?.[0].family).toBe("Smith");
-			expect(result.entries[0].author?.[1].family).toBe("Doe");
+			assert.strictEqual(result.entries[0].author?.length, 2);
+			assert.strictEqual(result.entries[0].author?.[0].family, "Smith");
+			assert.strictEqual(result.entries[0].author?.[1].family, "Doe");
 		});
 	});
 
@@ -80,13 +81,13 @@ describe("BibTeXParser", () => {
 		it("should parse year field", () => {
 			const bibtex = "@article{test, year = {2024}}";
 			const result = parser.parse(bibtex);
-			expect(result.entries[0].issued?.["date-parts"]).toEqual([[2024]]);
+			assert.deepStrictEqual(result.entries[0].issued?.["date-parts"], [[2024]]);
 		});
 
 		it("should parse year and month", () => {
 			const bibtex = "@article{test, year = {2024}, month = mar}";
 			const result = parser.parse(bibtex);
-			expect(result.entries[0].issued?.["date-parts"]).toEqual([[2024, 3]]);
+			assert.deepStrictEqual(result.entries[0].issued?.["date-parts"], [[2024, 3]]);
 		});
 	});
 
@@ -97,7 +98,7 @@ describe("BibTeXParser", () => {
         @article{test, journal = JOURNAL}
       `;
 			const result = parser.parse(bibtex);
-			expect(result.entries[0]["container-title"]).toBe("Nature");
+			assert.strictEqual(result.entries[0]["container-title"], "Nature");
 		});
 
 		it("should handle line comments", () => {
@@ -108,8 +109,8 @@ describe("BibTeXParser", () => {
         }
       `;
 			const result = parser.parse(bibtex);
-			expect(result.entries).toHaveLength(1);
-			expect(result.entries[0].title).toBe("Title");
+			assert.strictEqual(result.entries.length, 1);
+			assert.strictEqual(result.entries[0].title, "Title");
 		});
 
 		it("should ignore @comment entries", () => {
@@ -118,8 +119,8 @@ describe("BibTeXParser", () => {
         @article{test, title = {Real}}
       `;
 			const result = parser.parse(bibtex);
-			expect(result.entries).toHaveLength(1);
-			expect(result.entries[0].title).toBe("Real");
+			assert.strictEqual(result.entries.length, 1);
+			assert.strictEqual(result.entries[0].title, "Real");
 		});
 
 		it("should ignore @preamble entries", () => {
@@ -128,7 +129,8 @@ describe("BibTeXParser", () => {
         @article{test, title = {Real}}
       `;
 			const result = parser.parse(bibtex);
-			expect(result.entries).toHaveLength(1);
+			assert.strictEqual(result.entries.length, 1);
+			assert.strictEqual(result.entries[0].title, "Real");
 		});
 	});
 
@@ -136,13 +138,13 @@ describe("BibTeXParser", () => {
 		it("should decode LaTeX characters in title", () => {
 			const bibtex = "@article{test, title = {M\\\"{u}ller}}";
 			const result = parser.parse(bibtex);
-			expect(result.entries[0].title).toBe("Müller");
+			assert.strictEqual(result.entries[0].title, "Müller");
 		});
 
 		it("should decode LaTeX in author names", () => {
 			const bibtex = "@article{test, author = {M\\\"{u}ller, Hans}}";
 			const result = parser.parse(bibtex);
-			expect(result.entries[0].author?.[0].family).toBe("Müller");
+			assert.strictEqual(result.entries[0].author?.[0].family, "Müller");
 		});
 	});
 
@@ -150,20 +152,20 @@ describe("BibTeXParser", () => {
 		it("should detect unmatched braces", () => {
 			const bibtex = "@article{test, title = {Unmatched";
 			const warnings = parser.validate(bibtex);
-			expect(warnings.length).toBeGreaterThan(0);
-			expect(warnings[0].type).toBe("parse-error");
+			assert.ok(warnings.length > 0);
+			assert.strictEqual(warnings[0].type, "parse-error");
 		});
 
 		it("should validate correct BibTeX", () => {
 			const bibtex = "@article{test, title = {Correct}}";
 			const warnings = parser.validate(bibtex);
-			expect(warnings.some((w) => w.severity === "error")).toBe(false);
+			assert.strictEqual(warnings.some((w) => w.severity === "error"), false);
 		});
 
 		it("should warn on empty file", () => {
 			const bibtex = "";
 			const warnings = parser.validate(bibtex);
-			expect(warnings.some((w) => w.message.includes("No entries"))).toBe(true);
+			assert.strictEqual(warnings.some((w) => w.message.includes("No entries")), true);
 		});
 	});
 
@@ -176,7 +178,7 @@ describe("BibTeXParser", () => {
       `;
 			const result = parser.parse(bibtex);
 			// Should parse the good entries and report warnings for bad ones
-			expect(result.stats.successful + result.stats.failed).toBeGreaterThan(0);
+			assert.ok(result.stats.successful + result.stats.failed > 0);
 		});
 	});
 
@@ -184,8 +186,8 @@ describe("BibTeXParser", () => {
 		it("should preserve format metadata", () => {
 			const bibtex = "@article{test, title = {Test}}";
 			const result = parser.parse(bibtex);
-			expect(result.entries[0]._formatMetadata?.source).toBe("bibtex");
-			expect(result.entries[0]._formatMetadata?.originalType).toBe("article");
+			assert.strictEqual(result.entries[0]._formatMetadata?.source, "bibtex");
+			assert.strictEqual(result.entries[0]._formatMetadata?.originalType, "article");
 		});
 	});
 });

@@ -1,115 +1,116 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert";
 import { normalizeToCslType, denormalizeFromCslType } from "./entry-types.js";
 
 describe("Entry Type Mappings", () => {
 	describe("normalizeToCslType", () => {
 		it("should normalize BibTeX article to article-journal", () => {
-			expect(normalizeToCslType("article", "bibtex")).toBe("article-journal");
+			assert.strictEqual(normalizeToCslType("article", "bibtex"), "article-journal");
 		});
 
 		it("should normalize BibTeX book to book", () => {
-			expect(normalizeToCslType("book", "bibtex")).toBe("book");
+			assert.strictEqual(normalizeToCslType("book", "bibtex"), "book");
 		});
 
 		it("should normalize BibTeX inproceedings to paper-conference", () => {
-			expect(normalizeToCslType("inproceedings", "bibtex")).toBe("paper-conference");
+			assert.strictEqual(normalizeToCslType("inproceedings", "bibtex"), "paper-conference");
 		});
 
 		it("should normalize BibTeX phdthesis to thesis", () => {
-			expect(normalizeToCslType("phdthesis", "bibtex")).toBe("thesis");
+			assert.strictEqual(normalizeToCslType("phdthesis", "bibtex"), "thesis");
 		});
 
 		it("should normalize RIS JOUR to article-journal", () => {
-			expect(normalizeToCslType("JOUR", "ris")).toBe("article-journal");
+			assert.strictEqual(normalizeToCslType("JOUR", "ris"), "article-journal");
 		});
 
 		it("should normalize RIS BOOK to book", () => {
-			expect(normalizeToCslType("BOOK", "ris")).toBe("book");
+			assert.strictEqual(normalizeToCslType("BOOK", "ris"), "book");
 		});
 
 		it("should normalize RIS CONF to paper-conference", () => {
-			expect(normalizeToCslType("CONF", "ris")).toBe("paper-conference");
+			assert.strictEqual(normalizeToCslType("CONF", "ris"), "paper-conference");
 		});
 
 		it("should normalize EndNote Journal Article", () => {
-			expect(normalizeToCslType("Journal Article", "endnote")).toBe("article-journal");
+			assert.strictEqual(normalizeToCslType("Journal Article", "endnote"), "article-journal");
 		});
 
 		it("should handle unknown types with fallback", () => {
-			expect(normalizeToCslType("unknown", "bibtex")).toBe("article");
+			assert.strictEqual(normalizeToCslType("unknown", "bibtex"), "article");
 		});
 
 		it("should be case-insensitive for BibTeX", () => {
-			expect(normalizeToCslType("ARTICLE", "bibtex")).toBe("article-journal");
-			expect(normalizeToCslType("Article", "bibtex")).toBe("article-journal");
+			assert.strictEqual(normalizeToCslType("ARTICLE", "bibtex"), "article-journal");
+			assert.strictEqual(normalizeToCslType("Article", "bibtex"), "article-journal");
 		});
 	});
 
 	describe("denormalizeFromCslType", () => {
 		it("should denormalize article-journal to BibTeX article", () => {
 			const result = denormalizeFromCslType("article-journal", "bibtex");
-			expect(result.type).toBe("article");
-			expect(result.lossy).toBe(false);
+			assert.strictEqual(result.type, "article");
+			assert.strictEqual(result.lossy, false);
 		});
 
 		it("should denormalize book to BibTeX book", () => {
 			const result = denormalizeFromCslType("book", "bibtex");
-			expect(result.type).toBe("book");
-			expect(result.lossy).toBe(false);
+			assert.strictEqual(result.type, "book");
+			assert.strictEqual(result.lossy, false);
 		});
 
 		it("should denormalize paper-conference to BibTeX inproceedings", () => {
 			const result = denormalizeFromCslType("paper-conference", "bibtex");
-			expect(result.type).toBe("inproceedings");
-			expect(result.lossy).toBe(false);
+			assert.strictEqual(result.type, "inproceedings");
+			assert.strictEqual(result.lossy, false);
 		});
 
 		it("should denormalize dataset to BibTeX misc (lossy)", () => {
 			const result = denormalizeFromCslType("dataset", "bibtex");
-			expect(result.type).toBe("misc");
-			expect(result.lossy).toBe(true);
+			assert.strictEqual(result.type, "misc");
+			assert.strictEqual(result.lossy, true);
 		});
 
 		it("should denormalize software to BibTeX misc (lossy)", () => {
 			const result = denormalizeFromCslType("software", "bibtex");
-			expect(result.type).toBe("misc");
-			expect(result.lossy).toBe(true);
+			assert.strictEqual(result.type, "misc");
+			assert.strictEqual(result.lossy, true);
 		});
 
 		it("should denormalize webpage to BibTeX misc (lossy)", () => {
 			const result = denormalizeFromCslType("webpage", "bibtex");
-			expect(result.type).toBe("misc");
-			expect(result.lossy).toBe(true);
+			assert.strictEqual(result.type, "misc");
+			assert.strictEqual(result.lossy, true);
 		});
 
 		it("should denormalize dataset to BibLaTeX dataset (not lossy)", () => {
 			const result = denormalizeFromCslType("dataset", "biblatex");
-			expect(result.type).toBe("dataset");
-			expect(result.lossy).toBe(false);
+			assert.strictEqual(result.type, "dataset");
+			assert.strictEqual(result.lossy, false);
 		});
 
 		it("should denormalize software to BibLaTeX software (not lossy)", () => {
 			const result = denormalizeFromCslType("software", "biblatex");
-			expect(result.type).toBe("software");
-			expect(result.lossy).toBe(false);
+			assert.strictEqual(result.type, "software");
+			assert.strictEqual(result.lossy, false);
 		});
 
 		it("should denormalize to RIS types", () => {
-			expect(denormalizeFromCslType("article-journal", "ris").type).toBe("JOUR");
-			expect(denormalizeFromCslType("book", "ris").type).toBe("BOOK");
-			expect(denormalizeFromCslType("dataset", "ris").type).toBe("DATA");
+			assert.strictEqual(denormalizeFromCslType("article-journal", "ris").type, "JOUR");
+			assert.strictEqual(denormalizeFromCslType("book", "ris").type, "BOOK");
+			assert.strictEqual(denormalizeFromCslType("dataset", "ris").type, "DATA");
 		});
 
 		it("should denormalize to EndNote types", () => {
-			expect(denormalizeFromCslType("article-journal", "endnote").type).toBe("Journal Article");
-			expect(denormalizeFromCslType("book", "endnote").type).toBe("Book");
-			expect(denormalizeFromCslType("dataset", "endnote").type).toBe("Dataset");
+			assert.strictEqual(denormalizeFromCslType("article-journal", "endnote").type, "Journal Article");
+			assert.strictEqual(denormalizeFromCslType("book", "endnote").type, "Book");
+			assert.strictEqual(denormalizeFromCslType("dataset", "endnote").type, "Dataset");
 		});
 
 		it("should handle unknown types", () => {
 			const result = denormalizeFromCslType("unknown-type" as any, "bibtex");
-			expect(result.type).toBe("misc");
-			expect(result.lossy).toBe(true);
+			assert.strictEqual(result.type, "misc");
+			assert.strictEqual(result.lossy, true);
 		});
 	});
 
@@ -120,7 +121,7 @@ describe("Entry Type Mappings", () => {
 			for (const bibtexType of bibtexTypes) {
 				const cslType = normalizeToCslType(bibtexType, "bibtex");
 				const result = denormalizeFromCslType(cslType, "bibtex");
-				expect(result.lossy).toBe(false);
+				assert.strictEqual(result.lossy, false);
 			}
 		});
 
@@ -130,8 +131,8 @@ describe("Entry Type Mappings", () => {
 
 			for (const cslType of modernTypes) {
 				const result = denormalizeFromCslType(cslType, "bibtex");
-				expect(result.lossy).toBe(true);
-				expect(result.type).toBe("misc");
+				assert.strictEqual(result.lossy, true);
+				assert.strictEqual(result.type, "misc");
 			}
 		});
 
@@ -140,7 +141,7 @@ describe("Entry Type Mappings", () => {
 
 			for (const cslType of modernTypes) {
 				const result = denormalizeFromCslType(cslType, "biblatex");
-				expect(result.lossy).toBe(false);
+				assert.strictEqual(result.lossy, false);
 			}
 		});
 	});
