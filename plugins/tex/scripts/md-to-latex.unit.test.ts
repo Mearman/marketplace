@@ -1,4 +1,5 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
 import { markdownToLatex } from "./md-to-latex.js";
 
 describe("markdownToLatex", () => {
@@ -6,45 +7,45 @@ describe("markdownToLatex", () => {
 		it("converts H1 to chapter", () => {
 			const input = "# Hello World";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\chapter{Hello World}");
+			assert.ok(output.includes("\\chapter{Hello World}"));
 		});
 
 		it("converts H2 to section", () => {
 			const input = "## Section";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\section{Section}");
+			assert.ok(output.includes("\\section{Section}"));
 		});
 
 		it("converts H3 to subsection", () => {
 			const input = "### Subsection";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\subsection{Subsection}");
+			assert.ok(output.includes("\\subsection{Subsection}"));
 		});
 
 		it("converts H4 to subsubsection", () => {
 			const input = "#### Subsubsection";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\subsubsection{Subsubsection}");
+			assert.ok(output.includes("\\subsubsection{Subsubsection}"));
 		});
 
 		it("converts H5 to paragraph", () => {
 			const input = "##### Paragraph";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\paragraph{Paragraph}");
+			assert.ok(output.includes("\\paragraph{Paragraph}"));
 		});
 
 		it("converts H6 to subparagraph", () => {
 			const input = "###### Subparagraph";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\subparagraph{Subparagraph}");
+			assert.ok(output.includes("\\subparagraph{Subparagraph}"));
 		});
 
 		it("handles multiple headers", () => {
 			const input = "# Title\n\n## Section\n\n### Subsection";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\chapter{Title}");
-			expect(output).toContain("\\section{Section}");
-			expect(output).toContain("\\subsection{Subsection}");
+			assert.ok(output.includes("\\chapter{Title}"));
+			assert.ok(output.includes("\\section{Section}"));
+			assert.ok(output.includes("\\subsection{Subsection}"));
 		});
 	});
 
@@ -52,38 +53,38 @@ describe("markdownToLatex", () => {
 		it("converts **bold** to textbf", () => {
 			const input = "This is **bold** text";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\textbf{bold}");
+			assert.ok(output.includes("\\textbf{bold}"));
 		});
 
 		it("converts __bold__ to textbf", () => {
 			const input = "This is __bold__ text";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\textbf{bold}");
+			assert.ok(output.includes("\\textbf{bold}"));
 		});
 
 		it("converts *italic* to emph", () => {
 			const input = "This is *italic* text";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\emph{italic}");
+			assert.ok(output.includes("\\emph{italic}"));
 		});
 
 		it("converts _italic_ to emph", () => {
 			const input = "This is _italic_ text";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\emph{italic}");
+			assert.ok(output.includes("\\emph{italic}"));
 		});
 
 		it("handles bold and italic together", () => {
 			const input = "**bold** and *italic*";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\textbf{bold}");
-			expect(output).toContain("\\emph{italic}");
+			assert.ok(output.includes("\\textbf{bold}"));
+			assert.ok(output.includes("\\emph{italic}"));
 		});
 
 		it("converts inline code to texttt", () => {
 			const input = "Use `code` here";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\texttt{code}");
+			assert.ok(output.includes("\\texttt{code}"));
 		});
 	});
 
@@ -91,14 +92,14 @@ describe("markdownToLatex", () => {
 		it("converts [text](url) to href", () => {
 			const input = "[Click here](https://example.com)";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\href{https://example.com}{Click here}");
+			assert.ok(output.includes("\\href{https://example.com}{Click here}"));
 		});
 
 		it("handles multiple links", () => {
 			const input = "[Link 1](https://a.com) and [Link 2](https://b.com)";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\href{https://a.com}{Link 1}");
-			expect(output).toContain("\\href{https://b.com}{Link 2}");
+			assert.ok(output.includes("\\href{https://a.com}{Link 1}"));
+			assert.ok(output.includes("\\href{https://b.com}{Link 2}"));
 		});
 	});
 
@@ -106,18 +107,18 @@ describe("markdownToLatex", () => {
 		it("converts ![alt](src) with alt text to figure", () => {
 			const input = "![My Image](image.png)";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\begin{figure}[h]");
-			expect(output).toContain("\\centering");
-			expect(output).toContain("\\includegraphics{image.png}");
-			expect(output).toContain("\\caption{My Image}");
-			expect(output).toContain("\\end{figure}");
+			assert.ok(output.includes("\\begin{figure}[h]"));
+			assert.ok(output.includes("\\centering"));
+			assert.ok(output.includes("\\includegraphics{image.png}"));
+			assert.ok(output.includes("\\caption{My Image}"));
+			assert.ok(output.includes("\\end{figure}"));
 		});
 
 		it("converts ![](src) without alt text to includegraphics", () => {
 			const input = "![](image.png)";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\includegraphics{image.png}");
-			expect(output).not.toContain("\\begin{figure}");
+			assert.ok(output.includes("\\includegraphics{image.png}"));
+			assert.ok(!output.includes("\\begin{figure}"));
 		});
 	});
 
@@ -125,37 +126,37 @@ describe("markdownToLatex", () => {
 		it("converts unordered list to itemize", () => {
 			const input = "- Item 1\n- Item 2\n- Item 3";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\begin{itemize}");
-			expect(output).toContain("\\item Item 1");
-			expect(output).toContain("\\item Item 2");
-			expect(output).toContain("\\item Item 3");
-			expect(output).toContain("\\end{itemize}");
+			assert.ok(output.includes("\\begin{itemize}"));
+			assert.ok(output.includes("\\item Item 1"));
+			assert.ok(output.includes("\\item Item 2"));
+			assert.ok(output.includes("\\item Item 3"));
+			assert.ok(output.includes("\\end{itemize}"));
 		});
 
 		it("converts ordered list to enumerate", () => {
 			const input = "1. First\n2. Second\n3. Third";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\begin{enumerate}");
-			expect(output).toContain("\\item First");
-			expect(output).toContain("\\item Second");
-			expect(output).toContain("\\item Third");
-			expect(output).toContain("\\end{enumerate}");
+			assert.ok(output.includes("\\begin{enumerate}"));
+			assert.ok(output.includes("\\item First"));
+			assert.ok(output.includes("\\item Second"));
+			assert.ok(output.includes("\\item Third"));
+			assert.ok(output.includes("\\end{enumerate}"));
 		});
 
 		it("handles * for unordered lists", () => {
 			const input = "* Item 1\n* Item 2";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\begin{itemize}");
-			expect(output).toContain("\\item Item 1");
-			expect(output).toContain("\\item Item 2");
+			assert.ok(output.includes("\\begin{itemize}"));
+			assert.ok(output.includes("\\item Item 1"));
+			assert.ok(output.includes("\\item Item 2"));
 		});
 
 		it("handles + for unordered lists", () => {
 			const input = "+ Item 1\n+ Item 2";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\begin{itemize}");
-			expect(output).toContain("\\item Item 1");
-			expect(output).toContain("\\item Item 2");
+			assert.ok(output.includes("\\begin{itemize}"));
+			assert.ok(output.includes("\\item Item 1"));
+			assert.ok(output.includes("\\item Item 2"));
 		});
 	});
 
@@ -163,26 +164,26 @@ describe("markdownToLatex", () => {
 		it("converts code blocks to verbatim", () => {
 			const input = "```\ncode here\n```";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\begin{verbatim}");
-			expect(output).toContain("code here");
-			expect(output).toContain("\\end{verbatim}");
+			assert.ok(output.includes("\\begin{verbatim}"));
+			assert.ok(output.includes("code here"));
+			assert.ok(output.includes("\\end{verbatim}"));
 		});
 
 		it("handles code blocks with language specifier", () => {
 			const input = "```python\nprint('hello')\n```";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\begin{verbatim}");
-			expect(output).toContain("print('hello')");
-			expect(output).toContain("\\end{verbatim}");
+			assert.ok(output.includes("\\begin{verbatim}"));
+			assert.ok(output.includes("print('hello')"));
+			assert.ok(output.includes("\\end{verbatim}"));
 		});
 
 		it("protects code blocks from markdown conversion", () => {
 			const input = "```\n**not bold**\n*not italic*\n```";
 			const output = markdownToLatex(input);
-			expect(output).toContain("**not bold**");
-			expect(output).toContain("*not italic*");
-			expect(output).not.toContain("\\textbf");
-			expect(output).not.toContain("\\emph");
+			assert.ok(output.includes("**not bold**"));
+			assert.ok(output.includes("*not italic*"));
+			assert.ok(!output.includes("\\textbf"));
+			assert.ok(!output.includes("\\emph"));
 		});
 	});
 
@@ -190,17 +191,17 @@ describe("markdownToLatex", () => {
 		it("converts blockquotes to quote environment", () => {
 			const input = "> This is a quote";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\begin{quote}");
-			expect(output).toContain("This is a quote");
-			expect(output).toContain("\\end{quote}");
+			assert.ok(output.includes("\\begin{quote}"));
+			assert.ok(output.includes("This is a quote"));
+			assert.ok(output.includes("\\end{quote}"));
 		});
 
 		it("handles multi-line blockquotes", () => {
 			const input = "> Line 1\n> Line 2";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\begin{quote}");
-			expect(output).toContain("Line 1");
-			expect(output).toContain("Line 2");
+			assert.ok(output.includes("\\begin{quote}"));
+			assert.ok(output.includes("Line 1"));
+			assert.ok(output.includes("Line 2"));
 		});
 	});
 
@@ -208,7 +209,7 @@ describe("markdownToLatex", () => {
 		it("converts --- to hrulefill", () => {
 			const input = "Text above\n\n---\n\nText below";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\hrulefill");
+			assert.ok(output.includes("\\hrulefill"));
 		});
 	});
 
@@ -216,28 +217,27 @@ describe("markdownToLatex", () => {
 		it("escapes ampersand", () => {
 			const input = "Rock & Roll";
 			const output = markdownToLatex(input);
-			expect(output).toContain("Rock \\& Roll");
+			assert.ok(output.includes("Rock \\& Roll"));
 		});
 
 		it("escapes percent", () => {
 			const input = "100% complete";
 			const output = markdownToLatex(input);
-			expect(output).toContain("100\\% complete");
+			assert.ok(output.includes("100\\% complete"));
 		});
 
 		it("escapes dollar sign", () => {
 			const input = "Price: $50";
 			const output = markdownToLatex(input);
-			expect(output).toContain("Price: \\$50");
+			assert.ok(output.includes("Price: \\$50"));
 		});
 
 		it("does not escape braces in generated LaTeX", () => {
 			const input = "**bold**";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\textbf{bold}");
-			expect(output).not.toContain("\\{");
+			assert.ok(output.includes("\\textbf{bold}"));
+			assert.ok(!output.includes("\\{"));
 		});
-	});
 
 	describe("Complex Documents", () => {
 		it("handles mixed content", () => {
@@ -257,19 +257,19 @@ code block
 \`\`\``;
 
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\chapter{Title}");
-			expect(output).toContain("\\textbf{bold}");
-			expect(output).toContain("\\emph{italic}");
-			expect(output).toContain("\\section{Section}");
-			expect(output).toContain("\\begin{itemize}");
-			expect(output).toContain("\\href{https://example.com}{Link}");
-			expect(output).toContain("\\begin{verbatim}");
+			assert.ok(output.includes("\\chapter{Title}"));
+			assert.ok(output.includes("\\textbf{bold}"));
+			assert.ok(output.includes("\\emph{italic}"));
+			assert.ok(output.includes("\\section{Section}"));
+			assert.ok(output.includes("\\begin{itemize}"));
+			assert.ok(output.includes("\\href{https://example.com}{Link}"));
+			assert.ok(output.includes("\\begin{verbatim}"));
 		});
 
 		it("maintains text without special markdown", () => {
 			const input = "Plain text paragraph.";
 			const output = markdownToLatex(input);
-			expect(output).toContain("Plain text paragraph.");
+			assert.ok(output.includes("Plain text paragraph."));
 		});
 	});
 
@@ -277,19 +277,19 @@ code block
 		it("handles empty input", () => {
 			const input = "";
 			const output = markdownToLatex(input);
-			expect(output).toBe("");
+			assert.strictEqual(output, "");
 		});
 
 		it("handles input with only whitespace", () => {
 			const input = "   \n\n   ";
 			const output = markdownToLatex(input);
-			expect(output.trim()).toBe("");
+			assert.strictEqual(output.trim(), "");
 		});
 
 		it("handles inline code with special characters", () => {
 			const input = "Use `$variable` here";
 			const output = markdownToLatex(input);
-			expect(output).toContain("\\texttt{$variable}");
+			assert.ok(output.includes("\\texttt{$variable}"));
 			// Special chars inside code should be preserved
 		});
 
@@ -297,8 +297,8 @@ code block
 			const input = "Line 1\n\n\n\nLine 2";
 			const output = markdownToLatex(input);
 			// Should have content but not necessarily preserve exact whitespace
-			expect(output).toContain("Line 1");
-			expect(output).toContain("Line 2");
+			assert.ok(output.includes("Line 1"));
+			assert.ok(output.includes("Line 2"));
 		});
 	});
 });
@@ -312,19 +312,21 @@ describe("main() function with dependency injection", () => {
 	let parseArgs: any;
 
 	beforeEach(async () => {
+		mock.reset();
+
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
 		};
 
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 		};
 
-		mockReadFileSync = vi.fn();
-		mockWriteFileSync = vi.fn();
+		mockReadFileSync = mock.fn();
+		mockWriteFileSync = mock.fn();
 
 		deps = {
 			console: mockConsole,
@@ -336,67 +338,68 @@ describe("main() function with dependency injection", () => {
 		// Import parseArgs dynamically
 		const mod = await import("../../../lib/args/index.js");
 		parseArgs = mod.parseArgs;
-
-		vi.clearAllMocks();
 	});
 
 	it("should convert Markdown text from positional arguments", async () => {
-		const { main } = await import("./md-to-latex");
+		const { main } = await import("./md-to-latex.js");
 		const args = parseArgs(["## Hello World"]);
 
 		main(args, deps);
 
-		expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("\\section{Hello World}"));
+		assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("\\section{Hello World}")));
 	});
 
 	it("should read Markdown from file when --file flag is used", async () => {
-		const { main } = await import("./md-to-latex");
+		const { main } = await import("./md-to-latex.js");
 		mockReadFileSync.mockReturnValue("**Bold text**");
 
 		const args = parseArgs(["--file", "input.md"]);
 
 		main(args, deps);
 
-		expect(mockReadFileSync).toHaveBeenCalledWith("input.md", "utf-8");
-		expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("\\textbf{Bold text}"));
+		assert.strictEqual(mockReadFileSync.mock.calls[0][0], "input.md");
+		assert.strictEqual(mockReadFileSync.mock.calls[0][1], "utf-8");
+		assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("\\textbf{Bold text}")));
 	});
 
 	it("should write output to file when --output option is provided", async () => {
-		const { main } = await import("./md-to-latex");
+		const { main } = await import("./md-to-latex.js");
 
 		const args = parseArgs(["## Test", "--output=output.tex"]);
 
 		main(args, deps);
 
-		expect(mockWriteFileSync).toHaveBeenCalledWith("output.tex", expect.stringContaining("\\section{Test}"), "utf-8");
-		expect(mockConsole.log).toHaveBeenCalledWith("Converted LaTeX written to output.tex");
+		assert.strictEqual(mockWriteFileSync.mock.calls[0][0], "output.tex");
+		assert.ok(typeof mockWriteFileSync.mock.calls[0][1] === "string" && mockWriteFileSync.mock.calls[0][1].includes("\\section{Test}"));
+		assert.strictEqual(mockWriteFileSync.mock.calls[0][2], "utf-8");
+		assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "Converted LaTeX written to output.tex"));
 	});
 
 	it("should show error when --file flag but no file path", async () => {
-		const { main } = await import("./md-to-latex");
+		const { main } = await import("./md-to-latex.js");
 
 		const args = parseArgs(["--file"]);
 
-		expect(() => main(args, deps)).toThrow("process.exit called");
-		expect(mockConsole.error).toHaveBeenCalledWith("Error: No input file specified");
+		assert.throws(() => main(args, deps), { message: "process.exit called" });
+		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: No input file specified"));
 	});
 
 	it("should show error when no input text provided", async () => {
-		const { main } = await import("./md-to-latex");
+		const { main } = await import("./md-to-latex.js");
 
 		const args = parseArgs([]);
 
-		expect(() => main(args, deps)).toThrow("process.exit called");
-		expect(mockConsole.error).toHaveBeenCalledWith("Error: No input text specified");
+		assert.throws(() => main(args, deps), { message: "process.exit called" });
+		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: No input text specified"));
 	});
 
 	it("should show error when --file but empty positional args", async () => {
-		const { main } = await import("./md-to-latex");
+		const { main } = await import("./md-to-latex.js");
 
 		const args = parseArgs(["--file"]);
 
-		expect(() => main(args, deps)).toThrow("process.exit called");
-		expect(mockConsole.error).toHaveBeenCalledWith("Error: No input file specified");
+		assert.throws(() => main(args, deps), { message: "process.exit called" });
+		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: No input file specified"));
 	});
 });
 
@@ -406,12 +409,14 @@ describe("handleError", () => {
 	let deps: any;
 
 	beforeEach(() => {
+		mock.reset();
+
 		mockConsole = {
-			error: vi.fn(),
+			error: mock.fn(),
 		};
 
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 		};
@@ -420,23 +425,22 @@ describe("handleError", () => {
 			console: mockConsole,
 			process: mockProcess,
 		};
-
-		vi.clearAllMocks();
 	});
 
 	it("should log error message and exit", async () => {
-		const { handleError } = await import("./md-to-latex");
+		const { handleError } = await import("./md-to-latex.js");
 		const error = new Error("Test error");
 
-		expect(() => handleError(error, deps)).toThrow("process.exit called");
-		expect(mockConsole.error).toHaveBeenCalledWith("Error: Test error");
-		expect(mockProcess.exit).toHaveBeenCalledWith(1);
+		assert.throws(() => handleError(error, deps), { message: "process.exit called" });
+		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: Test error"));
+		assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 	});
 
 	it("should handle string errors", async () => {
-		const { handleError } = await import("./md-to-latex");
+		const { handleError } = await import("./md-to-latex.js");
 
-		expect(() => handleError("String error", deps)).toThrow("process.exit called");
-		expect(mockConsole.error).toHaveBeenCalledWith("Error: String error");
+		assert.throws(() => handleError("String error", deps), { message: "process.exit called" });
+		assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error: String error"));
 	});
+});
 });
