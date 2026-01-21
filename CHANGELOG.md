@@ -1,3 +1,8 @@
+## <small>1.17.4 (2026-01-21)</small>
+
+* chore(ci): allow empty scopes for ci/chore/docs commits ([565972c](https://github.com/Mearman/marketplace/commit/565972c))
+* ci: add Dependabot and allow empty scopes for ci/chore commits ([43d7073](https://github.com/Mearman/marketplace/commit/43d7073))
+
 ## <small>1.17.3 (2026-01-21)</small>
 
 * chore: add git commit --no-verify ban to permissions ([72d0f3b](https://github.com/Mearman/marketplace/commit/72d0f3b))
