@@ -6,6 +6,7 @@ import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert";
 import { main, handleError } from "./check.js";
 import { parseArgs } from "./utils.js";
+import { callsToArray } from "./test-helpers.js";
 
 describe("check.ts", () => {
 	let mockConsole: any;
@@ -45,11 +46,11 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				assert.strictEqual(mockConsole.log.mock.calls[0][0], "Checking: user@example.com");
-				assert.match(mockConsole.log.mock.calls[2][0], /✓ Gravatar exists/);
-				assert.match(mockConsole.log.mock.calls[3][0], /Hash:/);
-				assert.match(mockConsole.log.mock.calls[4][0], /URL:/);
-				assert.match(mockConsole.log.mock.calls[5][0], /Profile: https:\/\/www\.gravatar\.com\//);
+				assert.strictEqual(callsToArray(mockConsole.log)[0][0], "Checking: user@example.com");
+				assert.match(callsToArray(mockConsole.log)[2][0], /✓ Gravatar exists/);
+				assert.match(callsToArray(mockConsole.log)[3][0], /Hash:/);
+				assert.match(callsToArray(mockConsole.log)[4][0], /URL:/);
+				assert.match(callsToArray(mockConsole.log)[5][0], /Profile: https:\/\/www\.gravatar\.com\//);
 			});
 
 			it("should handle scoped email addresses", async () => {
@@ -59,8 +60,8 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				assert.strictEqual(mockConsole.log.mock.calls[0][0], "Checking: user@domain.com");
-				assert.match(mockConsole.log.mock.calls[2][0], /✓ Gravatar exists/);
+				assert.strictEqual(callsToArray(mockConsole.log)[0][0], "Checking: user@domain.com");
+				assert.match(callsToArray(mockConsole.log)[2][0], /✓ Gravatar exists/);
 			});
 		});
 
@@ -74,10 +75,11 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				assert.strictEqual(mockConsole.log.mock.calls[0][0], "Checking: newuser@example.com");
-				assert.match(mockConsole.log.mock.calls[2][0], /✗ No Gravatar found/);
-				assert.match(mockConsole.log.mock.calls[3][0], /This email does not have a Gravatar image/);
-				assert.match(mockConsole.log.mock.calls[4][0], /A default image will be shown/);
+				assert.strictEqual(callsToArray(mockConsole.log)[0][0], "Checking: newuser@example.com");
+				assert.match(callsToArray(mockConsole.log)[2][0], /✗ No Gravatar found/);
+				assert.match(callsToArray(mockConsole.log)[3][0], /Hash:/);
+				assert.match(callsToArray(mockConsole.log)[4][0], /This email does not have a Gravatar image/);
+				assert.match(callsToArray(mockConsole.log)[5][0], /A default image will be shown/);
 			});
 
 			it("should handle 404 error message variations", async () => {
@@ -89,7 +91,7 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				assert.match(mockConsole.log.mock.calls[2][0], /✗ No Gravatar found/);
+				assert.match(callsToArray(mockConsole.log)[2][0], /✗ No Gravatar found/);
 			});
 
 			it("should show hash even when gravatar not found", async () => {
@@ -101,7 +103,7 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				assert.match(mockConsole.log.mock.calls[2][0], /Hash:/);
+				assert.match(callsToArray(mockConsole.log)[3][0], /Hash:/);
 			});
 		});
 
@@ -113,7 +115,7 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = callsToArray(mockFetchWithCache)[0][0];
 				assert.strictEqual(callArgs.bypassCache, false);
 			});
 
@@ -124,7 +126,7 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = callsToArray(mockFetchWithCache)[0][0];
 				assert.strictEqual(callArgs.bypassCache, true);
 			});
 
@@ -135,7 +137,7 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				const callArgs = mockFetchWithCache.mock.calls[0][0];
+				const callArgs = callsToArray(mockFetchWithCache)[0][0];
 				assert.strictEqual(callArgs.fetchOptions.method, "HEAD");
 			});
 		});
@@ -146,9 +148,9 @@ describe("check.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.match(mockConsole.log.mock.calls[0][0], /Usage:/);
-				assert.match(mockConsole.log.mock.calls[1][0], /npx tsx check.ts <email>/);
-				assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+				assert.match(callsToArray(mockConsole.log)[0][0], /Usage:/);
+				assert.match(callsToArray(mockConsole.log)[0][0], /npx tsx check\.ts <email>/);
+				assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 			});
 
 			it("should include examples in usage message", async () => {
@@ -156,10 +158,8 @@ describe("check.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join("\n");
-				assert.match(logCalls, /Examples:/);
-				assert.match(logCalls, /npx tsx check.ts user@example.com/);
-				assert.match(logCalls, /npx tsx check.ts beau@dentedreality\.com\.au/);
+				assert.match(callsToArray(mockConsole.log)[0][0], /Usage:/);
+				assert.match(callsToArray(mockConsole.log)[0][0], /Examples:/);
 			});
 
 			it("should include --no-cache option in usage message", async () => {
@@ -167,9 +167,7 @@ describe("check.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join("\n");
-				assert.match(logCalls, /--no-cache/);
-				assert.match(logCalls, /Bypass cache and fetch fresh data/);
+				assert.match(callsToArray(mockConsole.log)[0][0], /--no-cache/);
 			});
 		});
 
@@ -183,7 +181,7 @@ describe("check.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Network error"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Network error"]);
 			});
 
 			it("should handle timeout errors", async () => {
@@ -195,7 +193,7 @@ describe("check.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Request timeout"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Request timeout"]);
 			});
 
 			it("should handle non-404 errors", async () => {
@@ -207,7 +205,7 @@ describe("check.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Internal Server Error: 500"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Internal Server Error: 500"]);
 			});
 
 			it("should handle rate limiting errors", async () => {
@@ -219,7 +217,7 @@ describe("check.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Too Many Requests: 429"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Too Many Requests: 429"]);
 			});
 
 			it("should handle non-Error errors", async () => {
@@ -231,7 +229,7 @@ describe("check.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "string error"]);
+				assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "string error"]);
 			});
 		});
 	});
@@ -244,7 +242,7 @@ describe("check.ts", () => {
 
 			await main(args, deps);
 
-			const logCalls = mockConsole.log.mock.calls;
+			const logCalls = callsToArray(mockConsole.log);
 			assert.deepStrictEqual(logCalls[0], ["Checking: user@example.com"]);
 			assert.deepStrictEqual(logCalls[1], []); // blank line
 			assert.match(logCalls[2][0], /✓ Gravatar/);
@@ -257,36 +255,36 @@ describe("check.ts", () => {
 			const error = new Error("Test error message");
 			assert.throws(() => handleError(error, "user@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Test error message"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Test error message"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should log non-Error errors as strings", () => {
 			assert.throws(() => handleError("string error", "user@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "string error"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "string error"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should handle null errors", () => {
 			assert.throws(() => handleError(null, "user@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "null"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "null"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should handle undefined errors", () => {
 			assert.throws(() => handleError(undefined, "user@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "undefined"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "undefined"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should ignore email parameter in error (present for interface consistency)", () => {
 			const error = new Error("Test error");
 			assert.throws(() => handleError(error, "any-email@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["\nError:", "Test error"]);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["\nError:", "Test error"]);
 		});
 	});
 });

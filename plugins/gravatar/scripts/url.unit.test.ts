@@ -6,6 +6,7 @@ import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert";
 import { main, handleError } from "./url.js";
 import { parseArgs } from "./utils.js";
+import { callsToArray } from "./test-helpers.js";
 
 describe("url.ts", () => {
 	let mockConsole: any;
@@ -39,9 +40,9 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				assert.strictEqual(mockConsole.log.mock.calls[0][0], "Email: user@example.com");
-				assert.match(mockConsole.log.mock.calls[1][0], /Hash:/);
-				assert.match(mockConsole.log.mock.calls[2][0], /URL: https:\/\/www\.gravatar\.com\/avatar\//);
+				assert.strictEqual(callsToArray(mockConsole.log)[0][0], "Email: user@example.com");
+				assert.match(callsToArray(mockConsole.log)[1][0], /Hash:/);
+				assert.match(callsToArray(mockConsole.log)[2][0], /URL: https:\/\/www\.gravatar\.com\/avatar\//);
 			});
 
 			it("should generate URL with custom size", async () => {
@@ -49,8 +50,8 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				assert.match(mockConsole.log.mock.calls[2][0], /URL: https:\/\/www\.gravatar\.com\/avatar\//);
-				assert.match(mockConsole.log.mock.calls[3][0], /size=200px/);
+				assert.match(callsToArray(mockConsole.log)[2][0], /URL: https:\/\/www\.gravatar\.com\/avatar\//);
+				assert.match(callsToArray(mockConsole.log)[3][0], /size=200px/);
 			});
 
 			it("should generate URL with default image type", async () => {
@@ -58,8 +59,8 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				assert.match(mockConsole.log.mock.calls[2][0], /URL: https:\/\/www\.gravatar\.com\/avatar\//);
-				assert.match(mockConsole.log.mock.calls[3][0], /default=identicon/);
+				assert.match(callsToArray(mockConsole.log)[2][0], /URL: https:\/\/www\.gravatar\.com\/avatar\//);
+				assert.match(callsToArray(mockConsole.log)[3][0], /default=identicon/);
 			});
 
 			it("should generate URL with rating level", async () => {
@@ -67,8 +68,8 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				assert.match(mockConsole.log.mock.calls[2][0], /URL: https:\/\/www\.gravatar\.com\/avatar\//);
-				assert.match(mockConsole.log.mock.calls[3][0], /rating=pg/);
+				assert.match(callsToArray(mockConsole.log)[2][0], /URL: https:\/\/www\.gravatar\.com\/avatar\//);
+				assert.match(callsToArray(mockConsole.log)[3][0], /rating=pg/);
 			});
 
 			it("should display hash", async () => {
@@ -76,7 +77,7 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				assert.match(mockConsole.log.mock.calls[1][0], /Hash: b58996c504c5638798eb6b511e6f49af/);
+				assert.match(callsToArray(mockConsole.log)[1][0], /Hash: b58996c504c5638798eb6b511e6f49af/);
 			});
 		});
 
@@ -86,7 +87,7 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				assert.match(mockConsole.log.mock.calls[3][0], /size=2048px/);
+				assert.match(callsToArray(mockConsole.log)[3][0], /size=2048px/);
 			});
 
 			it("should reject size over 2048", async () => {
@@ -94,7 +95,7 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join(" ");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join(" ");
 				assert.ok(!logCalls.includes("size=2049"));
 			});
 
@@ -103,7 +104,7 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join(" ");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join(" ");
 				assert.ok(!logCalls.includes("size=-100"));
 			});
 
@@ -127,7 +128,7 @@ describe("url.ts", () => {
 					const args = parseArgs(["user@example.com", `--default=${defaultType}`]);
 					await main(args, deps);
 
-					const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join(" ");
+					const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join(" ");
 					assert.ok(logCalls.includes(`default=${defaultType}`));
 				}
 			});
@@ -137,8 +138,8 @@ describe("url.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.match(mockConsole.error.mock.calls[0][0], /Invalid default type/);
-				assert.match(mockConsole.error.mock.calls[1][0], /mp, identicon, monsterid, wavatar, retro, robohash, blank/);
+				assert.match(callsToArray(mockConsole.error)[0][0], /Invalid default type/);
+				assert.match(callsToArray(mockConsole.error)[0][0], /mp, identicon, monsterid, wavatar, retro, robohash, blank/);
 			});
 
 			it("should validate rating levels", async () => {
@@ -161,7 +162,7 @@ describe("url.ts", () => {
 					const args = parseArgs(["user@example.com", `--rating=${rating}`]);
 					await main(args, deps);
 
-					const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join(" ");
+					const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join(" ");
 					assert.ok(logCalls.includes(`rating=${rating}`));
 				}
 			});
@@ -171,8 +172,8 @@ describe("url.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.match(mockConsole.error.mock.calls[0][0], /Invalid rating level/);
-				assert.match(mockConsole.error.mock.calls[1][0], /g, pg, r, x/);
+				assert.match(callsToArray(mockConsole.error)[0][0], /Invalid rating level/);
+				assert.match(callsToArray(mockConsole.error)[0][0], /g, pg, r, x/);
 			});
 
 			it("should combine multiple options", async () => {
@@ -185,7 +186,7 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join(" ");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join(" ");
 				assert.ok(logCalls.includes("size=300px"));
 				assert.ok(logCalls.includes("default=robohash"));
 				assert.ok(logCalls.includes("rating=pg"));
@@ -196,7 +197,7 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join(" ");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join(" ");
 				assert.ok(logCalls.includes("force-default"));
 			});
 		});
@@ -207,8 +208,8 @@ describe("url.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				assert.match(mockConsole.log.mock.calls[0][0], /Usage:/);
-				assert.match(mockConsole.log.mock.calls[1][0], /npx tsx url\.ts <email>/);
+				assert.match(callsToArray(mockConsole.log)[0][0], /Usage:/);
+				assert.match(callsToArray(mockConsole.log)[0][0], /npx tsx url\.ts <email>/);
 			});
 
 			it("should include examples in usage message", async () => {
@@ -216,7 +217,7 @@ describe("url.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join("\n");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join("\n");
 				assert.match(logCalls, /Examples:/);
 				assert.match(logCalls, /npx tsx url\.ts user@example\.com/);
 				assert.match(logCalls, /npx tsx url\.ts user@example\.com --size=200/);
@@ -227,7 +228,7 @@ describe("url.ts", () => {
 
 				await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join("\n");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join("\n");
 				assert.match(logCalls, /--size=N/);
 				assert.match(logCalls, /--default=TYPE/);
 				assert.match(logCalls, /--rating=LEVEL/);
@@ -247,7 +248,7 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join(" ");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join(" ");
 				assert.ok(logCalls.includes("Options:"));
 				assert.ok(logCalls.includes("size=400px"));
 				assert.ok(logCalls.includes("default=identicon"));
@@ -260,7 +261,7 @@ describe("url.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]).join(" ");
+				const logCalls = callsToArray(mockConsole.log).map((call: any[]) => call[0]).join(" ");
 				assert.ok(logCalls.includes("Options:"));
 				assert.ok(logCalls.includes("size=80px"));
 			});
@@ -272,36 +273,36 @@ describe("url.ts", () => {
 			const error = new Error("URL generation failed");
 			assert.throws(() => handleError(error, "user@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["Error:", "URL generation failed"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["Error:", "URL generation failed"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should log non-Error errors as strings", () => {
 			assert.throws(() => handleError("string error", "user@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["Error:", "string error"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["Error:", "string error"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should handle null errors", () => {
 			assert.throws(() => handleError(null, "user@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["Error:", "null"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["Error:", "null"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should handle undefined errors", () => {
 			assert.throws(() => handleError(undefined, "user@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["Error:", "undefined"]);
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["Error:", "undefined"]);
+			assert.strictEqual(callsToArray(mockProcess.exit)[0][0], 1);
 		});
 
 		it("should ignore email parameter in error (present for interface consistency)", () => {
 			const error = new Error("Test error");
 			assert.throws(() => handleError(error, "any-email@example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.deepStrictEqual(mockConsole.error.mock.calls[0], ["Error:", "Test error"]);
+			assert.deepStrictEqual(callsToArray(mockConsole.error)[0], ["Error:", "Test error"]);
 		});
 	});
 });
