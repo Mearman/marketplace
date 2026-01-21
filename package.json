@@ -15,10 +15,10 @@
 		"remark-lint": "remark plugins/*/skills/*/SKILL.md",
 		"remark-lint:all": "remark plugins/*/skills/*/SKILL.md --fr",
 		"typecheck": "tsc --noEmit",
-		"test": "vitest",
-		"test:run": "vitest run",
-		"test:coverage": "vitest run --coverage",
-		"test:ui": "vitest --ui"
+		"test": "tsx --test",
+		"test:run": "tsx --test --test-only",
+		"test:coverage": "c8 tsx --test",
+		"test:watch": "tsx --test --watch"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "20.3.1",
