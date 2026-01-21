@@ -2,7 +2,8 @@
  * Tests for github-api user.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
 import { main, handleError } from "./user";
 import type { GitHubUser } from "./utils";
 import { parseArgs } from "./utils";
@@ -16,28 +17,28 @@ describe("user.ts", () => {
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.reset();
 
 		// Mock console
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
 		};
 
 		// Mock process
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 		};
 
 		// Mock dependencies
-		mockFetchWithCache = vi.fn();
-		mockGetAuthHeaders = vi.fn().mockReturnValue({
+		mockFetchWithCache = mock.fn();
+		mockGetAuthHeaders = mock.fn(() => ({
 			Accept: "application/vnd.github.v3+json",
 			"User-Agent": "claude-code-github-api",
-		});
-		mockGetTokenFromEnv = vi.fn().mockReturnValue(undefined);
+		}));
+		mockGetTokenFromEnv = mock.fn(() => undefined);
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
@@ -75,14 +76,14 @@ describe("user.ts", () => {
 		};
 
 		it("should display user info with all fields", async () => {
-			mockFetchWithCache.mockResolvedValue(mockUserData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockUserData);
 			const args = parseArgs(["torvalds"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Fetching user: torvalds");
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("torvalds"));
-			expect(mockConsole.log).toHaveBeenCalledWith("Bio: Creator of Linux");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "Fetching user: torvalds"));
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments?.[0] === "string" && call.arguments[0].includes("torvalds")));
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "Bio: Creator of Linux"));
 		});
 
 		it("should display user info without optional fields", async () => {
@@ -96,13 +97,13 @@ describe("user.ts", () => {
 				email: null,
 				hireable: null,
 			};
-			mockFetchWithCache.mockResolvedValue(minimalUser);
+			mockFetchWithCache.mock.mockImplementation(async () => minimalUser);
 			const args = parseArgs(["testuser"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Fetching user: testuser");
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("testuser"));
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "Fetching user: testuser"));
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments?.[0] === "string" && call.arguments[0].includes("testuser")));
 		});
 
 		it("should handle organization type user", async () => {
@@ -112,12 +113,12 @@ describe("user.ts", () => {
 				type: "Organization",
 				name: "Facebook",
 			};
-			mockFetchWithCache.mockResolvedValue(orgUser);
+			mockFetchWithCache.mock.mockImplementation(async () => orgUser);
 			const args = parseArgs(["facebook"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Organization"));
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments?.[0] === "string" && call.arguments[0].includes("Organization")));
 		});
 
 		it("should handle hireable true", async () => {
@@ -125,12 +126,12 @@ describe("user.ts", () => {
 				...mockUserData,
 				hireable: true,
 			};
-			mockFetchWithCache.mockResolvedValue(hireableUser);
+			mockFetchWithCache.mock.mockImplementation(async () => hireableUser);
 			const args = parseArgs(["testuser"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("  Hireable: Yes");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "  Hireable: Yes"));
 		});
 
 		it("should handle hireable false", async () => {
@@ -138,104 +139,111 @@ describe("user.ts", () => {
 				...mockUserData,
 				hireable: false,
 			};
-			mockFetchWithCache.mockResolvedValue(hireableUser);
+			mockFetchWithCache.mock.mockImplementation(async () => hireableUser);
 			const args = parseArgs(["testuser"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("  Hireable: No");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "  Hireable: No"));
 		});
 
 		it("should pass --no-cache flag to fetchWithCache", async () => {
-			mockFetchWithCache.mockResolvedValue(mockUserData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockUserData);
 			const args = parseArgs(["--no-cache", "torvalds"]);
 
 			await main(args, deps);
 
-			expect(mockFetchWithCache).toHaveBeenCalledWith(
-				expect.objectContaining({
-					bypassCache: true,
-				})
-			);
+			assert.ok(mockFetchWithCache.mock.calls.some((call: any) =>
+				call.arguments?.[0] !== undefined && typeof call.arguments[0] === "object" && "bypassCache" in call.arguments[0] && call.arguments[0].bypassCache === true
+			));
 		});
 
 		it("should use token from options", async () => {
-			mockFetchWithCache.mockResolvedValue(mockUserData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockUserData);
 			const args = parseArgs(["--token=ghp_test_token", "torvalds"]);
 
 			await main(args, deps);
 
-			expect(mockGetAuthHeaders).toHaveBeenCalledWith("ghp_test_token");
+			assert.ok(mockGetAuthHeaders.mock.calls.some((call: any) => call.arguments?.[0] === "ghp_test_token"));
 		});
 
 		it("should call getTokenFromEnv when no token in options", async () => {
-			mockFetchWithCache.mockResolvedValue(mockUserData);
-			mockGetTokenFromEnv.mockReturnValue("ghp_env_token");
+			mockFetchWithCache.mock.mockImplementation(async () => mockUserData);
+			mockGetTokenFromEnv.mock.mockImplementation(() => "ghp_env_token");
 			const args = parseArgs(["torvalds"]);
 
 			await main(args, deps);
 
-			expect(mockGetTokenFromEnv).toHaveBeenCalled();
-			expect(mockGetAuthHeaders).toHaveBeenCalledWith("ghp_env_token");
+			assert.ok(mockGetTokenFromEnv.mock.calls.length >= 1);
+			assert.ok(mockGetAuthHeaders.mock.calls.some((call: any) => call.arguments?.[0] === "ghp_env_token"));
 		});
 
 		it("should show usage and exit when no username provided", async () => {
 			const args = parseArgs([]);
 
-			await expect(main(args, deps)).rejects.toThrow("process.exit called");
+			await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments?.[0] === "string" && call.arguments[0].includes("Usage:")));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 
 		it("should handle fetchWithCache rejection", async () => {
-			mockFetchWithCache.mockRejectedValue(new Error("Resource not found"));
+			mockFetchWithCache.mock.mockImplementation(async () => {
+				throw new Error("Resource not found");
+			});
 			const args = parseArgs(["torvalds"]);
 
-			await expect(main(args, deps)).rejects.toThrow("process.exit called");
+			await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-			expect(mockConsole.log).toHaveBeenCalledWith("User \"torvalds\" not found");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) =>
+				call.arguments?.[0] === "User \"torvalds\" not found"
+			));
 		});
 	});
 
 	describe("handleError", () => {
 		it("should log not found message for 404 error", () => {
 			const error = new Error("Resource not found");
-			expect(() => handleError(error, "torvalds", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "torvalds", { console: mockConsole, process: mockProcess }), {
+				message: "process.exit called"
+			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith("User \"torvalds\" not found");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.log.mock.calls.some((call: any) =>
+				call.arguments?.[0] === "User \"torvalds\" not found"
+			));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 
 		it("should log rate limit message for 403 error", () => {
 			const error = new Error("Authentication/Authorization failed: 403");
-			expect(() => handleError(error, "torvalds", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "torvalds", { console: mockConsole, process: mockProcess }), {
+				message: "process.exit called"
+			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				"API rate limit exceeded. Use a GitHub token to increase your quota."
-			);
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.log.mock.calls.some((call: any) =>
+				call.arguments?.[0] === "API rate limit exceeded. Use a GitHub token to increase your quota."
+			));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 
 		it("should log generic error message for other errors", () => {
 			const error = new Error("Network error");
-			expect(() => handleError(error, "torvalds", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "torvalds", { console: mockConsole, process: mockProcess }), {
+				message: "process.exit called"
+			});
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Network error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments?.[0] === "Error:" && call.arguments?.[1] === "Network error"));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 
 		it("should handle non-Error errors", () => {
-			expect(() => handleError("string error", "torvalds", {
+			assert.throws(() => handleError("string error", "torvalds", {
 				console: mockConsole,
 				process: mockProcess,
-			})).toThrow("process.exit called");
+			}), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "string error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments?.[0] === "Error:" && call.arguments?.[1] === "string error"));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 	});
 });

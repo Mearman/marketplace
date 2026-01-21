@@ -2,7 +2,8 @@
  * Tests for github-api readme.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
 import { main, handleError } from "./readme";
 import type { GitHubReadme } from "./utils";
 import { parseArgs } from "./utils";
@@ -17,29 +18,29 @@ describe("readme.ts", () => {
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.reset();
 
 		// Mock console
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
 		};
 
 		// Mock process
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 		};
 
 		// Mock dependencies
-		mockFetchWithCache = vi.fn();
-		mockGetAuthHeaders = vi.fn().mockReturnValue({
+		mockFetchWithCache = mock.fn();
+		mockGetAuthHeaders = mock.fn(() => ({
 			Accept: "application/vnd.github.v3+json",
 			"User-Agent": "claude-code-github-api",
-		});
-		mockGetTokenFromEnv = vi.fn().mockReturnValue(undefined);
-		mockBase64Decode = vi.fn().mockReturnValue("# README Content\n\nThis is a test README.");
+		}));
+		mockGetTokenFromEnv = mock.fn(() => undefined);
+		mockBase64Decode = mock.fn(() => "# README Content\n\nThis is a test README.");
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
@@ -67,168 +68,169 @@ describe("readme.ts", () => {
 		};
 
 		it("should display README for owner/repo format", async () => {
-			mockFetchWithCache.mockResolvedValue(mockReadmeData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockReadmeData);
 			const args = parseArgs(["facebook/react"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Fetching README for: facebook/react");
-			expect(mockBase64Decode).toHaveBeenCalledWith("UkVBRE1FIENvbnRlbnQ=");
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("README.md"));
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "Fetching README for: facebook/react"));
+			assert.ok(mockBase64Decode.mock.calls.some((call: any) => call.arguments?.[0] === "UkVBRE1FIENvbnRlbnQ="));
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments?.[0] === "string" && call.arguments[0].includes("README.md")));
 		});
 
 		it("should display README for https URL", async () => {
-			mockFetchWithCache.mockResolvedValue(mockReadmeData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockReadmeData);
 			const args = parseArgs(["https://github.com/facebook/react"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Fetching README for: facebook/react");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "Fetching README for: facebook/react"));
 		});
 
 		it("should display README for git+https URL", async () => {
-			mockFetchWithCache.mockResolvedValue(mockReadmeData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockReadmeData);
 			const args = parseArgs(["git+https://github.com/facebook/react"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Fetching README for: facebook/react");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "Fetching README for: facebook/react"));
 		});
 
 		it("should display README for git@github URL", async () => {
-			mockFetchWithCache.mockResolvedValue(mockReadmeData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockReadmeData);
 			const args = parseArgs(["git@github.com:facebook/react.git"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Fetching README for: facebook/react");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "Fetching README for: facebook/react"));
 		});
 
 		it("should display size in KB", async () => {
-			mockFetchWithCache.mockResolvedValue(mockReadmeData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockReadmeData);
 			const args = parseArgs(["facebook/react"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Size: 1.0 KB");
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => call.arguments?.[0] === "Size: 1.0 KB"));
 		});
 
 		it("should display HTML URL", async () => {
-			mockFetchWithCache.mockResolvedValue(mockReadmeData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockReadmeData);
 			const args = parseArgs(["facebook/react"]);
 
 			await main(args, deps);
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				"URL: https://github.com/facebook/react/blob/main/README.md"
-			);
+			assert.ok(mockConsole.log.mock.calls.some((call: any) =>
+				call.arguments?.[0] === "URL: https://github.com/facebook/react/blob/main/README.md"
+			));
 		});
 
 		it("should pass --no-cache flag to fetchWithCache", async () => {
-			mockFetchWithCache.mockResolvedValue(mockReadmeData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockReadmeData);
 			const args = parseArgs(["--no-cache", "facebook/react"]);
 
 			await main(args, deps);
 
-			expect(mockFetchWithCache).toHaveBeenCalledWith(
-				expect.objectContaining({
-					bypassCache: true,
-				})
-			);
+			assert.ok(mockFetchWithCache.mock.calls.some((call: any) =>
+				call.arguments?.[0] !== undefined && typeof call.arguments[0] === "object" && "bypassCache" in call.arguments[0] && call.arguments[0].bypassCache === true
+			));
 		});
 
 		it("should use token from options", async () => {
-			mockFetchWithCache.mockResolvedValue(mockReadmeData);
+			mockFetchWithCache.mock.mockImplementation(async () => mockReadmeData);
 			const args = parseArgs(["--token=ghp_test_token", "facebook/react"]);
 
 			await main(args, deps);
 
-			expect(mockGetAuthHeaders).toHaveBeenCalledWith("ghp_test_token");
+			assert.ok(mockGetAuthHeaders.mock.calls.some((call: any) => call.arguments?.[0] === "ghp_test_token"));
 		});
 
 		it("should call getTokenFromEnv when no token in options", async () => {
-			mockFetchWithCache.mockResolvedValue(mockReadmeData);
-			mockGetTokenFromEnv.mockReturnValue("ghp_env_token");
+			mockFetchWithCache.mock.mockImplementation(async () => mockReadmeData);
+			mockGetTokenFromEnv.mock.mockImplementation(() => "ghp_env_token");
 			const args = parseArgs(["facebook/react"]);
 
 			await main(args, deps);
 
-			expect(mockGetTokenFromEnv).toHaveBeenCalled();
-			expect(mockGetAuthHeaders).toHaveBeenCalledWith("ghp_env_token");
+			assert.ok(mockGetTokenFromEnv.mock.calls.length >= 1);
+			assert.ok(mockGetAuthHeaders.mock.calls.some((call: any) => call.arguments?.[0] === "ghp_env_token"));
 		});
 
 		it("should show usage and exit when no repository provided", async () => {
 			const args = parseArgs([]);
 
-			await expect(main(args, deps)).rejects.toThrow("process.exit called");
+			await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.log.mock.calls.some((call: any) => typeof call.arguments?.[0] === "string" && call.arguments[0].includes("Usage:")));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 
 		it("should show error and exit for invalid repository URL", async () => {
 			const args = parseArgs(["not-a-valid-url"]);
 
-			await expect(main(args, deps)).rejects.toThrow("process.exit called");
+			await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith(
-				expect.stringContaining("Could not parse repository URL")
-			);
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => typeof call.arguments?.[0] === "string" && call.arguments[0].includes("Could not parse repository URL")));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 
 		it("should handle fetchWithCache rejection", async () => {
-			mockFetchWithCache.mockRejectedValue(new Error("Resource not found"));
+			mockFetchWithCache.mock.mockImplementation(async () => {
+				throw new Error("Resource not found");
+			});
 			const args = parseArgs(["facebook/react"]);
 
-			await expect(main(args, deps)).rejects.toThrow("process.exit called");
+			await assert.rejects(async () => main(args, deps), { message: "process.exit called" });
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				"Repository \"facebook/react\" has no README or does not exist"
-			);
+			assert.ok(mockConsole.log.mock.calls.some((call: any) =>
+				call.arguments?.[0] === "Repository \"facebook/react\" has no README or does not exist"
+			));
 		});
 	});
 
 	describe("handleError", () => {
 		it("should log not found message for 404 error", () => {
 			const error = new Error("Resource not found");
-			expect(() => handleError(error, "facebook", "react", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "facebook", "react", { console: mockConsole, process: mockProcess }), {
+				message: "process.exit called"
+			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				"Repository \"facebook/react\" has no README or does not exist"
-			);
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.log.mock.calls.some((call: any) =>
+				call.arguments?.[0] === "Repository \"facebook/react\" has no README or does not exist"
+			));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 
 		it("should log rate limit message for 403 error", () => {
 			const error = new Error("Authentication/Authorization failed: 403");
-			expect(() => handleError(error, "facebook", "react", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "facebook", "react", { console: mockConsole, process: mockProcess }), {
+				message: "process.exit called"
+			});
 
-			expect(mockConsole.log).toHaveBeenCalledWith(
-				"API rate limit exceeded. Use a GitHub token to increase your quota."
-			);
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.log.mock.calls.some((call: any) =>
+				call.arguments?.[0] === "API rate limit exceeded. Use a GitHub token to increase your quota."
+			));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 
 		it("should log generic error message for other errors", () => {
 			const error = new Error("Network error");
-			expect(() => handleError(error, "facebook", "react", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "facebook", "react", { console: mockConsole, process: mockProcess }), {
+				message: "process.exit called"
+			});
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Network error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments?.[0] === "Error:" && call.arguments?.[1] === "Network error"));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 
 		it("should handle non-Error errors", () => {
-			expect(() => handleError("string error", "facebook", "react", {
+			assert.throws(() => handleError("string error", "facebook", "react", {
 				console: mockConsole,
 				process: mockProcess,
-			})).toThrow("process.exit called");
+			}), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "string error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any) => call.arguments?.[0] === "Error:" && call.arguments?.[1] === "string error"));
+			assert.ok(mockProcess.exit.mock.calls.some((call: any) => call.arguments?.[0] === 1));
 		});
 	});
 });
