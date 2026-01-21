@@ -2,9 +2,10 @@
  * Tests for pypi-json info.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError } from "./info";
-import { parseArgs } from "./utils";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { main, handleError } from "./info.js";
+import { parseArgs } from "./utils.js";
 
 describe("info.ts", () => {
 	let mockConsole: any;
@@ -13,20 +14,20 @@ describe("info.ts", () => {
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.reset();
 
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
 		};
 
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 		};
 
-		mockFetchWithCache = vi.fn();
+		mockFetchWithCache = mock.fn();
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
@@ -58,11 +59,11 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Fetching: requests");
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("requests"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Latest Version: 2.31.0"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("License: Apache 2.0"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Author: Kenneth Reitz"));
+				assert.strictEqual(mockConsole.log.mock.calls[0][0], "Fetching: requests");
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("requests")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Latest Version: 2.31.0")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("License: Apache 2.0")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Author: Kenneth Reitz")));
 			});
 
 			it("should display summary", async () => {
@@ -80,8 +81,8 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Summary:"));
-				expect(mockConsole.log).toHaveBeenCalledWith("Python HTTP for Humans.");
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Summary:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "Python HTTP for Humans."));
 			});
 
 			it("should display description", async () => {
@@ -102,8 +103,8 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Description:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("..."));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Description:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("...")));
 			});
 
 			it("should display project URLs", async () => {
@@ -124,9 +125,9 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Project URLs:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Homepage:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Source:"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Project URLs:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Homepage:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Source:")));
 			});
 
 			it("should display keywords", async () => {
@@ -144,7 +145,7 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Keywords: http, requests, urllib"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Keywords: http, requests, urllib")));
 			});
 
 			it("should display classifiers", async () => {
@@ -166,7 +167,7 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Classifiers:"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Classifiers:")));
 			});
 
 			it("should display files with --files flag", async () => {
@@ -198,9 +199,9 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Latest Release Files"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("requests-2.31.0-py3-none-any.whl"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("requests-2.31.0.tar.gz"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Latest Release Files")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("requests-2.31.0-py3-none-any.whl")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("requests-2.31.0.tar.gz")));
 			});
 
 			it("should display yanked files", async () => {
@@ -226,8 +227,8 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("YANKED"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Security issue"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("YANKED")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Security issue")));
 			});
 
 			it("should display releases with --releases flag", async () => {
@@ -265,9 +266,9 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Release History"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("2.31.0"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("2.30.0"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Release History")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("2.31.0")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("2.30.0")));
 			});
 
 			it("should bypass cache with --no-cache flag", async () => {
@@ -284,11 +285,7 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: true,
-					})
-				);
+				assert.strictEqual(mockFetchWithCache.mock.calls[0][0].bypassCache, true);
 			});
 
 			it("should show truncation for many files", async () => {
@@ -313,7 +310,7 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("... and 5 more files"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("... and 5 more files")));
 			});
 
 			it("should show truncation for many releases", async () => {
@@ -344,7 +341,7 @@ describe("info.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("... and 5 more releases"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("... and 5 more releases")));
 			});
 		});
 
@@ -352,10 +349,10 @@ describe("info.ts", () => {
 			it("should show usage message when no package name provided", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("npx tsx info.ts <package-name>"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx info.ts <package-name>")));
 			});
 		});
 
@@ -365,9 +362,9 @@ describe("info.ts", () => {
 
 				const args = parseArgs(["nonexistent-package"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("not found on PyPI"));
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("not found on PyPI")));
 			});
 
 			it("should handle network errors", async () => {
@@ -375,9 +372,9 @@ describe("info.ts", () => {
 
 				const args = parseArgs(["requests"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Network error"));
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
 			});
 
 			it("should handle timeout errors", async () => {
@@ -385,9 +382,9 @@ describe("info.ts", () => {
 
 				const args = parseArgs(["requests"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Network error"));
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
 			});
 
 			it("should handle ENOTFOUND errors", async () => {
@@ -395,9 +392,9 @@ describe("info.ts", () => {
 
 				const args = parseArgs(["requests"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Network error"));
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
 			});
 
 			it("should handle generic errors", async () => {
@@ -405,9 +402,9 @@ describe("info.ts", () => {
 
 				const args = parseArgs(["requests"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Unknown error");
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "Unknown error"));
 			});
 
 			it("should handle non-Error errors", async () => {
@@ -415,9 +412,9 @@ describe("info.ts", () => {
 
 				const args = parseArgs(["requests"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "string error");
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "string error"));
 			});
 		});
 	});
@@ -426,72 +423,72 @@ describe("info.ts", () => {
 		it("should handle 404 error", () => {
 			const error = new Error("404 Not Found");
 
-			expect(() => handleError(error, "requests", deps)).toThrow("process.exit called");
+			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("not found on PyPI"));
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("not found on PyPI")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should handle ECONNREFUSED error", () => {
 			const error = new Error("ECONNREFUSED");
 
-			expect(() => handleError(error, "requests", deps)).toThrow("process.exit called");
+			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Network error"));
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should handle ETIMEDOUT error", () => {
 			const error = new Error("ETIMEDOUT");
 
-			expect(() => handleError(error, "requests", deps)).toThrow("process.exit called");
+			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Network error"));
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should handle timeout error", () => {
 			const error = new Error("timeout");
 
-			expect(() => handleError(error, "requests", deps)).toThrow("process.exit called");
+			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Network error"));
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should handle ENOTFOUND error", () => {
 			const error = new Error("ENOTFOUND");
 
-			expect(() => handleError(error, "requests", deps)).toThrow("process.exit called");
+			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith(expect.stringContaining("Network error"));
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Network error")));
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should handle generic Error instance", () => {
 			const error = new Error("Generic error");
 
-			expect(() => handleError(error, "requests", deps)).toThrow("process.exit called");
+			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Generic error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "Generic error"));
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should handle non-Error error", () => {
 			const error = "string error";
 
-			expect(() => handleError(error, "requests", deps)).toThrow("process.exit called");
+			assert.throws(() => handleError(error, "requests", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "string error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "string error"));
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should ignore packageName parameter for non-404 errors", () => {
 			const error = new Error("Some other error");
 
-			expect(() => handleError(error, "any-package-name", deps)).toThrow("process.exit called");
+			assert.throws(() => handleError(error, "any-package-name", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Some other error");
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Error:" && call[1] === "Some other error"));
 		});
 	});
 });
