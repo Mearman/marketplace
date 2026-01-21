@@ -741,4 +741,7 @@ ${pluginsList}`;
 	}
 }
 
-main();
+// Only run main when this file is executed directly (not imported for testing)
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main();
+}

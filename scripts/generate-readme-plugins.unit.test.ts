@@ -10,47 +10,13 @@
  * - Marker preservation logic
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, beforeEach, afterEach, mock } from "node:test";
+import assert from "node:assert";
+import { writeFileSync, unlinkSync, existsSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmdirSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
-// Mock fs module
-vi.mock("node:fs", () => {
-	const mockFs = {
-		existsSync: vi.fn((path: string) => {
-			if (typeof path === "string") {
-				if (path.includes("marketplace.json")) return true;
-				if (path.includes("README.md")) return true;
-			}
-			return true;
-		}),
-		readFileSync: vi.fn((path: string) => {
-			if (typeof path === "string") {
-				if (path.includes("marketplace.json")) {
-					return JSON.stringify({ plugins: [] });
-				}
-				if (path.includes("README.md")) {
-					return "<!-- AUTO-GENERATED PLUGINS START -->\n<!-- AUTO-GENERATED PLUGINS END -->";
-				}
-			}
-			return "";
-		}),
-		writeFileSync: vi.fn(),
-		readdirSync: vi.fn(() => []),
-	};
-	return mockFs;
-});
-
-// Mock console.error to prevent error output
-vi.spyOn(console, "error").mockImplementation(() => {});
-
-// Mock process.exit to prevent actual exit
-vi.stubGlobal("process", {
-	...process,
-	exit: vi.fn(() => {
-		throw new Error("process.exit called");
-	}),
-});
-
-// Import after mocks are set up
 import {
 	extractYamlFrontmatter,
 	removeFrontmatter,
@@ -63,21 +29,46 @@ import {
 	PLUGIN_END_MARKER,
 	type PluginComponents,
 	type Plugin,
-} from "./generate-readme-plugins";
-import { existsSync, readFileSync } from "node:fs";
-
-// Get typed references to mocks
-const mockExistsSync = existsSync as ReturnType<typeof vi.fn>;
-const mockReadFileSync = readFileSync as ReturnType<typeof vi.fn>;
+} from "./generate-readme-plugins.js";
 
 describe("generate-readme-plugins.ts", () => {
+	let tempDir: string;
+	let tempFiles: string[] = [];
+
 	beforeEach(() => {
-		vi.clearAllMocks();
+		// Create a temporary directory for test files
+		tempDir = mkdtempSync(join(tmpdir(), "readme-test-"));
+		tempFiles = [];
 	});
 
 	afterEach(() => {
-		vi.restoreAllMocks();
+		// Clean up temp files
+		for (const file of tempFiles) {
+			try {
+				if (existsSync(file)) {
+					unlinkSync(file);
+				}
+			} catch {
+				// Ignore cleanup errors
+			}
+		}
+		tempFiles = [];
+
+		// Clean up temp directory
+		try {
+			rmdirSync(tempDir);
+		} catch {
+			// Ignore cleanup errors
+		}
 	});
+
+	// Helper to create a temp file
+	function createTempFile(name: string, content: string): string {
+		const filePath = join(tempDir, name);
+		writeFileSync(filePath, content, "utf-8");
+		tempFiles.push(filePath);
+		return filePath;
+	}
 
 	// ============================================================================
 	// YAML Frontmatter Tests
@@ -93,7 +84,7 @@ description: A test skill
 
 			const result = extractYamlFrontmatter(content);
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				name: "test-skill",
 				description: "A test skill",
 			});
@@ -107,7 +98,7 @@ description: A test skill
 			const result = extractYamlFrontmatter(content);
 
 			// Empty frontmatter returns null (no key-value pairs found)
-			expect(result).toBeNull();
+			assert.strictEqual(result, null);
 		});
 
 		it("should return null when no frontmatter exists", () => {
@@ -116,7 +107,7 @@ No frontmatter`;
 
 			const result = extractYamlFrontmatter(content);
 
-			expect(result).toBeNull();
+			assert.strictEqual(result, null);
 		});
 
 		it("should trim whitespace from keys and values", () => {
@@ -128,7 +119,7 @@ description: A test skill
 
 			const result = extractYamlFrontmatter(content);
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				name: "test-skill",
 				description: "A test skill",
 			});
@@ -145,7 +136,7 @@ version: 1.0.0
 
 			const result = extractYamlFrontmatter(content);
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				name: "test-skill",
 				description: "A test skill",
 				tags: "test, example",
@@ -163,7 +154,7 @@ description: A test skill
 
 			const result = extractYamlFrontmatter(content);
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				name: "test-skill",
 				description: "A test skill",
 			});
@@ -178,7 +169,7 @@ description: This is: a test
 
 			const result = extractYamlFrontmatter(content);
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				name: "test-skill",
 				description: "This is: a test",
 			});
@@ -196,8 +187,8 @@ More content`;
 
 			const result = removeFrontmatter(content);
 
-			expect(result).toBe("# Content here\nMore content");
-			expect(result).not.toContain("---");
+			assert.strictEqual(result, "# Content here\nMore content");
+			assert.ok(!result.includes("---"));
 		});
 
 		it("should remove frontmatter without trailing newline", () => {
@@ -208,7 +199,7 @@ name: test-skill
 
 			const result = removeFrontmatter(content);
 
-			expect(result).toBe("# Content here");
+			assert.strictEqual(result, "# Content here");
 		});
 
 		it("should return content unchanged when no frontmatter", () => {
@@ -216,7 +207,7 @@ name: test-skill
 
 			const result = removeFrontmatter(content);
 
-			expect(result).toBe(content);
+			assert.strictEqual(result, content);
 		});
 
 		it("should handle multiline frontmatter", () => {
@@ -229,7 +220,7 @@ tags: test
 
 			const result = removeFrontmatter(content);
 
-			expect(result).toBe("# Content");
+			assert.strictEqual(result, "# Content");
 		});
 
 		it("should handle content with dashes after frontmatter", () => {
@@ -243,7 +234,7 @@ name: test
 
 			const result = removeFrontmatter(content);
 
-			expect(result).toBe("# Title\n---\n- item 1\n- item 2");
+			assert.strictEqual(result, "# Title\n---\n- item 1\n- item 2");
 		});
 	});
 
@@ -257,7 +248,7 @@ name: test
 
 			const result = formatComponentSummary(components);
 
-			expect(result).toBe("No components");
+			assert.strictEqual(result, "No components");
 		});
 
 		it("should format single skill", () => {
@@ -267,7 +258,7 @@ name: test
 
 			const result = formatComponentSummary(components);
 
-			expect(result).toBe("1 skill");
+			assert.strictEqual(result, "1 skill");
 		});
 
 		it("should pluralize multiple skills", () => {
@@ -280,7 +271,7 @@ name: test
 
 			const result = formatComponentSummary(components);
 
-			expect(result).toBe("2 skills");
+			assert.strictEqual(result, "2 skills");
 		});
 
 		it("should join multiple component types", () => {
@@ -294,7 +285,7 @@ name: test
 
 			const result = formatComponentSummary(components);
 
-			expect(result).toBe("2 skills, 1 command");
+			assert.strictEqual(result, "2 skills, 1 command");
 		});
 
 		it("should show up to 3 component types fully", () => {
@@ -306,7 +297,7 @@ name: test
 
 			const result = formatComponentSummary(components);
 
-			expect(result).toBe("1 skill, 1 command, 1 agent");
+			assert.strictEqual(result, "1 skill, 1 command, 1 agent");
 		});
 
 		it("should truncate when more than 3 component types", () => {
@@ -320,7 +311,7 @@ name: test
 
 			const result = formatComponentSummary(components);
 
-			expect(result).toBe("1 skill, 1 command, and 3 more");
+			assert.strictEqual(result, "1 skill, 1 command, and 3 more");
 		});
 
 		it("should not show MCP when count is 0", () => {
@@ -330,7 +321,7 @@ name: test
 
 			const result = formatComponentSummary(components);
 
-			expect(result).not.toContain("MCP");
+			assert.ok(!result.includes("MCP"));
 		});
 
 		it("should show MCP when present", () => {
@@ -340,7 +331,7 @@ name: test
 
 			const result = formatComponentSummary(components);
 
-			expect(result).toBe("MCP");
+			assert.strictEqual(result, "MCP");
 		});
 	});
 
@@ -352,7 +343,7 @@ name: test
 		it("should split on first colon", () => {
 			const result = extractTitleAndDescription("Bibliography: Tools for managing citations");
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				title: "Bibliography",
 				desc: "Tools for managing citations",
 			});
@@ -361,7 +352,7 @@ name: test
 		it("should handle colon with spaces", () => {
 			const result = extractTitleAndDescription("Bibliography  :  Tools for managing citations");
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				title: "Bibliography",
 				desc: "Tools for managing citations",
 			});
@@ -370,16 +361,18 @@ name: test
 		it("should return empty title when no colon", () => {
 			const result = extractTitleAndDescription("Tools for managing citations");
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				title: "",
 				desc: "Tools for managing citations",
 			});
 		});
 
 		it("should split on first period when no colon and period after position 20", () => {
-			const result = extractTitleAndDescription("This is a long title that goes on. And this is the description");
+			const result = extractTitleAndDescription(
+				"This is a long title that goes on. And this is the description",
+			);
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				title: "This is a long title that goes on",
 				desc: "And this is the description",
 			});
@@ -388,7 +381,7 @@ name: test
 		it("should not split on early period", () => {
 			const result = extractTitleAndDescription("A.B.C Something");
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				title: "",
 				desc: "A.B.C Something",
 			});
@@ -397,7 +390,7 @@ name: test
 		it("should handle description without colon or late period", () => {
 			const result = extractTitleAndDescription("Short description");
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				title: "",
 				desc: "Short description",
 			});
@@ -406,7 +399,7 @@ name: test
 		it("should handle colon in description part", () => {
 			const result = extractTitleAndDescription("Tool: Does something: and more");
 
-			expect(result).toEqual({
+			assert.deepStrictEqual(result, {
 				title: "Tool",
 				desc: "Does something: and more",
 			});
@@ -445,29 +438,29 @@ name: test
 		it("should generate plugin cards with links", () => {
 			const result = generateRootReadmeList(mockPlugins);
 
-			expect(result).toContain("[bib](plugins/bib/)");
-			expect(result).toContain("[cve-search](plugins/cve-search/)");
+			assert.ok(result.includes("[bib](plugins/bib/)"));
+			assert.ok(result.includes("[cve-search](plugins/cve-search/)"));
 		});
 
 		it("should include versions in cards", () => {
 			const result = generateRootReadmeList(mockPlugins);
 
-			expect(result).toContain("v0.2.0");
-			expect(result).toContain("v0.3.0");
+			assert.ok(result.includes("v0.2.0"));
+			assert.ok(result.includes("v0.3.0"));
 		});
 
 		it("should include component summaries", () => {
 			const result = generateRootReadmeList(mockPlugins);
 
-			expect(result).toContain("**Components:** 2 skills");
-			expect(result).toContain("**Components:** 1 skill");
+			assert.ok(result.includes("**Components:** 2 skills"));
+			assert.ok(result.includes("**Components:** 1 skill"));
 		});
 
 		it("should include install commands", () => {
 			const result = generateRootReadmeList(mockPlugins);
 
-			expect(result).toContain("/plugin install bib@mearman");
-			expect(result).toContain("/plugin install cve-search@mearman");
+			assert.ok(result.includes("/plugin install bib@mearman"));
+			assert.ok(result.includes("/plugin install cve-search@mearman"));
 		});
 
 		it("should handle plugin without components", () => {
@@ -483,7 +476,7 @@ name: test
 
 			const result = generateRootReadmeList(pluginsWithoutComponents);
 
-			expect(result).toContain("**Components:** No components");
+			assert.ok(result.includes("**Components:** No components"));
 		});
 
 		it("should use description when no colon for title", () => {
@@ -499,13 +492,13 @@ name: test
 
 			const result = generateRootReadmeList(pluginsWithoutColon);
 
-			expect(result).toContain("Just a description without colon");
+			assert.ok(result.includes("Just a description without colon"));
 		});
 
 		it("should format display name with title colon pattern", () => {
 			const result = generateRootReadmeList(mockPlugins);
 
-			expect(result).toContain("Bibliography: Tools for citations");
+			assert.ok(result.includes("Bibliography: Tools for citations"));
 		});
 	});
 
@@ -545,38 +538,38 @@ name: test
 		it("should generate plugin README header", () => {
 			const result = generatePluginReadme(mockPlugin);
 
-			expect(result).toContain("# Bibliography (bib)");
+			assert.ok(result.includes("# Bibliography (bib)"));
 		});
 
 		it("should include version and install info", () => {
 			const result = generatePluginReadme(mockPlugin);
 
-			expect(result).toContain("**Version:** v0.2.0");
-			expect(result).toContain("**Install:** `/plugin install bib@mearman`");
+			assert.ok(result.includes("**Version:** v0.2.0"));
+			assert.ok(result.includes("**Install:** `/plugin install bib@mearman`"));
 		});
 
 		it("should include auto-generated markers", () => {
 			const result = generatePluginReadme(mockPlugin);
 
-			expect(result).toContain(PLUGIN_START_MARKER);
-			expect(result).toContain(PLUGIN_END_MARKER);
+			assert.ok(result.includes(PLUGIN_START_MARKER));
+			assert.ok(result.includes(PLUGIN_END_MARKER));
 		});
 
 		it("should generate sections for each component type", () => {
 			const result = generatePluginReadme(mockPlugin);
 
-			expect(result).toContain("## Skills");
-			expect(result).toContain("## Commands");
+			assert.ok(result.includes("## Skills"));
+			assert.ok(result.includes("## Commands"));
 		});
 
 		it("should include full content for each component", () => {
 			const result = generatePluginReadme(mockPlugin);
 
-			expect(result).toContain("# Bib Convert");
-			expect(result).toContain("Detailed documentation");
-			expect(result).toContain("# Bib Validate");
-			expect(result).toContain("More docs");
-			expect(result).toContain("# /bib-validate");
+			assert.ok(result.includes("# Bib Convert"));
+			assert.ok(result.includes("Detailed documentation"));
+			assert.ok(result.includes("# Bib Validate"));
+			assert.ok(result.includes("More docs"));
+			assert.ok(result.includes("# /bib-validate"));
 		});
 
 		it("should skip component types with no items", () => {
@@ -592,9 +585,9 @@ name: test
 
 			const result = generatePluginReadme(pluginWithOnlySkills);
 
-			expect(result).toContain("## Skills");
-			expect(result).not.toContain("## Commands");
-			expect(result).not.toContain("## Hooks");
+			assert.ok(result.includes("## Skills"));
+			assert.ok(!result.includes("## Commands"));
+			assert.ok(!result.includes("## Hooks"));
 		});
 
 		it("should handle plugin with no components", () => {
@@ -609,9 +602,9 @@ name: test
 			const result = generatePluginReadme(emptyPlugin);
 
 			// When no colon in description, plugin name is used as display name
-			expect(result).toContain("# empty (empty)");
-			expect(result).toContain(PLUGIN_START_MARKER);
-			expect(result).toContain(PLUGIN_END_MARKER);
+			assert.ok(result.includes("# empty (empty)"));
+			assert.ok(result.includes(PLUGIN_START_MARKER));
+			assert.ok(result.includes(PLUGIN_END_MARKER));
 		});
 
 		it("should use plugin name when title extraction fails", () => {
@@ -626,12 +619,12 @@ name: test
 			const result = generatePluginReadme(pluginWithoutTitle);
 
 			// When no colon in description, plugin name is used as display name
-			expect(result).toContain("# test-plugin (test-plugin)");
+			assert.ok(result.includes("# test-plugin (test-plugin)"));
 		});
 	});
 
 	// ============================================================================
-	// Marker Preservation Tests
+	// Marker Preservation Tests (using actual temp files)
 	// ============================================================================
 
 	describe("preserveManualSections", () => {
@@ -653,22 +646,19 @@ Skill content here
 ${PLUGIN_END_MARKER}`;
 
 		it("should return generated content when file does not exist", () => {
-			mockExistsSync.mockReturnValue(false);
+			const nonExistentPath = join(tempDir, "nonexistent.md");
 
-			const result = preserveManualSections("/path/to/README.md", generatedContent);
+			const result = preserveManualSections(nonExistentPath, generatedContent);
 
-			expect(result).toBe(generatedContent);
-			expect(mockExistsSync).toHaveBeenCalledWith("/path/to/README.md");
-			expect(mockReadFileSync).not.toHaveBeenCalled();
+			assert.strictEqual(result, generatedContent);
 		});
 
 		it("should return generated content when existing file has no markers", () => {
-			mockExistsSync.mockReturnValue(true);
-			mockReadFileSync.mockReturnValue("# Old content\n\nSome old content");
+			const filePath = createTempFile("test-no-markers.md", "# Old content\n\nSome old content");
 
-			const result = preserveManualSections("/path/to/README.md", generatedContent);
+			const result = preserveManualSections(filePath, generatedContent);
 
-			expect(result).toBe(generatedContent);
+			assert.strictEqual(result, generatedContent);
 		});
 
 		it("should preserve content before markers", () => {
@@ -686,15 +676,14 @@ Old content
 
 ${PLUGIN_END_MARKER}`;
 
-			mockExistsSync.mockReturnValue(true);
-			mockReadFileSync.mockReturnValue(existing);
+			const filePath = createTempFile("test-before.md", existing);
 
-			const result = preserveManualSections("/path/to/README.md", generatedContent);
+			const result = preserveManualSections(filePath, generatedContent);
 
-			expect(result).toContain("# Manual Header");
-			expect(result).toContain("This is manual content before the auto-generated section.");
-			expect(result).toContain("### test-skill");
-			expect(result).not.toContain("old-skill");
+			assert.ok(result.includes("# Manual Header"));
+			assert.ok(result.includes("This is manual content before the auto-generated section."));
+			assert.ok(result.includes("### test-skill"));
+			assert.ok(!result.includes("old-skill"));
 		});
 
 		it("should preserve content after markers", () => {
@@ -713,15 +702,14 @@ ${PLUGIN_END_MARKER}
 This is manual content after the auto-generated section.
 `;
 
-			mockExistsSync.mockReturnValue(true);
-			mockReadFileSync.mockReturnValue(existing);
+			const filePath = createTempFile("test-after.md", existing);
 
-			const result = preserveManualSections("/path/to/README.md", generatedContent);
+			const result = preserveManualSections(filePath, generatedContent);
 
-			expect(result).toContain("## Development");
-			expect(result).toContain("This is manual content after the auto-generated section.");
-			expect(result).toContain("### test-skill");
-			expect(result).not.toContain("old-skill");
+			assert.ok(result.includes("## Development"));
+			assert.ok(result.includes("This is manual content after the auto-generated section."));
+			assert.ok(result.includes("### test-skill"));
+			assert.ok(!result.includes("old-skill"));
 		});
 
 		it("should preserve content both before and after markers", () => {
@@ -744,16 +732,15 @@ ${PLUGIN_END_MARKER}
 Custom footer content.
 `;
 
-			mockExistsSync.mockReturnValue(true);
-			mockReadFileSync.mockReturnValue(existing);
+			const filePath = createTempFile("test-both.md", existing);
 
-			const result = preserveManualSections("/path/to/README.md", generatedContent);
+			const result = preserveManualSections(filePath, generatedContent);
 
-			expect(result).toContain("# Custom Title");
-			expect(result).toContain("Custom intro content.");
-			expect(result).toContain("## Contributing");
-			expect(result).toContain("Custom footer content.");
-			expect(result).toContain("### test-skill");
+			assert.ok(result.includes("# Custom Title"));
+			assert.ok(result.includes("Custom intro content."));
+			assert.ok(result.includes("## Contributing"));
+			assert.ok(result.includes("Custom footer content."));
+			assert.ok(result.includes("### test-skill"));
 		});
 
 		it("should handle marker without trailing newline in existing content", () => {
@@ -767,14 +754,13 @@ ${PLUGIN_START_MARKER}
 ${PLUGIN_END_MARKER}
 ## Footer`;
 
-			mockExistsSync.mockReturnValue(true);
-			mockReadFileSync.mockReturnValue(existing);
+			const filePath = createTempFile("test-no-newline.md", existing);
 
-			const result = preserveManualSections("/path/to/README.md", generatedContent);
+			const result = preserveManualSections(filePath, generatedContent);
 
-			expect(result).toContain("# Manual");
-			expect(result).toContain("## Footer");
-			expect(result).toContain("### test-skill");
+			assert.ok(result.includes("# Manual"));
+			assert.ok(result.includes("## Footer"));
+			assert.ok(result.includes("### test-skill"));
 		});
 
 		it("should correctly replace marker content", () => {
@@ -788,17 +774,16 @@ Old skill content
 
 ${PLUGIN_END_MARKER}`;
 
-			mockExistsSync.mockReturnValue(true);
-			mockReadFileSync.mockReturnValue(existing);
+			const filePath = createTempFile("test-replace.md", existing);
 
-			const result = preserveManualSections("/path/to/README.md", generatedContent);
+			const result = preserveManualSections(filePath, generatedContent);
 
 			// Should have new content
-			expect(result).toContain("### test-skill");
-			expect(result).toContain("Skill content here");
+			assert.ok(result.includes("### test-skill"));
+			assert.ok(result.includes("Skill content here"));
 			// Should not have old content
-			expect(result).not.toContain("old-skill");
-			expect(result).not.toContain("Old skill content");
+			assert.ok(!result.includes("old-skill"));
+			assert.ok(!result.includes("Old skill content"));
 		});
 	});
 });
