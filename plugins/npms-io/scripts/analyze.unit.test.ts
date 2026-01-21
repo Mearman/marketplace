@@ -2,9 +2,10 @@
  * Tests for npms-io analyze.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError } from "./analyze";
-import { parseArgs, type NpmsPackage } from "./utils";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { main, handleError } from "./analyze.js";
+import { parseArgs, type NpmsPackage } from "./utils.js";
 
 describe("analyze.ts", () => {
 	let mockConsole: any;
@@ -13,27 +14,27 @@ describe("analyze.ts", () => {
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.reset();
 
 		// Mock console
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
-			warn: vi.fn(),
-			info: vi.fn(),
-			debug: vi.fn(),
-			trace: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
+			warn: mock.fn(),
+			info: mock.fn(),
+			debug: mock.fn(),
+			trace: mock.fn(),
 		};
 
 		// Mock process
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn().mockImplementation(() => {
 				throw new Error("process.exit called");
 			}),
 		};
 
 		// Mock fetchWithCache
-		mockFetchWithCache = vi.fn();
+		mockFetchWithCache = mock.fn();
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
@@ -123,13 +124,14 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Analyzing: react");
-				expect(mockConsole.log).toHaveBeenCalledWith("react - Package Analysis");
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Quality Scores:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Overall: 95/100"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Quality: 90/100"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Popularity: 98/100"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Maintenance: 97/100"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("Analyzing: react"));
+				assert.ok(logCalls.includes("react - Package Analysis"));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Quality Scores:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Overall: 95/100")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Quality: 90/100")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Popularity: 98/100")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Maintenance: 97/100")));
 			});
 
 			it("should display package information section", async () => {
@@ -139,10 +141,11 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Package Information:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Version: 18.2.0"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Description:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Published:"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Package Information:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Version: 18.2.0")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Description:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Published:")));
 			});
 
 			it("should display npm statistics", async () => {
@@ -152,12 +155,13 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("npm Statistics:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Week:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("downloads"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Month:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Quarter:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Year:"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("npm Statistics:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Week:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("downloads")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Month:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Quarter:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Year:")));
 			});
 
 			it("should display GitHub activity", async () => {
@@ -167,12 +171,13 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("GitHub Activity:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Stars:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Forks:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Open Issues:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Contributors:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Latest Commit:"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("GitHub Activity:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Stars:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Forks:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Open Issues:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Contributors:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Latest Commit:")));
 			});
 
 			it("should display project health indicators", async () => {
@@ -182,12 +187,13 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Project Health:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Participates in CoC"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Has contributing guide"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Has license"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Has security policy"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Has open discussions"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Project Health:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Participates in CoC")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Has contributing guide")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Has license")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Has security policy")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Has open discussions")));
 			});
 
 			it("should display recent releases", async () => {
@@ -197,10 +203,11 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Recent Releases:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("18.2.0"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("18.1.0"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("18.0.0"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Recent Releases:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("18.2.0")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("18.1.0")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("18.0.0")));
 			});
 
 			it("should display links", async () => {
@@ -210,11 +217,12 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Links:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("npm:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Homepage:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Repository:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Bugs:"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Links:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("npm:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Homepage:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Repository:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Bugs:")));
 			});
 		});
 
@@ -237,7 +245,7 @@ describe("analyze.ts", () => {
 				// Should not display description line
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => String(call[0] || ""));
 				const hasDescription = logCalls.some((call: string) => call.includes("Description:"));
-				expect(hasDescription).toBe(false);
+				assert.strictEqual(hasDescription, false);
 			});
 
 			it("should handle package without npm statistics", async () => {
@@ -261,7 +269,7 @@ describe("analyze.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => String(call[0] || ""));
 				const hasNpmStats = logCalls.some((call: string) => call.includes("npm Statistics:"));
-				expect(hasNpmStats).toBe(false);
+				assert.strictEqual(hasNpmStats, false);
 			});
 
 			it("should handle package without github data", async () => {
@@ -279,8 +287,8 @@ describe("analyze.ts", () => {
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => String(call[0] || ""));
 				const hasGitHubActivity = logCalls.some((call: string) => call.includes("GitHub Activity:"));
 				const hasProjectHealth = logCalls.some((call: string) => call.includes("Project Health:"));
-				expect(hasGitHubActivity).toBe(false);
-				expect(hasProjectHealth).toBe(false);
+				assert.strictEqual(hasGitHubActivity, false);
+				assert.strictEqual(hasProjectHealth, false);
 			});
 
 			it("should handle package without links", async () => {
@@ -300,7 +308,7 @@ describe("analyze.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => String(call[0] || ""));
 				const hasLinks = logCalls.some((call: string) => call.includes("Links:"));
-				expect(hasLinks).toBe(false);
+				assert.strictEqual(hasLinks, false);
 			});
 
 			it("should handle missing github optional fields", async () => {
@@ -322,14 +330,14 @@ describe("analyze.ts", () => {
 				await main(args, deps);
 
 				// Should show GitHub Activity section but skip undefined fields
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("GitHub Activity:"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("GitHub Activity:")));
 
 				// Verify it doesn't show undefined fields
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call.join(" "));
 				const fullLog = logCalls.join(" ");
 				// Should not have "Stars:", "Forks:", etc. when they're undefined
-				expect(fullLog).not.toContain("Stars: undefined");
-				expect(fullLog).not.toContain("Forks: undefined");
+				assert.ok(!fullLog.includes("Stars: undefined"));
+				assert.ok(!fullLog.includes("Forks: undefined"));
 			});
 
 			it("should handle package with no recent releases", async () => {
@@ -349,7 +357,7 @@ describe("analyze.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => String(call[0] || ""));
 				const hasRecentReleases = logCalls.some((call: string) => call.includes("Recent Releases:"));
-				expect(hasRecentReleases).toBe(false);
+				assert.strictEqual(hasRecentReleases, false);
 			});
 		});
 
@@ -361,11 +369,8 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: false,
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.bypassCache, false);
 			});
 
 			it("should bypass cache when --no-cache flag is provided", async () => {
@@ -375,11 +380,8 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: true,
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.bypassCache, true);
 			});
 
 			it("should use correct cache key based on package name", async () => {
@@ -389,11 +391,8 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						cacheKey: "analyze-@types/node",
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.cacheKey, "analyze-@types/node");
 			});
 
 			it("should use correct TTL of 6 hours", async () => {
@@ -403,11 +402,8 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						ttl: 21600, // 6 hours
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.ttl, 21600); // 6 hours
 			});
 
 			it("should use correct API URL", async () => {
@@ -417,11 +413,8 @@ describe("analyze.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: "https://api.npms.io/v2/package/lodash",
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.url, "https://api.npms.io/v2/package/lodash");
 			});
 		});
 
@@ -429,37 +422,39 @@ describe("analyze.ts", () => {
 			it("should show usage message when no package name provided", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("npx tsx analyze.ts <package-name>"));
-				expect(mockProcess.exit).toHaveBeenCalledWith(1);
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				const usageOutput = logCalls.join("\n");
+				assert.ok(usageOutput.includes("Usage:"));
+				assert.ok(usageOutput.includes("npx tsx analyze.ts <package-name>"));
+				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should include examples in usage message", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
 				const logCalls = mockConsole.log.mock.calls;
 				const usageOutput = logCalls.map((call: any[]) => call[0]).join("\n");
 
-				expect(usageOutput).toContain("Examples:");
-				expect(usageOutput).toContain("npx tsx analyze.ts react");
-				expect(usageOutput).toContain("npx tsx analyze.ts express");
-				expect(usageOutput).toContain("npx tsx analyze.ts @babel/core");
+				assert.ok(usageOutput.includes("Examples:"));
+				assert.ok(usageOutput.includes("npx tsx analyze.ts react"));
+				assert.ok(usageOutput.includes("npx tsx analyze.ts express"));
+				assert.ok(usageOutput.includes("npx tsx analyze.ts @babel/core"));
 			});
 
 			it("should include --no-cache option in usage message", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
 				const logCalls = mockConsole.log.mock.calls;
 				const usageOutput = logCalls.map((call: any[]) => call[0]).join("\n");
 
-				expect(usageOutput).toContain("--no-cache");
-				expect(usageOutput).toContain("Bypass cache and fetch fresh data");
+				assert.ok(usageOutput.includes("--no-cache"));
+				assert.ok(usageOutput.includes("Bypass cache and fetch fresh data"));
 			});
 		});
 
@@ -483,10 +478,10 @@ describe("analyze.ts", () => {
 				const descriptionCall = mockConsole.log.mock.calls.find((call: any[]) =>
 					call[0]?.includes("Description:")
 				);
-				expect(descriptionCall).toBeDefined();
+				assert.ok(descriptionCall);
 				const descText = descriptionCall[0];
-				expect(descText.length).toBeLessThanOrEqual(80 + 30); // 80 char + "  Description: " + "..."
-				expect(descText).toContain("...");
+				assert.ok(descText.length <= 80 + 30); // 80 char + "  Description: " + "..."
+				assert.ok(descText.includes("..."));
 			});
 
 			it("should limit recent releases to 5", async () => {
@@ -521,7 +516,7 @@ describe("analyze.ts", () => {
 				);
 
 				// Should show max 5 releases
-				expect(releaseLines.length).toBeLessThanOrEqual(5);
+				assert.ok(releaseLines.length <= 5);
 			});
 
 			it("should include blank lines for proper formatting", async () => {
@@ -532,9 +527,9 @@ describe("analyze.ts", () => {
 				await main(args, deps);
 
 				const logCalls = mockConsole.log.mock.calls;
-				expect(logCalls[0]).toEqual(["Analyzing: test-formatting"]);
+				assert.assert.deepStrictEqual(logCalls[0], ["Analyzing: test-formatting"]);
 				// Should have blank lines between sections
-				expect(logCalls).toContainEqual([]);
+				assert.ok(logCalls.some((call: any[]) => assert.deepStrictEqual(call, [])));
 			});
 		});
 	});
@@ -542,89 +537,79 @@ describe("analyze.ts", () => {
 	describe("handleError", () => {
 		it("should log friendly message for 'Resource not found' error", () => {
 			const error = new Error("Resource not found");
-			expect(() => handleError(error, "my-package", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "my-package", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.log).toHaveBeenCalledWith("Package \"my-package\" not found or analysis not available");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.log.mock.calls[mockConsole.log.mock.calls.length - 1], "Package \"my-package\" not found or analysis not available");
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should log error message for generic errors", () => {
 			const error = new Error("Network timeout");
-			expect(() => handleError(error, "react", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "react", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Network timeout");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Network timeout"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle string errors", () => {
-			expect(() => handleError("string error", "express", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError("string error", "express", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "string error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle null errors", () => {
-			expect(() => handleError(null, "lodash", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(null, "lodash", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "null");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "null"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle undefined errors", () => {
-			expect(() => handleError(undefined, "axios", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(undefined, "axios", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "undefined");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "undefined"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle numeric errors", () => {
-			expect(() => handleError(500, "vue", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(500, "vue", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "500");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "500"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle object errors without message property", () => {
 			const error = { code: "ERR_CODE", status: 500 };
-			expect(() => handleError(error, "angular", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "angular", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "[object Object]");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "[object Object]"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should always call process.exit with code 1", () => {
 			const error = new Error("Any error");
-			expect(() => handleError(error, "test", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should be case-sensitive for 'Resource not found' check", () => {
 			const error = new Error("resource not found");
-			expect(() => handleError(error, "test", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
 			// Should go to error console, not friendly message
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "resource not found");
-			expect(mockConsole.log).not.toHaveBeenCalledWith(expect.stringContaining("not found or analysis not available"));
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "resource not found"]);
+			assert.ok(!mockConsole.log.mock.calls.some((call: any[]) => call[0] && typeof call[0] === "string" && call[0].includes("not found or analysis not available")));
 		});
 
 		it("should match 'Resource not found' in longer error message", () => {
 			const error = new Error("Error: Resource not found for package xyz");
-			expect(() => handleError(error, "xyz", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "xyz", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
 			// Should show friendly message because it contains "Resource not found"
-			expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("not found or analysis not available"));
-			expect(mockConsole.error).not.toHaveBeenCalled();
+			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] && typeof call[0] === "string" && call[0].includes("not found or analysis not available")));
+			assert.strictEqual(mockConsole.error.mock.calls.length, 0);
 		});
 	});
 });

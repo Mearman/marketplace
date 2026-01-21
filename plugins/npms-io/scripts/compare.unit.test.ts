@@ -2,9 +2,10 @@
  * Tests for npms-io compare.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError } from "./compare";
-import { parseArgs, type NpmsMgetResponse } from "./utils";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { main, handleError } from "./compare.js";
+import { parseArgs, type NpmsMgetResponse } from "./utils.js";
 
 describe("compare.ts", () => {
 	let mockConsole: any;
@@ -13,27 +14,27 @@ describe("compare.ts", () => {
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.reset();
 
 		// Mock console
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
-			warn: vi.fn(),
-			info: vi.fn(),
-			debug: vi.fn(),
-			trace: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
+			warn: mock.fn(),
+			info: mock.fn(),
+			debug: mock.fn(),
+			trace: mock.fn(),
 		};
 
 		// Mock process
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn().mockImplementation(() => {
 				throw new Error("process.exit called");
 			}),
 		};
 
 		// Mock fetchWithCache
-		mockFetchWithCache = vi.fn();
+		mockFetchWithCache = mock.fn();
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
@@ -120,10 +121,11 @@ describe("compare.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Comparing: react vs vue");
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Package Comparison: react vs vue"));
-				expect(mockConsole.log).toHaveBeenCalledWith("-".repeat(60));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Highest overall score"));
+				const logCalls = mockConsole.log.mock.calls;
+				assert.strictEqual(logCalls[0][0], "Comparing: react vs vue");
+				assert.ok(String(logCalls[1][0]).includes("Package Comparison: react vs vue"));
+				assert.strictEqual(logCalls[2][0], "-".repeat(60));
+				assert.ok(String(logCalls[3][0]).includes("Highest overall score"));
 			});
 
 			it("should compare three or more packages", async () => {
@@ -137,16 +139,16 @@ describe("compare.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Comparing: react vs vue vs angular");
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Package Comparison: react vs vue vs angular"));
+				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
+				assert.ok(logCalls.includes("Comparing: react vs vue vs angular"));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Package Comparison: react vs vue vs angular")));
 
 				// Verify table header contains all three packages
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const headerRow = logCalls.find((call: string) => call && typeof call === "string" && call.includes("Metric"));
-				expect(headerRow).toBeDefined();
-				expect(headerRow).toContain("react");
-				expect(headerRow).toContain("vue");
-				expect(headerRow).toContain("angular");
+				assert.ok(headerRow);
+				assert.ok(headerRow.includes("react"));
+				assert.ok(headerRow.includes("vue"));
+				assert.ok(headerRow.includes("angular"));
 			});
 
 			it("should correctly identify the highest scoring package", async () => {
@@ -162,9 +164,9 @@ describe("compare.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const recommendation = logCalls.find((call: string) => call && typeof call === "string" && call.includes("Highest overall score"));
-				expect(recommendation).toBeDefined();
-				expect(recommendation).toContain("pkg2");
-				expect(recommendation).toContain("92/100");
+				assert.ok(recommendation);
+				assert.ok(recommendation.includes("pkg2"));
+				assert.ok(recommendation.includes("92/100"));
 			});
 		});
 
@@ -177,11 +179,12 @@ describe("compare.ts", () => {
 				mockFetchWithCache.mockResolvedValue(mockData);
 				const args = parseArgs(["nonexistent1", "nonexistent2"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith("\nNo packages found or analyzed");
-				expect(mockConsole.log).toHaveBeenCalledWith("\nNot found: nonexistent1, nonexistent2");
-				expect(mockProcess.exit).toHaveBeenCalledWith(1);
+				const logCalls = mockConsole.log.mock.calls;
+				assert.strictEqual(logCalls[logCalls.length - 2][0], "\nNo packages found or analyzed");
+				assert.strictEqual(logCalls[logCalls.length - 1][0], "\nNot found: nonexistent1, nonexistent2");
+				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should handle some packages not found (mixed available/missing)", async () => {
@@ -196,13 +199,13 @@ describe("compare.ts", () => {
 				await main(args, deps);
 
 				// Should still show comparison for available packages
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Package Comparison: react vs vue"));
+				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Package Comparison: react vs vue")));
 
 				// Should mention missing package
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const missingNotice = logCalls.find((call: string) => call && typeof call === "string" && call.includes("Not found or not analyzed"));
-				expect(missingNotice).toBeDefined();
-				expect(missingNotice).toContain("nonexistent");
+				assert.ok(missingNotice);
+				assert.ok(missingNotice.includes("nonexistent"));
 			});
 
 			it("should show comparison table only for available packages when some are missing", async () => {
@@ -218,14 +221,14 @@ describe("compare.ts", () => {
 				// Table should only show react
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const headerRow = logCalls.find((call: string) => call && typeof call === "string" && call.includes("Metric"));
-				expect(headerRow).toBeDefined();
-				expect(headerRow).toContain("react");
-				expect(headerRow).not.toContain("missing-pkg");
+				assert.ok(headerRow);
+				assert.ok(headerRow.includes("react"));
+				assert.ok(!headerRow.includes("missing-pkg"));
 
 				// Should show missing notice
 				const missingNotice = logCalls.find((call: string) => call && typeof call === "string" && call.includes("Not found or not analyzed"));
-				expect(missingNotice).toBeDefined();
-				expect(missingNotice).toContain("missing-pkg");
+				assert.ok(missingNotice);
+				assert.ok(missingNotice.includes("missing-pkg"));
 			});
 		});
 
@@ -248,11 +251,11 @@ describe("compare.ts", () => {
 				const issuesRow = logCalls.find((call: string) => call && call.startsWith && call.startsWith("Issues"));
 
 				// React should have numbers, vue should have N/A
-				expect(starsRow).toBeDefined();
-				expect(starsRow).toContain("1.0K"); // react
-				expect(starsRow).toContain("N/A"); // vue
-				expect(forksRow).toBeDefined();
-				expect(issuesRow).toBeDefined();
+				assert.ok(starsRow);
+				assert.ok(starsRow.includes("1.0K")); // react
+				assert.ok(starsRow.includes("N/A")); // vue
+				assert.ok(forksRow);
+				assert.ok(issuesRow);
 			});
 
 			it("should display N/A for packages without npm data", async () => {
@@ -269,9 +272,9 @@ describe("compare.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const downloadsRow = logCalls.find((call: string) => call && call.startsWith && call.startsWith("Downloads/Mo"));
-				expect(downloadsRow).toBeDefined();
-				expect(downloadsRow).toContain("50.0K"); // react
-				expect(downloadsRow).toContain("N/A"); // vue
+				assert.ok(downloadsRow);
+				assert.ok(downloadsRow.includes("50.0K")); // react
+				assert.ok(downloadsRow.includes("N/A")); // vue
 			});
 
 			it("should display N/A when github field exists but specific properties are missing", async () => {
@@ -291,9 +294,9 @@ describe("compare.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const starsRow = logCalls.find((call: string) => call && call.startsWith && call.startsWith("Stars"));
-				expect(starsRow).toBeDefined();
-				expect(starsRow).toContain("1.0K"); // react has stars
-				expect(starsRow).toContain("N/A"); // vue missing stars
+				assert.ok(starsRow);
+				assert.ok(starsRow.includes("1.0K")); // react has stars
+				assert.ok(starsRow.includes("N/A")); // vue missing stars
 			});
 		});
 
@@ -311,10 +314,10 @@ describe("compare.ts", () => {
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const headerRow = logCalls.find((call: string) => call && call.includes && call.includes("Metric"));
 
-				expect(headerRow).toBeDefined();
-				expect(headerRow).toContain("Metric");
-				expect(headerRow).toContain("react");
-				expect(headerRow).toContain("vue");
+				assert.ok(headerRow);
+				assert.ok(headerRow.includes("Metric"));
+				assert.ok(headerRow.includes("react"));
+				assert.ok(headerRow.includes("vue"));
 			});
 
 			it("should display separator line between sections", async () => {
@@ -331,7 +334,7 @@ describe("compare.ts", () => {
 				const separators = logCalls.filter((call: string) => call && call.startsWith && call.startsWith("─"));
 
 				// Should have separator lines (one after header, one after scores)
-				expect(separators.length).toBeGreaterThan(0);
+				assert.ok(separators.length > 0);
 			});
 
 			it("should pad package names for alignment", async () => {
@@ -348,9 +351,9 @@ describe("compare.ts", () => {
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const headerRow = logCalls.find((call: string) => call && call.includes && call.includes("Metric"));
 
-				expect(headerRow).toBeDefined();
+				assert.ok(headerRow);
 				// The max width should accommodate "very-long-package-name"
-				expect(headerRow).toContain("very-long-package-name");
+				assert.ok(headerRow.includes("very-long-package-name"));
 			});
 
 			it("should display all score rows (Overall, Quality, Popularity, Maintenance)", async () => {
@@ -369,10 +372,10 @@ describe("compare.ts", () => {
 				const popularityRow = logCalls.find((call: string) => call && call.startsWith && call.startsWith("Popularity"));
 				const maintenanceRow = logCalls.find((call: string) => call && call.startsWith && call.startsWith("Maintenance"));
 
-				expect(overallRow).toBeDefined();
-				expect(qualityRow).toBeDefined();
-				expect(popularityRow).toBeDefined();
-				expect(maintenanceRow).toBeDefined();
+				assert.ok(overallRow);
+				assert.ok(qualityRow);
+				assert.ok(popularityRow);
+				assert.ok(maintenanceRow);
 			});
 
 			it("should display version row", async () => {
@@ -387,8 +390,8 @@ describe("compare.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const versionRow = logCalls.find((call: string) => call && call.startsWith && call.startsWith("Version"));
-				expect(versionRow).toBeDefined();
-				expect(versionRow).toContain("18.2.0");
+				assert.ok(versionRow);
+				assert.ok(versionRow.includes("18.2.0"));
 			});
 
 			it("should display github stats rows (Stars, Forks, Issues)", async () => {
@@ -406,14 +409,14 @@ describe("compare.ts", () => {
 				const forksRow = logCalls.find((call: string) => call && call.startsWith && call.startsWith("Forks"));
 				const issuesRow = logCalls.find((call: string) => call && call.startsWith && call.startsWith("Issues"));
 
-				expect(starsRow).toBeDefined();
-				expect(forksRow).toBeDefined();
-				expect(issuesRow).toBeDefined();
+				assert.ok(starsRow);
+				assert.ok(forksRow);
+				assert.ok(issuesRow);
 
 				// Check that numbers are formatted (with K/M suffixes)
-				expect(starsRow).toContain("1.0K");
-				expect(forksRow).toContain("200");
-				expect(issuesRow).toContain("10");
+				assert.ok(starsRow.includes("1.0K"));
+				assert.ok(forksRow.includes("200"));
+				assert.ok(issuesRow.includes("10"));
 			});
 
 			it("should display downloads row", async () => {
@@ -428,8 +431,8 @@ describe("compare.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
 				const downloadsRow = logCalls.find((call: string) => call && call.startsWith && call.startsWith("Downloads/Mo"));
-				expect(downloadsRow).toBeDefined();
-				expect(downloadsRow).toContain("50.0K");
+				assert.ok(downloadsRow);
+				assert.ok(downloadsRow.includes("50.0K"));
 			});
 		});
 
@@ -444,11 +447,8 @@ describe("compare.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: false,
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.bypassCache, false);
 			});
 
 			it("should bypass cache when --no-cache flag is provided", async () => {
@@ -461,11 +461,8 @@ describe("compare.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: true,
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.bypassCache, true);
 			});
 
 			it("should use correct cache key based on package names", async () => {
@@ -478,11 +475,8 @@ describe("compare.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						cacheKey: "compare-react-vue",
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.cacheKey, "compare-react-vue");
 			});
 
 			it("should use correct TTL (6 hours)", async () => {
@@ -495,11 +489,8 @@ describe("compare.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						ttl: 21600, // 6 hours
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.ttl, 21600); // 6 hours
 			});
 
 			it("should use POST method for fetch", async () => {
@@ -512,15 +503,10 @@ describe("compare.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						fetchOptions: expect.objectContaining({
-							method: "POST",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify(["react", "vue"]),
-						}),
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.fetchOptions.method, "POST");
+				assert.assert.deepStrictEqual(call.fetchOptions.headers, { "Content-Type": "application/json" });
+				assert.strictEqual(call.fetchOptions.body, JSON.stringify(["react", "vue"]));
 			});
 		});
 
@@ -528,46 +514,50 @@ describe("compare.ts", () => {
 			it("should show usage message when less than 2 packages provided", async () => {
 				const args = parseArgs(["react"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("npx tsx compare.ts <package1> <package2>"));
-				expect(mockProcess.exit).toHaveBeenCalledWith(1);
+				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
+				const usageOutput = logCalls.join("\n");
+				assert.ok(usageOutput.includes("Usage:"));
+				assert.ok(usageOutput.includes("npx tsx compare.ts <package1> <package2>"));
+				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should show usage message when no packages provided", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-				expect(mockProcess.exit).toHaveBeenCalledWith(1);
+				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => call[0]);
+				const usageOutput = logCalls.join("\n");
+				assert.ok(usageOutput.includes("Usage:"));
+				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should include examples in usage message", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
 				const logCalls = mockConsole.log.mock.calls;
 				const usageOutput = logCalls.map((call: any[]) => call[0]).join("\n");
 
-				expect(usageOutput).toContain("Examples:");
-				expect(usageOutput).toContain("npx tsx compare.ts react vue angular");
-				expect(usageOutput).toContain("npx tsx compare.ts axios got node-fetch");
-				expect(usageOutput).toContain("npx tsx compare.ts express koa fastify hapi");
+				assert.ok(usageOutput.includes("Examples:"));
+				assert.ok(usageOutput.includes("npx tsx compare.ts react vue angular"));
+				assert.ok(usageOutput.includes("npx tsx compare.ts axios got node-fetch"));
+				assert.ok(usageOutput.includes("npx tsx compare.ts express koa fastify hapi"));
 			});
 
 			it("should include --no-cache option in usage message", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
 				const logCalls = mockConsole.log.mock.calls;
 				const usageOutput = logCalls.map((call: any[]) => call[0]).join("\n");
 
-				expect(usageOutput).toContain("--no-cache");
-				expect(usageOutput).toContain("Bypass cache and fetch fresh data");
+				assert.ok(usageOutput.includes("--no-cache"));
+				assert.ok(usageOutput.includes("Bypass cache and fetch fresh data"));
 			});
 		});
 
@@ -576,37 +566,37 @@ describe("compare.ts", () => {
 				mockFetchWithCache.mockRejectedValue(new Error("Network error"));
 				const args = parseArgs(["react", "vue"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Network error");
-				expect(mockProcess.exit).toHaveBeenCalledWith(1);
+				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Network error"]);
+				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should handle timeout errors", async () => {
 				mockFetchWithCache.mockRejectedValue(new Error("Request timeout"));
 				const args = parseArgs(["react", "vue"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Request timeout");
+				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Request timeout"]);
 			});
 
 			it("should handle 500 errors from API", async () => {
 				mockFetchWithCache.mockRejectedValue(new Error("Internal Server Error: 500"));
 				const args = parseArgs(["react", "vue"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Internal Server Error: 500");
+				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Internal Server Error: 500"]);
 			});
 
 			it("should handle rate limiting errors", async () => {
 				mockFetchWithCache.mockRejectedValue(new Error("Too Many Requests: 429"));
 				const args = parseArgs(["react", "vue"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Too Many Requests: 429");
+				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Too Many Requests: 429"]);
 			});
 		});
 	});
@@ -614,61 +604,54 @@ describe("compare.ts", () => {
 	describe("handleError", () => {
 		it("should log Error instance message", () => {
 			const error = new Error("Test error message");
-			expect(() => handleError(error, { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Test error message");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Test error message"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should log non-Error errors as strings", () => {
-			expect(() => handleError("string error", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError("string error", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "string error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle null errors", () => {
-			expect(() => handleError(null, { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(null, { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "null");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "null"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle undefined errors", () => {
-			expect(() => handleError(undefined, { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(undefined, { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "undefined");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "undefined"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle numeric errors", () => {
-			expect(() => handleError(404, { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(404, { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "404");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "404"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle object errors without message property", () => {
 			const error = { code: 500, status: "error" };
-			expect(() => handleError(error, { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
 			// String(error) converts objects to "[object Object]"
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "[object Object]");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "[object Object]"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should always call process.exit with code 1", () => {
 			const error = new Error("Any error");
-			expect(() => handleError(error, { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 	});
 });

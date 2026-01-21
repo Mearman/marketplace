@@ -2,9 +2,10 @@
  * Tests for npms-io suggest.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError } from "./suggest";
-import { parseArgs, type NpmsSuggestion } from "./utils";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { main, handleError } from "./suggest.js";
+import { parseArgs, type NpmsSuggestion } from "./utils.js";
 
 describe("suggest.ts", () => {
 	let mockConsole: any;
@@ -13,27 +14,27 @@ describe("suggest.ts", () => {
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		mock.reset();
 
 		// Mock console
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
-			warn: vi.fn(),
-			info: vi.fn(),
-			debug: vi.fn(),
-			trace: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
+			warn: mock.fn(),
+			info: mock.fn(),
+			debug: mock.fn(),
+			trace: mock.fn(),
 		};
 
 		// Mock process
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn().mockImplementation(() => {
 				throw new Error("process.exit called");
 			}),
 		};
 
 		// Mock fetchWithCache
-		mockFetchWithCache = vi.fn();
+		mockFetchWithCache = mock.fn();
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
@@ -55,9 +56,9 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Searching for: \"react\"");
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Suggestions for \"react\""));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("(3 results)"));
+				assert.assert.deepStrictEqual(mockConsole.log.mock.calls[0][0], "Searching for: \"react\"");
+				assert.ok(String(mockConsole.log.mock.calls[1][0]).includes("Suggestions for \"react\""));
+				assert.ok(String(mockConsole.log.mock.calls[1][0]).includes("(3 results)"));
 			});
 
 			it("should display detailed results with score and URL for each package", async () => {
@@ -70,12 +71,13 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("1. express");
-				expect(mockConsole.log).toHaveBeenCalledWith("   Score: 980,000");
-				expect(mockConsole.log).toHaveBeenCalledWith("   URL: https://www.npmjs.com/package/express");
-				expect(mockConsole.log).toHaveBeenCalledWith("2. express-validator");
-				expect(mockConsole.log).toHaveBeenCalledWith("   Score: 880,000");
-				expect(mockConsole.log).toHaveBeenCalledWith("   URL: https://www.npmjs.com/package/express-validator");
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("1. express"));
+				assert.ok(logCalls.includes("   Score: 980,000"));
+				assert.ok(logCalls.includes("   URL: https://www.npmjs.com/package/express"));
+				assert.ok(logCalls.includes("2. express-validator"));
+				assert.ok(logCalls.includes("   Score: 880,000"));
+				assert.ok(logCalls.includes("   URL: https://www.npmjs.com/package/express-validator"));
 			});
 
 			it("should show separator line with correct length", async () => {
@@ -89,7 +91,8 @@ describe("suggest.ts", () => {
 
 				// "Suggestions for \"lodash\" (1 result)" is 33 chars, separator should be 5 + 20 = 25 dashes
 				// Actually: query.length (6) + 25 = 31 dashes
-				expect(mockConsole.log).toHaveBeenCalledWith("-".repeat(31));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("-".repeat(31)));
 			});
 
 			it("should format score with locale string (commas for thousands)", async () => {
@@ -101,7 +104,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("   Score: 1,234,567");
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("   Score: 1,234,567"));
 			});
 
 			it("should show detailed + condensed list when results > 15", async () => {
@@ -116,12 +120,13 @@ describe("suggest.ts", () => {
 				await main(args, deps);
 
 				// Should show detailed for first 15
-				expect(mockConsole.log).toHaveBeenCalledWith("1. package-1");
-				expect(mockConsole.log).toHaveBeenCalledWith("15. package-15");
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("1. package-1"));
+				assert.ok(logCalls.includes("15. package-15"));
 
 				// Should show condensed list for all 20
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Top 20 suggestions:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("package-1, package-2"));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Top 20 suggestions:")));
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("package-1, package-2")));
 			});
 
 			it("should limit results to requested size", async () => {
@@ -135,11 +140,11 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("(10 results)"));
-				expect(mockConsole.log).toHaveBeenCalledWith("1. package-1");
-				expect(mockConsole.log).toHaveBeenCalledWith("10. package-10");
-				// Should not show package-11
-				expect(mockConsole.log).not.toHaveBeenCalledWith("11. package-11");
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("(10 results)")));
+				assert.ok(logCalls.includes("1. package-1"));
+				assert.ok(logCalls.includes("10. package-10"));
+				assert.ok(!logCalls.includes("11. package-11"));
 			});
 
 			it("should use singular 'result' when only 1 result found", async () => {
@@ -151,8 +156,9 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("(1 result)"));
-				expect(mockConsole.log).not.toHaveBeenCalledWith(expect.stringContaining("(1 results)"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("(1 result)")));
+				assert.ok(!logCalls.some((call: string) => typeof call === "string" && call.includes("(1 results)")));
 			});
 
 			it("should use plural 'results' when multiple results found", async () => {
@@ -165,7 +171,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("(2 results)"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("(2 results)")));
 			});
 
 			it("should add blank lines between detailed results", async () => {
@@ -183,7 +190,7 @@ describe("suggest.ts", () => {
 				// Find the index of "2. pkg2"
 				const pkg2Index = logCalls.findIndex((call: any[]) => call[0] === "2. pkg2");
 				// The call before it should be a blank line
-				expect(logCalls[pkg2Index - 1]).toEqual([]);
+				assert.assert.deepStrictEqual(logCalls[pkg2Index - 1], []);
 			});
 
 			it("should not add blank line after last detailed result", async () => {
@@ -200,7 +207,7 @@ describe("suggest.ts", () => {
 				// Find the index of "2. pkg2"
 				const pkg2Index = logCalls.findIndex((call: any[]) => call[0] === "2. pkg2");
 				// The call after it should NOT be a blank line (it should be the score)
-				expect(logCalls[pkg2Index + 1]).not.toEqual([]);
+				assert.ok(!assert.deepStrictEqual(logCalls[pkg2Index + 1], []));
 			});
 		});
 
@@ -209,21 +216,23 @@ describe("suggest.ts", () => {
 				mockFetchWithCache.mockResolvedValue([]);
 				const args = parseArgs(["nonexistent-query-xyz"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Searching for: \"nonexistent-query-xyz\"");
-				expect(mockConsole.log).toHaveBeenCalledWith("\nNo suggestions found for \"nonexistent-query-xyz\"");
-				expect(mockProcess.exit).toHaveBeenCalledWith(0);
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("Searching for: \"nonexistent-query-xyz\""));
+				assert.ok(logCalls.includes("\nNo suggestions found for \"nonexistent-query-xyz\""));
+				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [0]);
 			});
 
 			it("should exit with code 0 when no results", async () => {
 				mockFetchWithCache.mockResolvedValue([]);
 				const args = parseArgs(["xyz"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("No suggestions found"));
-				expect(mockProcess.exit).toHaveBeenCalledWith(0);
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("No suggestions found")));
+				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [0]);
 			});
 		});
 
@@ -231,18 +240,20 @@ describe("suggest.ts", () => {
 			it("should show error when query is less than 2 characters", async () => {
 				const args = parseArgs(["a"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Error: Query must be at least 2 characters");
-				expect(mockProcess.exit).toHaveBeenCalledWith(1);
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("Error: Query must be at least 2 characters"));
+				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should show error for single character query", async () => {
 				const args = parseArgs(["x"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Error: Query must be at least 2 characters");
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("Error: Query must be at least 2 characters"));
 			});
 
 			it("should accept 2 character query", async () => {
@@ -251,49 +262,50 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Searching for: \"ab\"");
-				expect(mockConsole.log).not.toHaveBeenCalledWith("Error: Query must be at least 2 characters");
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("Searching for: \"ab\""));
+				assert.ok(!logCalls.includes("Error: Query must be at least 2 characters"));
 			});
 
 			it("should show usage message when no query provided", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
 				const logCalls = mockConsole.log.mock.calls;
 				const usageOutput = logCalls.map((call: any[]) => call[0]).join("\n");
 
-				expect(usageOutput).toContain("Usage:");
-				expect(usageOutput).toContain("npx tsx suggest.ts <query>");
-				expect(mockProcess.exit).toHaveBeenCalledWith(1);
+				assert.ok(usageOutput.includes("Usage:"));
+				assert.ok(usageOutput.includes("npx tsx suggest.ts <query>"));
+				assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 			});
 
 			it("should include all options in usage message", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
 				const logCalls = mockConsole.log.mock.calls;
 				const usageOutput = logCalls.map((call: any[]) => call[0]).join("\n");
 
-				expect(usageOutput).toContain("--size=N");
-				expect(usageOutput).toContain("Number of suggestions");
-				expect(usageOutput).toContain("--no-cache");
-				expect(usageOutput).toContain("Bypass cache");
+				assert.ok(usageOutput.includes("--size=N"));
+				assert.ok(usageOutput.includes("Number of suggestions"));
+				assert.ok(usageOutput.includes("--no-cache"));
+				assert.ok(usageOutput.includes("Bypass cache"));
 			});
 
 			it("should include examples in usage message", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
 				const logCalls = mockConsole.log.mock.calls;
 				const usageOutput = logCalls.map((call: any[]) => call[0]).join("\n");
 
-				expect(usageOutput).toContain("Examples:");
-				expect(usageOutput).toContain("npx tsx suggest.ts react");
-				expect(usageOutput).toContain("npx tsx suggest.ts --size=10 express");
-				expect(usageOutput).toContain("npx tsx suggest.ts @babel/core");
+				assert.ok(usageOutput.includes("Examples:"));
+				assert.ok(usageOutput.includes("npx tsx suggest.ts react"));
+				assert.ok(usageOutput.includes("npx tsx suggest.ts --size=10 express"));
+				assert.ok(usageOutput.includes("npx tsx suggest.ts @babel/core"));
 			});
 		});
 
@@ -310,7 +322,8 @@ describe("suggest.ts", () => {
 				await main(args, deps);
 
 				// Should limit to 25 (default)
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("(25 results)"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("(25 results)")));
 			});
 
 			it("should parse custom size option", async () => {
@@ -324,10 +337,11 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("(5 results)"));
-				expect(mockConsole.log).toHaveBeenCalledWith("1. pkg0");
-				expect(mockConsole.log).toHaveBeenCalledWith("5. pkg4");
-				expect(mockConsole.log).not.toHaveBeenCalledWith("6. pkg5");
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("(5 results)")));
+				assert.ok(logCalls.includes("1. pkg0"));
+				assert.ok(logCalls.includes("5. pkg4"));
+				assert.ok(!logCalls.includes("6. pkg5"));
 			});
 
 			it("should cap size at 250 when larger value is provided", async () => {
@@ -342,11 +356,8 @@ describe("suggest.ts", () => {
 				await main(args, deps);
 
 				// Should cap at 250
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						cacheKey: expect.stringContaining("-250"),
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.ok(call.cacheKey.includes("-250"));
 			});
 
 			it("should use size 1 when explicitly requested", async () => {
@@ -355,7 +366,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("(1 result)"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("(1 result)")));
 			});
 
 			it("should include size in cache key", async () => {
@@ -364,11 +376,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						cacheKey: "suggest-react-50",
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.cacheKey, "suggest-react-50");
 			});
 		});
 
@@ -379,11 +388,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: false,
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.bypassCache, false);
 			});
 
 			it("should bypass cache when --no-cache flag is provided", async () => {
@@ -392,11 +398,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: true,
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.bypassCache, true);
 			});
 
 			it("should include query in cache key", async () => {
@@ -405,11 +408,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						cacheKey: "suggest-express-25",
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.cacheKey, "suggest-express-25");
 			});
 
 			it("should use correct TTL (1 hour)", async () => {
@@ -418,11 +418,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						ttl: 3600,
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.ttl, 3600);
 			});
 
 			it("should build correct API URL from query", async () => {
@@ -431,11 +428,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: "https://api.npms.io/v2/search/suggestions?q=%40babel%2Fcore",
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.url, "https://api.npms.io/v2/search/suggestions?q=%40babel%2Fcore");
 			});
 
 			it("should handle special characters in query for cache key", async () => {
@@ -444,11 +438,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						cacheKey: "suggest-@types/node-25",
-					})
-				);
+				const call = mockFetchWithCache.mock.calls[mockFetchWithCache.mock.calls.length - 1][0];
+				assert.strictEqual(call.cacheKey, "suggest-@types/node-25");
 			});
 		});
 
@@ -459,9 +450,10 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Searching for: \"query\"");
+				assert.assert.deepStrictEqual(mockConsole.log.mock.calls[0][0], "Searching for: \"query\"");
 				// Verify the output contains the expected header elements
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Suggestions for \"query\""));
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.some((call: string) => typeof call === "string" && call.includes("Suggestions for \"query\"")));
 			});
 
 			it("should show separator line after header", async () => {
@@ -470,9 +462,9 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls;
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
 				// "Suggestions for \"query2\" (1 result)" - query2.length=6, so dashes=31
-				expect(logCalls.some((call: any[]) => call[0] === "-".repeat(31))).toBe(true);
+				assert.ok(logCalls.includes("-".repeat(31)));
 			});
 
 			it("should add blank line at end of output", async () => {
@@ -483,7 +475,7 @@ describe("suggest.ts", () => {
 
 				const logCalls = mockConsole.log.mock.calls;
 				// Last call should be a blank line
-				expect(logCalls[logCalls.length - 1]).toEqual([]);
+				assert.assert.deepStrictEqual(logCalls[logCalls.length - 1], []);
 			});
 
 			it("should format large scores with locale string", async () => {
@@ -494,7 +486,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("   Score: 999,999,999");
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("   Score: 999,999,999"));
 			});
 
 			it("should show npm URL for each package", async () => {
@@ -505,7 +498,8 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("   URL: https://www.npmjs.com/package/@angular/core");
+				const logCalls = mockConsole.log.mock.calls.map((c: any) => c[0]);
+				assert.ok(logCalls.includes("   URL: https://www.npmjs.com/package/@angular/core"));
 			});
 		});
 
@@ -514,36 +508,36 @@ describe("suggest.ts", () => {
 				mockFetchWithCache.mockRejectedValue(new Error("Network error"));
 				const args = parseArgs(["react"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Network error");
+				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Network error"]);
 			});
 
 			it("should handle timeout errors", async () => {
 				mockFetchWithCache.mockRejectedValue(new Error("Request timeout"));
 				const args = parseArgs(["express"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Request timeout");
+				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Request timeout"]);
 			});
 
 			it("should handle API errors", async () => {
 				mockFetchWithCache.mockRejectedValue(new Error("API rate limit exceeded"));
 				const args = parseArgs(["test"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "API rate limit exceeded");
+				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "API rate limit exceeded"]);
 			});
 
 			it("should handle non-Error errors", async () => {
 				mockFetchWithCache.mockRejectedValue("string error");
 				const args = parseArgs(["react"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("Error:", "string error");
+				assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
 			});
 		});
 	});
@@ -551,92 +545,81 @@ describe("suggest.ts", () => {
 	describe("handleError", () => {
 		it("should log Error instance message and exit", () => {
 			const error = new Error("Test error message");
-			expect(() => handleError(error, "react", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "react", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Test error message");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Test error message"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should log non-Error errors as strings", () => {
-			expect(() => handleError("string error", "express", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError("string error", "express", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "string error");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "string error"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle null errors", () => {
-			expect(() => handleError(null, "lodash", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(null, "lodash", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "null");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "null"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle undefined errors", () => {
-			expect(() => handleError(undefined, "axios", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(undefined, "axios", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "undefined");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "undefined"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle numeric errors", () => {
-			expect(() => handleError(500, "react", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(500, "react", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "500");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "500"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should handle object errors without message property", () => {
 			const error = { code: "ERR_API", status: 500 };
-			expect(() => handleError(error, "express", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "express", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "[object Object]");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "[object Object]"]);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should always call process.exit with code 1", () => {
 			const error = new Error("Any error");
-			expect(() => handleError(error, "test", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.assert.deepStrictEqual(mockProcess.exit.mock.calls[mockProcess.exit.mock.calls.length - 1], [1]);
 		});
 
 		it("should ignore _query parameter (present for interface consistency)", () => {
 			const error = new Error("Test error");
-			expect(() => handleError(error, "any-query-name", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "any-query-name", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
 			// The _query parameter is unused in the error handling, just part of the interface
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Test error");
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Test error"]);
 		});
 
 		it("should handle Error objects with custom message property", () => {
 			const customError = new Error("Custom API error");
-			expect(() => handleError(customError, "vue", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(customError, "vue", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "Custom API error");
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "Custom API error"]);
 		});
 
 		it("should handle boolean errors", () => {
-			expect(() => handleError(false, "test", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(false, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "false");
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "false"]);
 		});
 
 		it("should handle array errors", () => {
 			const arrayError = ["error1", "error2"];
-			expect(() => handleError(arrayError, "test", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(arrayError, "test", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("Error:", "error1,error2");
+			assert.assert.deepStrictEqual(mockConsole.error.mock.calls[mockConsole.error.mock.calls.length - 1], ["Error:", "error1,error2"]);
 		});
 	});
 });
