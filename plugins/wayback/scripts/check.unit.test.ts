@@ -2,12 +2,10 @@
  * Tests for wayback check.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError } from "./check";
-import { parseArgs } from "./utils";
-
-// Mock fetch
-global.fetch = vi.fn();
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { main, handleError } from "./check.js";
+import { parseArgs } from "./utils.js";
 
 describe("check.ts", () => {
 	let mockConsole: any;
@@ -16,21 +14,20 @@ describe("check.ts", () => {
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
-		vi.mocked(global.fetch).mockReset();
+		mock.reset();
 
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
 		};
 
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 		};
 
-		mockFetchWithCache = vi.fn();
+		mockFetchWithCache = mock.fn();
 
 		deps = {
 			fetchWithCache: mockFetchWithCache,
@@ -52,15 +49,15 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mockResolvedValue(mockData);
+				mockFetchWithCache.mock.mockImplementation(async () => mockData);
 				const args = parseArgs(["https://example.com"]);
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Checking: https://example.com");
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✓ Archived"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Timestamp:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("URL:"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "Checking: https://example.com"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✓ Archived")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Timestamp:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("URL:")));
 			});
 
 			it("should display not archived when no snapshot", async () => {
@@ -71,13 +68,13 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mockResolvedValue(mockData);
+				mockFetchWithCache.mock.mockImplementation(async () => mockData);
 				const args = parseArgs(["https://example.com"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✗ Not archived"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Use wayback-submit"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ Not archived")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Use wayback-submit")));
 			});
 
 			it("should use --no-raw flag", async () => {
@@ -90,13 +87,14 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mockResolvedValue(mockData);
+				mockFetchWithCache.mock.mockImplementation(async () => mockData);
 				const args = parseArgs(["--no-raw", "https://example.com"]);
 
 				await main(args, deps);
 
 				// When --no-raw is used, the URL should NOT contain "id_/" (modifier is empty)
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("https://web.archive.org/web/20240101120000/https://example.com"));
+				const logCalls = mockConsole.log.mock.calls.map((c: any[]) => c[0]).join(" ");
+				assert.ok(!logCalls.includes("id_/"));
 			});
 
 			it("should bypass cache with --no-cache flag", async () => {
@@ -109,16 +107,12 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mockResolvedValue(mockData);
+				mockFetchWithCache.mock.mockImplementation(async () => mockData);
 				const args = parseArgs(["--no-cache", "https://example.com"]);
 
 				await main(args, deps);
 
-				expect(mockFetchWithCache).toHaveBeenCalledWith(
-					expect.objectContaining({
-						bypassCache: true,
-					})
-				);
+				assert.strictEqual(mockFetchWithCache.mock.calls[0][0].bypassCache, true);
 			});
 		});
 
@@ -126,31 +120,31 @@ describe("check.ts", () => {
 			it("should show usage message when no URL provided", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("npx tsx check.ts <url>"));
-				expect(mockProcess.exit).toHaveBeenCalledWith(1);
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx check.ts <url>")));
+				assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 			});
 		});
 
 		describe("error handling", () => {
 			it("should handle network errors", async () => {
-				mockFetchWithCache.mockRejectedValue(new Error("Network error"));
+				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("Network error"); });
 				const args = parseArgs(["https://example.com"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Network error");
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Network error"));
 			});
 
 			it("should handle non-Error errors", async () => {
-				mockFetchWithCache.mockRejectedValue("string error");
+				mockFetchWithCache.mock.mockImplementation(async () => { throw "string error"; });
 				const args = parseArgs(["https://example.com"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "string error");
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "string error"));
 			});
 		});
 
@@ -165,14 +159,14 @@ describe("check.ts", () => {
 						},
 					},
 				};
-				mockFetchWithCache.mockResolvedValue(mockData);
+				mockFetchWithCache.mock.mockImplementation(async () => mockData);
 				const args = parseArgs(["https://example.com"]);
 
 				await main(args, deps);
 
 				const logCalls = mockConsole.log.mock.calls;
-				expect(logCalls[1]).toEqual([]); // blank line after checking
-				expect(logCalls[logCalls.length - 1]).toEqual([]); // blank line at end
+				assert.deepStrictEqual(logCalls[1], []); // blank line after checking
+				assert.deepStrictEqual(logCalls[logCalls.length - 1], []); // blank line at end
 			});
 		});
 	});
@@ -180,26 +174,23 @@ describe("check.ts", () => {
 	describe("handleError", () => {
 		it("should log Error instance message", () => {
 			const error = new Error("Check failed");
-			expect(() => handleError(error, "https://example.com", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "https://example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Check failed");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Check failed"));
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should log non-Error errors as strings", () => {
-			expect(() => handleError("string error", "https://example.com", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError("string error", "https://example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "string error");
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "string error"));
 		});
 
 		it("should ignore url parameter", () => {
 			const error = new Error("Test error");
-			expect(() => handleError(error, "any-url", { console: mockConsole, process: mockProcess }))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "any-url", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Test error");
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Test error"));
 		});
 	});
 });

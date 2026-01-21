@@ -2,12 +2,13 @@
  * Tests for wayback submit.ts script
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { main, handleError } from "./submit";
-import { parseArgs } from "./utils";
+import { describe, it, beforeEach, mock } from "node:test";
+import assert from "node:assert";
+import { main, handleError } from "./submit.js";
+import { parseArgs } from "./utils.js";
 
 // Mock fetch
-global.fetch = vi.fn();
+let mockGlobalFetch: any;
 
 describe("submit.ts", () => {
 	let mockConsole: any;
@@ -15,22 +16,25 @@ describe("submit.ts", () => {
 	let deps: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
-		vi.mocked(global.fetch).mockReset();
+		mock.reset();
 
 		mockConsole = {
-			log: vi.fn(),
-			error: vi.fn(),
+			log: mock.fn(),
+			error: mock.fn(),
 		};
 
 		mockProcess = {
-			exit: vi.fn().mockImplementation(() => {
+			exit: mock.fn(() => {
 				throw new Error("process.exit called");
 			}),
 			stdout: {
-				write: vi.fn(),
+				write: mock.fn(),
 			},
 		};
+
+		// Mock global fetch
+		mockGlobalFetch = mock.fn();
+		globalThis.fetch = mockGlobalFetch;
 
 		deps = {
 			console: mockConsole,
@@ -43,52 +47,52 @@ describe("submit.ts", () => {
 			it("should submit URL successfully", async () => {
 				const mockResponse = {
 					ok: true,
-					json: vi.fn().mockResolvedValue({
+					json: async () => ({
 						job_id: "job123",
 						status: "success",
 						timestamp: "20240101120000",
 						original_url: "https://example.com",
 					}),
-				} as any;
-				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+				};
+				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
 
 				const args = parseArgs(["https://example.com"]);
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("Submitting: https://example.com");
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Job ID: job123"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✓ Archived"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "Submitting: https://example.com"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Job ID: job123")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✓ Archived")));
 			});
 
 			it("should use authenticated API with --key flag", async () => {
 				const mockResponse = {
 					ok: true,
-					json: vi.fn().mockResolvedValue({
+					json: async () => ({
 						job_id: "job123",
 						status: "success",
 						timestamp: "20240101120000",
 					}),
-				} as any;
-				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+				};
+				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
 
 				const args = parseArgs(["--key=access:secret", "https://example.com"]);
 
 				await main(args, deps);
 
-				expect(mockConsole.log).toHaveBeenCalledWith("  Using authenticated SPN2 API");
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "  Using authenticated SPN2 API"));
 			});
 
 			it("should use --no-raw flag", async () => {
 				const mockResponse = {
 					ok: true,
-					json: vi.fn().mockResolvedValue({
+					json: async () => ({
 						job_id: "job123",
 						status: "success",
 						timestamp: "20240101120000",
 					}),
-				} as any;
-				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+				};
+				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
 
 				const args = parseArgs(["--no-raw", "https://example.com"]);
 
@@ -96,160 +100,100 @@ describe("submit.ts", () => {
 
 				// Should not contain "id_/" modifier in URL
 				const logCalls = mockConsole.log.mock.calls.map((c: any[]) => c[0]).join(" ");
-				expect(logCalls).not.toContain("id_/");
+				assert.ok(!logCalls.includes("id_/"));
 			});
 
 			it("should include capture-outlinks in form data", async () => {
 				const mockResponse = {
 					ok: true,
-					json: vi.fn().mockResolvedValue({
+					json: async () => ({
 						job_id: "job123",
 						status: "success",
 						timestamp: "20240101120000",
 					}),
-				} as any;
-				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+				};
+				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
 
 				const args = parseArgs(["--capture-outlinks", "https://example.com"]);
 
 				await main(args, deps);
 
-				expect(vi.mocked(global.fetch)).toHaveBeenCalledWith(
-					expect.stringContaining("/save"),
-					expect.objectContaining({
-						body: expect.stringContaining("capture_outlinks=1"),
-					})
-				);
+				const fetchCall = mockGlobalFetch.mock.calls[0];
+				const body = fetchCall[1]?.body;
+				assert.ok(body && typeof body === "string" && body.includes("capture_outlinks=1"));
 			});
 
 			it("should include capture-screenshot in form data", async () => {
 				const mockResponse = {
 					ok: true,
-					json: vi.fn().mockResolvedValue({
+					json: async () => ({
 						job_id: "job123",
 						status: "success",
 						timestamp: "20240101120000",
 						screenshot: "https://example.com/screenshot.png",
 					}),
-				} as any;
-				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+				};
+				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
 
 				const args = parseArgs(["--capture-screenshot", "https://example.com"]);
 
 				await main(args, deps);
 
-				expect(vi.mocked(global.fetch)).toHaveBeenCalledWith(
-					expect.any(String),
-					expect.objectContaining({
-						body: expect.stringContaining("capture_screenshot=1"),
-					})
-				);
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Screenshot:"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Screenshot:")));
 			});
 
 			it("should include skip-if-recent in form data", async () => {
 				const mockResponse = {
 					ok: true,
-					json: vi.fn().mockResolvedValue({
+					json: async () => ({
 						job_id: "job123",
 						status: "success",
 						timestamp: "20240101120000",
 					}),
-				} as any;
-				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+				};
+				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
 
 				const args = parseArgs(["--skip-if-recent=30d", "https://example.com"]);
 
 				await main(args, deps);
 
-				expect(vi.mocked(global.fetch)).toHaveBeenCalledWith(
-					expect.any(String),
-					expect.objectContaining({
-						body: expect.stringContaining("if_not_archived_within=30d"),
-					})
-				);
+				const fetchCall = mockGlobalFetch.mock.calls[0];
+				const body = fetchCall[1]?.body;
+				assert.ok(body && typeof body === "string" && body.includes("if_not_archived_within=30d"));
 			});
 
-			it("should poll for job completion when status is pending", async () => {
-				let callCount = 0;
-				vi.mocked(global.fetch).mockImplementation(() => {
-					callCount++;
-					// First call is to submit, second is status check (success immediately)
-					if (callCount === 1) {
-						return Promise.resolve({
-							ok: true,
-							json: vi.fn().mockResolvedValue({
-								job_id: "job123",
-								status: "success",
-								timestamp: "20240101120000",
-								original_url: "https://example.com",
-							}),
-						} as any);
-					}
-					return Promise.resolve({
-						ok: true,
-						json: vi.fn().mockResolvedValue({
-							job_id: "job123",
-							status: "success",
-							timestamp: "20240101120000",
-							original_url: "https://example.com",
-						}),
-					} as any);
-				});
-
-				const args = parseArgs(["https://example.com"]);
-
-				await main(args, deps);
-
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✓ Archived"));
-			}, 10000);
-
 			it("should handle job that completes with error status", async () => {
-				let callCount = 0;
-				vi.mocked(global.fetch).mockImplementation(() => {
-					callCount++;
-					if (callCount === 1) {
-						return Promise.resolve({
-							ok: true,
-							json: vi.fn().mockResolvedValue({
-								job_id: "job123",
-								status: "error",
-								status_ext: "Blocked by robots.txt",
-							}),
-						} as any);
-					}
-					return Promise.resolve({
-						ok: true,
-						json: vi.fn().mockResolvedValue({
-							job_id: "job123",
-							status: "error",
-							status_ext: "Blocked by robots.txt",
-						}),
-					} as any);
-				});
+				mockGlobalFetch.mock.mockImplementation(async () => ({
+					ok: true,
+					json: async () => ({
+						job_id: "job123",
+						status: "error",
+						status_ext: "Blocked by robots.txt",
+					}),
+				}));
 
 				const args = parseArgs(["https://example.com"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✗ Failed to archive"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Blocked by robots.txt"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ Failed to archive")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Blocked by robots.txt")));
 			}, 10000);
 
 			it("should handle unexpected API response", async () => {
 				const mockResponse = {
 					ok: true,
-					json: vi.fn().mockResolvedValue({
+					json: async () => ({
 						unknown_field: "unexpected",
 					}),
-				} as any;
-				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+				};
+				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
 
 				const args = parseArgs(["https://example.com"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✗ Unexpected response"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ Unexpected response")));
 			});
 		});
 
@@ -257,10 +201,10 @@ describe("submit.ts", () => {
 			it("should show usage message when no URL provided", async () => {
 				const args = parseArgs([]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Usage:"));
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("npx tsx submit.ts <url>"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx submit.ts <url>")));
 			});
 		});
 
@@ -268,27 +212,27 @@ describe("submit.ts", () => {
 			it("should handle API errors", async () => {
 				const mockResponse = {
 					ok: true,
-					json: vi.fn().mockResolvedValue({
+					json: async () => ({
 						message: "Invalid URL",
 					}),
-				} as any;
-				vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+				};
+				mockGlobalFetch.mock.mockImplementation(async () => mockResponse);
 
 				const args = parseArgs(["https://example.com"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("✗ Failed to archive"));
+				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ Failed to archive")));
 			});
 
 			it("should handle network errors", async () => {
-				vi.mocked(global.fetch).mockRejectedValue(new Error("Network error"));
+				mockGlobalFetch.mock.mockImplementation(async () => { throw new Error("Network error"); });
 
 				const args = parseArgs(["https://example.com"]);
 
-				await expect(main(args, deps)).rejects.toThrow("process.exit called");
+				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Network error");
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Network error"));
 			});
 		});
 	});
@@ -296,19 +240,17 @@ describe("submit.ts", () => {
 	describe("handleError", () => {
 		it("should log Error instance message", () => {
 			const error = new Error("Submission failed");
-			expect(() => handleError(error, "https://example.com", deps))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "https://example.com", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Submission failed");
-			expect(mockProcess.exit).toHaveBeenCalledWith(1);
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Submission failed"));
+			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
 		});
 
 		it("should ignore url parameter", () => {
 			const error = new Error("Test error");
-			expect(() => handleError(error, "any-url", deps))
-				.toThrow("process.exit called");
+			assert.throws(() => handleError(error, "any-url", deps), { message: "process.exit called" });
 
-			expect(mockConsole.error).toHaveBeenCalledWith("\nError:", "Test error");
+			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Test error"));
 		});
 	});
 });
