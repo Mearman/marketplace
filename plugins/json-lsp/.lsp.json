@@ -1,0 +1,10 @@
+{
+	"json": {
+		"command": "npx",
+		"args": ["tsx", "${CLAUDE_PLUGIN_ROOT}/src/server.ts"],
+		"extensionToLanguage": {
+			".json": "json",
+			".jsonc": "jsonc"
+		}
+	}
+}
