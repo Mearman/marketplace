@@ -23,7 +23,11 @@
 	"dependencies": {
 		"ajv": "8.17.1",
 		"ajv-draft-04": "1.0.0",
-		"ajv-formats": "3.0.1"
+		"ajv-formats": "3.0.1",
+		"jsonc-parser": "3.3.1",
+		"vscode-json-languageservice": "5.7.1",
+		"vscode-languageserver": "9.0.1",
+		"vscode-languageserver-textdocument": "1.0.11"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "20.3.1",
