@@ -1,3 +1,15 @@
+## 1.19.0 (2026-01-22)
+
+* chore(json-lsp): add LSP dependencies to root package.json ([59da5f2](https://github.com/Mearman/marketplace/commit/59da5f2))
+* chore(json-lsp): update pnpm lock file ([b18e448](https://github.com/Mearman/marketplace/commit/b18e448))
+* test(json-lsp): add associations unit tests ([c3c63a5](https://github.com/Mearman/marketplace/commit/c3c63a5))
+* test(json-lsp): add catalog unit tests ([c92f95c](https://github.com/Mearman/marketplace/commit/c92f95c))
+* feat(json-lsp): add LSP server configuration ([8b2aec7](https://github.com/Mearman/marketplace/commit/8b2aec7))
+* feat(json-lsp): add plugin manifest ([2a852c8](https://github.com/Mearman/marketplace/commit/2a852c8))
+* feat(json-lsp): add schema associations module ([14b71ec](https://github.com/Mearman/marketplace/commit/14b71ec))
+* feat(json-lsp): add SchemaStore catalog integration ([1510b9c](https://github.com/Mearman/marketplace/commit/1510b9c))
+* feat(json-lsp): implement LSP server ([3ba6f36](https://github.com/Mearman/marketplace/commit/3ba6f36))
+
 ## 1.18.0 (2026-01-22)
 
 * test(json-schema): add unit tests ([786d199](https://github.com/Mearman/marketplace/commit/786d199))
