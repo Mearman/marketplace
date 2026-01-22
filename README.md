@@ -72,7 +72,7 @@ Gravatar Avatar URLs: Tools for generating avatar URLs from email addresses
 /plugin install gravatar@mearman
 ```
 
-### [json-schema](plugins/json-schema/) — v0.1.0
+### [json-schema](plugins/json-schema/) — v0.2.0
 
 JSON Schema Validation: Tools for validating JSON schemas themselves, validating JSON files against schemas, and auto-validating files against their $schema reference
 

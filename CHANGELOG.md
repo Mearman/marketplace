@@ -1,3 +1,13 @@
+## 1.18.0 (2026-01-22)
+
+* test(json-schema): add unit tests ([786d199](https://github.com/Mearman/marketplace/commit/786d199))
+* feat(json-schema): add plugin manifest ([569b3ac](https://github.com/Mearman/marketplace/commit/569b3ac))
+* feat(json-schema): add schema-check skill ([ca1285d](https://github.com/Mearman/marketplace/commit/ca1285d))
+* feat(json-schema): add schema-meta skill ([896502d](https://github.com/Mearman/marketplace/commit/896502d))
+* feat(json-schema): add schema-validate skill ([ad965ab](https://github.com/Mearman/marketplace/commit/ad965ab))
+* feat(json-schema): add shared utilities ([4a90679](https://github.com/Mearman/marketplace/commit/4a90679))
+* chore(deps): add ajv packages for JSON Schema validation ([aba913a](https://github.com/Mearman/marketplace/commit/aba913a))
+
 ## <small>1.17.4 (2026-01-21)</small>
 
 * chore(ci): allow empty scopes for ci/chore/docs commits ([565972c](https://github.com/Mearman/marketplace/commit/565972c))
