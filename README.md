@@ -72,6 +72,16 @@ Gravatar Avatar URLs: Tools for generating avatar URLs from email addresses
 /plugin install gravatar@mearman
 ```
 
+### [json-schema](plugins/json-schema/) — v0.1.0
+
+JSON Schema Validation: Tools for validating JSON schemas themselves, validating JSON files against schemas, and auto-validating files against their $schema reference
+
+**Components:** 3 skills
+
+```bash
+/plugin install json-schema@mearman
+```
+
 ### [npm-registry](plugins/npm-registry/) — v0.2.0
 
 npm Registry: Tools for searching packages, getting metadata, checking existence, and fetching download statistics
