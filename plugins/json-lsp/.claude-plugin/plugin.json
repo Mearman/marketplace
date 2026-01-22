@@ -1,0 +1,5 @@
+{
+  "name": "json-lsp",
+  "description": "JSON Language Server: Provides validation, completion, hover, document symbols, and formatting for JSON and JSONC files with automatic schema association support",
+  "version": "0.1.0"
+}

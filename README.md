@@ -72,6 +72,16 @@ Gravatar Avatar URLs: Tools for generating avatar URLs from email addresses
 /plugin install gravatar@mearman
 ```
 
+### [json-lsp](plugins/json-lsp/) — v0.1.0
+
+JSON Language Server: Provides validation, completion, hover, document symbols, and formatting for JSON and JSONC files with automatic schema association support
+
+**Components:** LSP
+
+```bash
+/plugin install json-lsp@mearman
+```
+
 ### [json-schema](plugins/json-schema/) — v0.2.0
 
 JSON Schema Validation: Tools for validating JSON schemas themselves, validating JSON files against schemas, and auto-validating files against their $schema reference
