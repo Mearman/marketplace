@@ -95,64 +95,70 @@ export interface MarketplaceJson {
 // Component Type Configuration (Extensible)
 // ============================================================================
 
-interface ComponentTypeConfig<T> {
+// Common component item with name, description, content
+interface ComponentItem {
+  name: string;
+  description: string;
+  content?: string;
+}
+
+interface ComponentTypeConfig {
   name: string;
   directory: string;
   filePattern: string;
-  parse: (filePath: string) => T | null;
-  formatForReadme: (item: T) => string;
+  parse: (filePath: string) => ComponentItem | ComponentItem[] | null;
+  formatForReadme: (item: ComponentItem) => string;
   formatForCard: (count: number) => string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const COMPONENT_TYPES: ComponentTypeConfig<any>[] = [
+const COMPONENT_TYPES: ComponentTypeConfig[] = [
 	{
 		name: "Skills",
 		directory: "skills",
 		filePattern: "*/SKILL.md",
 		parse: parseSkillMd,
-		formatForReadme: (skill) => skill.content || `### ${skill.name}\n\n${skill.description}`,
-		formatForCard: (n) => `${n} skill${n !== 1 ? "s" : ""}`,
+		formatForReadme: (skill: ComponentItem) => skill.content ?? `### ${skill.name}\n\n${skill.description}`,
+		formatForCard: (n: number) => `${n} skill${n !== 1 ? "s" : ""}`,
 	},
 	{
 		name: "Commands",
 		directory: "commands",
 		filePattern: "*.md",
 		parse: parseCommandMd,
-		formatForReadme: (cmd) => cmd.content || `### ${cmd.name}\n\n${cmd.description}`,
-		formatForCard: (n) => `${n} command${n !== 1 ? "s" : ""}`,
+		formatForReadme: (cmd: ComponentItem) => cmd.content ?? `### ${cmd.name}\n\n${cmd.description}`,
+		formatForCard: (n: number) => `${n} command${n !== 1 ? "s" : ""}`,
 	},
 	{
 		name: "Hooks",
 		directory: "hooks",
 		filePattern: "hooks.json",
 		parse: parseHooksJson,
-		formatForReadme: (hook) => `### ${hook.name}\n\n\`\`\`json\n${hook.content}\n\`\`\``,
-		formatForCard: (n) => `${n} hook${n !== 1 ? "s" : ""}`,
+		formatForReadme: (hook: ComponentItem) => `### ${hook.name}\n\n\`\`\`json\n${hook.content ?? ""}\n\`\`\``,
+		formatForCard: (n: number) => `${n} hook${n !== 1 ? "s" : ""}`,
 	},
 	{
 		name: "Agents",
 		directory: "agents",
 		filePattern: "*.md",
 		parse: parseAgentMd,
-		formatForReadme: (agent) => agent.content || `### ${agent.name}\n\n${agent.description}`,
-		formatForCard: (n) => `${n} agent${n !== 1 ? "s" : ""}`,
+		formatForReadme: (agent: ComponentItem) => agent.content ?? `### ${agent.name}\n\n${agent.description}`,
+		formatForCard: (n: number) => `${n} agent${n !== 1 ? "s" : ""}`,
 	},
 	{
 		name: "MCP",
 		directory: ".",
 		filePattern: ".mcp.json",
 		parse: parseMcpJson,
-		formatForReadme: (mcp) => `\`\`\`json\n${mcp.content}\n\`\`\``,
-		formatForCard: (n) => (n > 0 ? "MCP" : ""),
+		formatForReadme: (mcp: ComponentItem) => `\`\`\`json\n${mcp.content ?? ""}\n\`\`\``,
+		formatForCard: (n: number) => (n > 0 ? "MCP" : ""),
 	},
 	{
 		name: "LSP",
 		directory: ".",
 		filePattern: ".lsp.json",
 		parse: parseLspJson,
-		formatForReadme: (lsp) => `\`\`\`json\n${lsp.content}\n\`\`\``,
-		formatForCard: (n) => (n > 0 ? "LSP" : ""),
+		formatForReadme: (lsp: ComponentItem) => `\`\`\`json\n${lsp.content ?? ""}\n\`\`\``,
+		formatForCard: (n: number) => (n > 0 ? "LSP" : ""),
 	},
 ];
 
@@ -246,21 +252,57 @@ function parseCommandMd(filePath: string): Command | null {
 }
 
 /**
+ * Type guard for hook matcher config object
+ */
+function isMatcherConfig(value: unknown): value is { matcher?: string; hooks?: unknown[] } {
+	return typeof value === "object" && value !== null;
+}
+
+/**
+ * Get property value from object safely without type assertions
+ */
+function getProp(obj: object, key: string): unknown {
+	return Object.getOwnPropertyDescriptor(obj, key)?.value;
+}
+
+/**
+ * Get string property from object safely
+ */
+function getStringProp(obj: object, key: string): string | undefined {
+	const val = getProp(obj, key);
+	return typeof val === "string" ? val : undefined;
+}
+
+/**
+ * Get array property from object safely
+ */
+function getArrayProp(obj: object, key: string): unknown[] {
+	const val = getProp(obj, key);
+	return Array.isArray(val) ? val : [];
+}
+
+/**
  * Parse hooks.json file.
  */
 function parseHooksJson(filePath: string): Hook[] | null {
 	try {
 		const content = readFileSync(filePath, "utf-8");
-		const hooksConfig = JSON.parse(content) as Record<string, unknown>;
+		const parsed: unknown = JSON.parse(content);
 
+		if (typeof parsed !== "object" || parsed === null) {
+			return null;
+		}
+
+		// Get object entries directly after type narrowing
+		const hooksConfig = parsed;
 		const hooks: Hook[] = [];
 
 		for (const [eventType, eventConfig] of Object.entries(hooksConfig)) {
 			if (Array.isArray(eventConfig)) {
 				for (const matcherConfig of eventConfig) {
-					if (typeof matcherConfig === "object" && matcherConfig !== null) {
-						const matcher = (matcherConfig as { matcher?: string }).matcher;
-						const hookConfigs = (matcherConfig as { hooks?: unknown[] }).hooks || [];
+					if (isMatcherConfig(matcherConfig)) {
+						const matcher = getStringProp(matcherConfig, "matcher");
+						const hookConfigs = getArrayProp(matcherConfig, "hooks");
 
 						hooks.push({
 							name: `${eventType}${matcher ? ` (${matcher})` : ""}`,
@@ -307,16 +349,20 @@ function parseAgentMd(filePath: string): Agent | null {
 function parseMcpJson(filePath: string): McpServer | null {
 	try {
 		const content = readFileSync(filePath, "utf-8");
-		const mcpConfig = JSON.parse(content) as Record<string, unknown>;
+		const parsed: unknown = JSON.parse(content);
 
-		const serverCount = Object.keys(mcpConfig).length;
+		if (typeof parsed !== "object" || parsed === null) {
+			return null;
+		}
+
+		const serverCount = Object.keys(parsed).length;
 
 		if (serverCount === 0) return null;
 
 		return {
 			name: "MCP Servers",
 			description: `${serverCount} server${serverCount !== 1 ? "s" : ""} configured`,
-			content: JSON.stringify(mcpConfig, null, 2),
+			content: JSON.stringify(parsed, null, 2),
 		};
 	} catch {
 		return null;
@@ -329,16 +375,20 @@ function parseMcpJson(filePath: string): McpServer | null {
 function parseLspJson(filePath: string): LspServer | null {
 	try {
 		const content = readFileSync(filePath, "utf-8");
-		const lspConfig = JSON.parse(content) as Record<string, unknown>;
+		const parsed: unknown = JSON.parse(content);
 
-		const serverCount = Object.keys(lspConfig).length;
+		if (typeof parsed !== "object" || parsed === null) {
+			return null;
+		}
+
+		const serverCount = Object.keys(parsed).length;
 
 		if (serverCount === 0) return null;
 
 		return {
 			name: "LSP Servers",
 			description: `${serverCount} server${serverCount !== 1 ? "s" : ""} configured`,
-			content: JSON.stringify(lspConfig, null, 2),
+			content: JSON.stringify(parsed, null, 2),
 		};
 	} catch {
 		return null;
@@ -393,6 +443,43 @@ function findFiles(pluginPath: string, directory: string, pattern: string): stri
 }
 
 /**
+ * Type guard to check if value is an array of ComponentItems
+ */
+function isComponentItemArray(value: unknown): value is ComponentItem[] {
+	return Array.isArray(value);
+}
+
+/**
+ * Assign component to the appropriate key in components object
+ */
+function assignComponent(
+	components: PluginComponents,
+	key: string,
+	value: ComponentItem[]
+): void {
+	switch (key) {
+	case "skills":
+		components.skills = value;
+		break;
+	case "commands":
+		components.commands = value;
+		break;
+	case "hooks":
+		components.hooks = value;
+		break;
+	case "agents":
+		components.agents = value;
+		break;
+	case "mcp":
+		components.mcp = value;
+		break;
+	case "lsp":
+		components.lsp = value;
+		break;
+	}
+}
+
+/**
  * Discover all components for a plugin.
  */
 function discoverComponents(pluginName: string): PluginComponents {
@@ -403,31 +490,28 @@ function discoverComponents(pluginName: string): PluginComponents {
 		const files = findFiles(pluginPath, type.directory, type.filePattern);
 
 		if (files.length > 0) {
-			const key = type.name.toLowerCase() as keyof PluginComponents;
+			const key = type.name.toLowerCase();
 
 			if (type.name === "Hooks") {
 				// Hooks returns array from single file
 				const parsed = type.parse(files[0]);
-				if (parsed) {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					components[key] = parsed as any;
+				if (parsed && isComponentItemArray(parsed)) {
+					assignComponent(components, key, parsed);
 				}
 			} else if (type.name === "MCP" || type.name === "LSP") {
 				// MCP/LSP are single-file configs
 				const parsed = type.parse(files[0]);
-				if (parsed) {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					components[key] = [parsed] as any;
+				if (parsed && !isComponentItemArray(parsed)) {
+					assignComponent(components, key, [parsed]);
 				}
 			} else {
 				// Skills, Commands, Agents are multi-file
 				const items = files
 					.map((f) => type.parse(f))
-					.filter((item): item is Skill | Command | Agent => item !== null);
+					.filter((item): item is ComponentItem => item !== null && !Array.isArray(item));
 
 				if (items.length > 0) {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					components[key] = items as any;
+					assignComponent(components, key, items);
 				}
 			}
 		}
@@ -441,14 +525,36 @@ function discoverComponents(pluginName: string): PluginComponents {
 // ============================================================================
 
 /**
+ * Get component array from PluginComponents by name
+ */
+function getComponentByName(components: PluginComponents, name: string): ComponentItem[] | undefined {
+	switch (name.toLowerCase()) {
+	case "skills":
+		return components.skills;
+	case "commands":
+		return components.commands;
+	case "hooks":
+		return components.hooks;
+	case "agents":
+		return components.agents;
+	case "mcp":
+		return components.mcp;
+	case "lsp":
+		return components.lsp;
+	default:
+		return undefined;
+	}
+}
+
+/**
  * Format component summary for root README card.
  */
 export function formatComponentSummary(components: PluginComponents): string {
 	const parts: string[] = [];
 
 	for (const type of COMPONENT_TYPES) {
-		const key = type.name.toLowerCase() as keyof PluginComponents;
-		const count = components[key]?.length || 0;
+		const items = getComponentByName(components, type.name);
+		const count = items?.length ?? 0;
 
 		if (count > 0) {
 			const label = type.formatForCard(count);
@@ -582,8 +688,7 @@ export function generatePluginReadme(plugin: Plugin): string {
 
 	// Generate sections for each component type
 	for (const type of COMPONENT_TYPES) {
-		const key = type.name.toLowerCase() as keyof PluginComponents;
-		const items = components[key];
+		const items = getComponentByName(components, type.name);
 
 		if (items && items.length > 0) {
 			sections.push(`## ${type.name}`);
@@ -661,6 +766,20 @@ function checkPluginReadme(pluginName: string, content: string): boolean {
 	return existingContent === preservedContent;
 }
 
+/**
+ * Type guard for MarketplaceJson
+ */
+function isMarketplaceJson(value: unknown): value is MarketplaceJson {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+	if (!("plugins" in value)) {
+		return false;
+	}
+	const pluginsDesc = Object.getOwnPropertyDescriptor(value, "plugins");
+	return pluginsDesc !== undefined && Array.isArray(pluginsDesc.value);
+}
+
 // ============================================================================
 // Main
 // ============================================================================
@@ -668,7 +787,13 @@ function checkPluginReadme(pluginName: string, content: string): boolean {
 function main(): void {
 	const checkOnly = process.argv.includes("--check");
 	const marketplaceJson = readFileSync(marketplacePath, "utf-8");
-	const marketplace = JSON.parse(marketplaceJson) as MarketplaceJson;
+	const parsed: unknown = JSON.parse(marketplaceJson);
+
+	if (!isMarketplaceJson(parsed)) {
+		throw new Error("Invalid marketplace.json format");
+	}
+
+	const marketplace = parsed;
 
 	// Enrich plugins with component information
 	for (const plugin of marketplace.plugins) {

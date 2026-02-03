@@ -10,9 +10,9 @@
  * - Marker preservation logic
  */
 
-import { describe, it, beforeEach, afterEach, mock } from "node:test";
+import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
-import { writeFileSync, unlinkSync, existsSync, readFileSync } from "node:fs";
+import { writeFileSync, unlinkSync, existsSync } from "node:fs";
 import { mkdtempSync, rmdirSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";

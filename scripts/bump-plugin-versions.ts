@@ -94,9 +94,33 @@ function bumpVersion(version: string, bumpType: "major" | "minor" | "patch"): st
 	}
 }
 
+function hasStringProperty(obj: object, key: string): boolean {
+	if (!(key in obj)) return false;
+	// Use Object.prototype to safely access the property
+	const descriptor = Object.getOwnPropertyDescriptor(obj, key);
+	if (descriptor === undefined) return false;
+	const value: unknown = descriptor.value;
+	return typeof value === "string";
+}
+
+function isPluginJson(value: unknown): value is PluginJson {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+	return (
+		hasStringProperty(value, "name") &&
+		hasStringProperty(value, "description") &&
+		hasStringProperty(value, "version")
+	);
+}
+
 function readPluginJson(pluginName: string): PluginJson {
 	const path = join(pluginsDir, pluginName, ".claude-plugin", "plugin.json");
-	return JSON.parse(readFileSync(path, "utf-8"));
+	const parsed: unknown = JSON.parse(readFileSync(path, "utf-8"));
+	if (!isPluginJson(parsed)) {
+		throw new Error(`Invalid plugin.json for ${pluginName}`);
+	}
+	return parsed;
 }
 
 function writePluginJson(pluginName: string, data: PluginJson): void {
@@ -108,8 +132,24 @@ function writePluginJson(pluginName: string, data: PluginJson): void {
 	writeFileSync(path, JSON.stringify(cleanData, null, 2) + "\n", "utf-8");
 }
 
+function isMarketplaceJson(value: unknown): value is MarketplaceJson {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+	if (!("$schema" in value) || !("name" in value) || !("owner" in value) ||
+		!("metadata" in value) || !("plugins" in value)) {
+		return false;
+	}
+	const pluginsDesc = Object.getOwnPropertyDescriptor(value, "plugins");
+	return pluginsDesc !== undefined && Array.isArray(pluginsDesc.value);
+}
+
 function readMarketplace(): MarketplaceJson {
-	return JSON.parse(readFileSync(marketplacePath, "utf-8"));
+	const parsed: unknown = JSON.parse(readFileSync(marketplacePath, "utf-8"));
+	if (!isMarketplaceJson(parsed)) {
+		throw new Error("Invalid marketplace.json");
+	}
+	return parsed;
 }
 
 function writeMarketplace(data: MarketplaceJson): void {
