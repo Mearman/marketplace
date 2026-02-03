@@ -3,6 +3,10 @@
   "hooks": {},
   "permissions": {
     "deny": [
+      "Edit(eslint.config.ts)",
+      "Edit(**/eslint.config.ts)",
+      "Write(eslint.config.ts)",
+      "Write(**/eslint.config.ts)",
       "Bash(git add -A*)",
       "Bash(git add --all*)",
       "Bash(git add . *)",
