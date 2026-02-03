@@ -251,9 +251,11 @@ export class RISParser implements Parser {
 			const cslField = getCslFieldFromRis(tag);
 
 			if (!cslField) {
-        // Unknown tag - store in metadata
-        entry._formatMetadata!.customFields![tag] = values;
-        continue;
+				// Unknown tag - store in metadata
+				if (entry._formatMetadata && entry._formatMetadata.customFields) {
+					entry._formatMetadata.customFields[tag] = values;
+				}
+				continue;
 			}
 
 			// Handle multi-value fields

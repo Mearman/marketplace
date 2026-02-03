@@ -55,6 +55,19 @@ function isCSLItemType(value: string): value is CSLItemType {
 }
 
 /**
+ * Safely get id from parsed item as string
+ */
+function getItemId(item: unknown, index: number): string {
+	if (typeof item === "object" && item !== null && "id" in item) {
+		// After 'in' check, TypeScript knows item has 'id' property
+		const id = item.id;
+		if (typeof id === "string") return id;
+		if (typeof id === "number") return String(id);
+	}
+	return `item-${index}`;
+}
+
+/**
  * CSL JSON Parser Implementation
  */
 export class CSLJSONParser implements Parser {
@@ -65,20 +78,21 @@ export class CSLJSONParser implements Parser {
 		const warnings: ConversionWarning[] = [];
 
 		try {
-			const parsed = JSON.parse(content);
+			const parsed: unknown = JSON.parse(content);
 
 			// Handle both array and single object
-			const items = Array.isArray(parsed) ? parsed : [parsed];
+			const items: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
 
 			for (let i = 0; i < items.length; i++) {
 				const item = items[i];
+				const itemId = getItemId(item, i);
 
 				try {
 					const entry = this.parseEntry(item, i);
 					entries.push(entry);
 				} catch (error) {
 					warnings.push({
-						entryId: item.id || `item-${i}`,
+						entryId: itemId,
 						severity: "error",
 						type: "parse-error",
 						message: error instanceof Error ? error.message : String(error),
@@ -107,28 +121,47 @@ export class CSLJSONParser implements Parser {
 	}
 
 	/**
+	 * Safely convert unknown value to string for IDs
+	 */
+	private safeStringify(value: unknown): string {
+		if (typeof value === "string") return value;
+		if (typeof value === "number") return String(value);
+		if (typeof value === "boolean") return String(value);
+		return JSON.stringify(value);
+	}
+
+	/**
    * Parse a single CSL JSON item into BibEntry
    */
-	private parseEntry(item: Record<string, unknown>, index: number): BibEntry {
-		// Validate required fields
-		if (!item.id) {
+	private parseEntry(item: unknown, index: number): BibEntry {
+		// Validate item is an object
+		if (typeof item !== "object" || item === null) {
+			throw new Error(`Entry at index ${index} is not an object`);
+		}
+
+		// Validate required fields using 'in' operator for type narrowing
+		if (!("id" in item) || item.id === undefined || item.id === null) {
 			throw new Error(`Entry at index ${index} missing required 'id' field`);
 		}
 
-		if (!item.type) {
-			throw new Error(`Entry '${item.id}' missing required 'type' field`);
+		if (!("type" in item) || item.type === undefined || item.type === null) {
+			const id = this.safeStringify(item.id);
+			throw new Error(`Entry '${id}' missing required 'type' field`);
 		}
+
+		// Now we know item has id and type - extract them safely
+		const entryId = this.safeStringify(item.id);
 
 		// Create entry with metadata
 		const entry: BibEntry = {
-			id: String(item.id),
+			id: entryId,
 			type: this.normalizeType(item.type),
 			_formatMetadata: {
 				source: "csl-json",
 			},
 		};
 
-		// Copy all other fields
+		// Copy all other fields using Object.entries on the validated object
 		for (const [key, value] of Object.entries(item)) {
 			if (key === "id" || key === "type") {
 				continue; // Already handled
@@ -168,7 +201,7 @@ export class CSLJSONParser implements Parser {
 		const warnings: ConversionWarning[] = [];
 
 		try {
-			const parsed = JSON.parse(content);
+			const parsed: unknown = JSON.parse(content);
 
 			// Check if it's an array or object
 			if (typeof parsed !== "object" || parsed === null) {
@@ -181,13 +214,26 @@ export class CSLJSONParser implements Parser {
 				return warnings;
 			}
 
-			const items = Array.isArray(parsed) ? parsed : [parsed];
+			const items: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
 
 			// Validate each item
 			for (let i = 0; i < items.length; i++) {
 				const item = items[i];
+				const itemId = getItemId(item, i);
 
-				if (!item.id) {
+				// Check if item is an object
+				if (typeof item !== "object" || item === null) {
+					warnings.push({
+						entryId: `item-${i}`,
+						severity: "error",
+						type: "validation-error",
+						message: `Item at index ${i} is not an object`,
+					});
+					continue;
+				}
+
+				// Use 'in' operator for type narrowing instead of type assertions
+				if (!("id" in item) || item.id === undefined || item.id === null) {
 					warnings.push({
 						entryId: `item-${i}`,
 						severity: "error",
@@ -196,12 +242,12 @@ export class CSLJSONParser implements Parser {
 					});
 				}
 
-				if (!item.type) {
+				if (!("type" in item) || item.type === undefined || item.type === null) {
 					warnings.push({
-						entryId: item.id || `item-${i}`,
+						entryId: itemId,
 						severity: "error",
 						type: "validation-error",
-						message: `Item '${item.id || i}' missing required 'type' field`,
+						message: `Item '${itemId}' missing required 'type' field`,
 					});
 				}
 			}

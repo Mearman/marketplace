@@ -309,8 +309,9 @@ async function main() {
 
 // Only run main if this is the main module (not imported in tests)
 if (import.meta.url === `file://${process.argv[1]}`) {
-	main().catch((error) => {
-		console.error(`Error: ${error.message}`);
+	main().catch((error: unknown) => {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error(`Error: ${message}`);
 		process.exit(1);
 	});
 }

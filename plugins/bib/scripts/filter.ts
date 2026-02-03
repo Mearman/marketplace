@@ -37,7 +37,8 @@ function main() {
 	const criteria: Partial<FilterCriteria> = {};
 	if (args.options.get("id")) criteria.id = args.options.get("id");
 	if (args.options.get("author")) criteria.author = args.options.get("author");
-	if (args.options.get("year")) criteria.year = parseInt(args.options.get("year")!);
+	const yearValue = args.options.get("year");
+	if (yearValue !== undefined) criteria.year = parseInt(yearValue);
 	if (args.options.get("type")) criteria.type = args.options.get("type");
 	if (args.options.get("keyword")) criteria.keyword = args.options.get("keyword");
 

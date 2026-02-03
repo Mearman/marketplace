@@ -9,11 +9,71 @@ export { parseArgs } from "../../../lib/args/index.js";
 export { formatNumber, formatDate } from "../../../lib/helpers/index.js";
 
 // Plugin-specific utilities
-import type { BibFormat } from "../lib/types.js";
+import type { BibFormat, CSLItemType } from "../lib/types.js";
 import type { ConversionWarning } from "../lib/types.js";
 import type { ConversionStats } from "../lib/types.js";
 import { detectFormat } from "../lib/converter.js";
 import { readFileSync } from "fs";
+
+/**
+ * Valid bibliography formats
+ */
+const VALID_BIB_FORMATS: readonly string[] = ["bibtex", "biblatex", "csl-json", "ris", "endnote"];
+
+/**
+ * Type guard for BibFormat
+ */
+export function isBibFormat(value: string): value is BibFormat {
+	return VALID_BIB_FORMATS.includes(value);
+}
+
+/**
+ * Valid CSL item types
+ */
+const VALID_CSL_ITEM_TYPES: readonly string[] = [
+	"article",
+	"article-journal",
+	"article-magazine",
+	"article-newspaper",
+	"bill",
+	"book",
+	"broadcast",
+	"chapter",
+	"dataset",
+	"entry",
+	"entry-dictionary",
+	"entry-encyclopedia",
+	"figure",
+	"graphic",
+	"interview",
+	"legal_case",
+	"legislation",
+	"manuscript",
+	"map",
+	"motion_picture",
+	"musical_score",
+	"paper-conference",
+	"patent",
+	"personal_communication",
+	"post",
+	"post-weblog",
+	"report",
+	"review",
+	"review-book",
+	"song",
+	"speech",
+	"thesis",
+	"treaty",
+	"webpage",
+	"software",
+];
+
+/**
+ * Type guard for CSLItemType
+ */
+export function isCSLItemType(value: string): value is CSLItemType {
+	return VALID_CSL_ITEM_TYPES.includes(value);
+}
 
 /**
  * Read and detect format of a bibliography file
@@ -37,14 +97,12 @@ export function readBibFile(filePath: string): { content: string; format: BibFor
 export function parseFormat(formatStr: string): BibFormat {
 	const normalized = formatStr.toLowerCase().trim();
 
-	const validFormats: BibFormat[] = ["bibtex", "biblatex", "csl-json", "ris", "endnote"];
-
-	if (validFormats.includes(normalized as BibFormat)) {
-		return normalized as BibFormat;
+	if (isBibFormat(normalized)) {
+		return normalized;
 	}
 
 	throw new Error(
-		`Invalid format: ${formatStr}. Supported formats: ${validFormats.join(", ")}`
+		`Invalid format: ${formatStr}. Supported formats: ${VALID_BIB_FORMATS.join(", ")}`
 	);
 }
 

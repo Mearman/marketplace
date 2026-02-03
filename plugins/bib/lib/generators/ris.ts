@@ -11,7 +11,7 @@
  * ER  -
  */
 
-import type { Generator, BibEntry, GeneratorOptions, DateVariable } from "../types.js";
+import type { Generator, BibEntry, GeneratorOptions, DateVariable, Person } from "../types.js";
 import { denormalizeFromCslType } from "../mappings/entry-types.js";
 import { getRisTag } from "../mappings/fields.js";
 import { serializeName } from "../parsers/names.js";
@@ -24,6 +24,17 @@ function isDateVariable(value: unknown): value is DateVariable {
 		value !== null &&
 		"date-parts" in value
 	);
+}
+
+// Type guard for Person
+function isPerson(value: unknown): value is Person {
+	if (typeof value !== "object" || value === null) return false;
+	// A Person must have at least family, given, or literal
+	// Use 'in' operator for type narrowing instead of type assertions
+	const hasFamily = "family" in value && typeof value.family === "string";
+	const hasGiven = "given" in value && typeof value.given === "string";
+	const hasLiteral = "literal" in value && typeof value.literal === "string";
+	return hasFamily || hasGiven || hasLiteral;
 }
 
 /**
@@ -110,8 +121,10 @@ export class RISGenerator implements Generator {
 			// Authors - one per line with AU tag
 			if (Array.isArray(value)) {
 				for (const person of value) {
-					const name = serializeName(person, "bibtex"); // Use BibTeX format: Last, First
-					lines.push(`AU  - ${name}`);
+					if (isPerson(person)) {
+						const name = serializeName(person, "bibtex"); // Use BibTeX format: Last, First
+						lines.push(`AU  - ${name}`);
+					}
 				}
 			}
 			return lines;
@@ -121,8 +134,10 @@ export class RISGenerator implements Generator {
 			// Editors
 			if (Array.isArray(value)) {
 				for (const person of value) {
-					const name = serializeName(person, "bibtex");
-					lines.push(`ED  - ${name}`);
+					if (isPerson(person)) {
+						const name = serializeName(person, "bibtex");
+						lines.push(`ED  - ${name}`);
+					}
 				}
 			}
 			return lines;
@@ -132,8 +147,10 @@ export class RISGenerator implements Generator {
 			// Translators (A3 tag)
 			if (Array.isArray(value)) {
 				for (const person of value) {
-					const name = serializeName(person, "bibtex");
-					lines.push(`A3  - ${name}`);
+					if (isPerson(person)) {
+						const name = serializeName(person, "bibtex");
+						lines.push(`A3  - ${name}`);
+					}
 				}
 			}
 			return lines;

@@ -44,6 +44,15 @@ export interface ConverterDependencies {
 }
 
 /**
+ * Helper for exhaustive switch checks - throws at runtime with proper error message
+ */
+function assertNever(value: never, context: string): never {
+	// This function is only reached if a case is missing in the switch
+	// The cast to string is safe because if we reach here, the type system is wrong
+	throw new Error(`${context}: ${String(value)}`);
+}
+
+/**
  * Default dependencies using real parsers and generators
  */
 const defaultDeps: ConverterDependencies = {
@@ -60,7 +69,7 @@ const defaultDeps: ConverterDependencies = {
 		case "endnote":
 			return createEndNoteXMLParser();
 		default:
-			throw new Error(`Unsupported source format: ${format}`);
+			return assertNever(format, "Unsupported source format");
 		}
 	},
 	getGenerator(format: BibFormat): Generator {
@@ -76,7 +85,7 @@ const defaultDeps: ConverterDependencies = {
 		case "endnote":
 			return createEndNoteXMLGenerator();
 		default:
-			throw new Error(`Unsupported target format: ${format}`);
+			return assertNever(format, "Unsupported target format");
 		}
 	},
 };
@@ -190,9 +199,16 @@ export function detectFormat(content: string): BibFormat | null {
 	// JSON - check for array or object with id/type fields
 	if (trimmed.startsWith("[") || (trimmed.startsWith("{") && trimmed.includes("\"type\""))) {
 		try {
-			const parsed = JSON.parse(trimmed);
-			const item = Array.isArray(parsed) ? parsed[0] : parsed;
-			if (item && item.type && item.id) {
+			const parsed: unknown = JSON.parse(trimmed);
+			const items: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
+			const item = items[0];
+			// Check if item is an object with type and id properties
+			if (
+				typeof item === "object" &&
+				item !== null &&
+				"type" in item &&
+				"id" in item
+			) {
 				return "csl-json";
 			}
 		} catch {

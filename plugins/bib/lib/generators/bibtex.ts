@@ -10,7 +10,7 @@
  * - Handling of lossy conversions (warnings for unsupported types)
  */
 
-import type { Generator, BibEntry, GeneratorOptions, DateVariable } from "../types.js";
+import type { Generator, BibEntry, GeneratorOptions, DateVariable, Person } from "../types.js";
 import { denormalizeFromCslType } from "../mappings/entry-types.js";
 import { getBibTeXField } from "../mappings/fields.js";
 import { serializeNames } from "../parsers/names.js";
@@ -24,6 +24,27 @@ function isDateVariable(value: unknown): value is DateVariable {
 		value !== null &&
 		"date-parts" in value
 	);
+}
+
+// Type guard for Person
+function isPerson(value: unknown): value is Person {
+	if (typeof value !== "object" || value === null) return false;
+	// A Person must have at least family, given, or literal
+	// Use 'in' operator for type narrowing instead of type assertions
+	const hasFamily = "family" in value && typeof value.family === "string";
+	const hasGiven = "given" in value && typeof value.given === "string";
+	const hasLiteral = "literal" in value && typeof value.literal === "string";
+	return hasFamily || hasGiven || hasLiteral;
+}
+
+// Type guard for Person array
+function isPersonArray(value: unknown): value is Person[] {
+	if (!Array.isArray(value)) return false;
+	// Use explicit type checking to avoid 'any' issues with Array.isArray
+	for (const item of value) {
+		if (!isPerson(item)) return false;
+	}
+	return true;
 }
 
 // Type guard for valid BibEntry keys
@@ -221,9 +242,11 @@ export class BibTeXGenerator implements Generator {
 	private generateField(bibtexField: string, cslField: string, value: unknown): string | null {
 		// Handle special field types
 		if (cslField === "author" || cslField === "editor" || cslField === "translator") {
-			// Name fields
-			if (!Array.isArray(value) || value.length === 0) return null;
-			const names = serializeNames(value, " and ", "bibtex");
+			// Name fields - validate it's a Person array
+			if (!isPersonArray(value) || value.length === 0) return null;
+			// Explicitly type the persons array after validation
+			const persons: Person[] = value;
+			const names = serializeNames(persons, " and ", "bibtex");
 			const encoded = encodeLatex(names);
 			return `${bibtexField} = {${encoded}}`;
 		}

@@ -32,12 +32,13 @@ export function filterEntries(
 		if (criteria.id && entry.id !== criteria.id) return false;
 
 		if (criteria.author) {
+			const authorCriteria = criteria.author;
 			const hasAuthor = entry.author?.some((a) =>
 				[a.family, a.given, a.literal]
 					.filter(Boolean)
 					.join(" ")
 					.toLowerCase()
-					.includes(criteria.author!.toLowerCase())
+					.includes(authorCriteria.toLowerCase())
 			);
 			if (!hasAuthor) return false;
 		}
@@ -70,11 +71,15 @@ export function createEntry(partial: Partial<BibEntry>): BibEntry {
 		throw new Error("Entry must have a type");
 	}
 
-	return {
+	// At this point, we've validated id and type are present
+	// Construct the entry with required fields first, then spread optional fields
+	const entry: BibEntry = {
+		...partial,
 		id: partial.id,
 		type: partial.type,
-		...partial,
-	} as BibEntry;
+	};
+
+	return entry;
 }
 
 /**

@@ -293,9 +293,11 @@ export class BibTeXParser implements Parser {
 			const cslField = getCslFieldFromBibTeX(bibtexField);
 
 			if (!cslField) {
-        // Unknown field - store in metadata
-        entry._formatMetadata!.customFields![bibtexField] = value;
-        continue;
+				// Unknown field - store in metadata
+				if (entry._formatMetadata && entry._formatMetadata.customFields) {
+					entry._formatMetadata.customFields[bibtexField] = value;
+				}
+				continue;
 			}
 
 			// Decode LaTeX
@@ -324,8 +326,8 @@ export class BibTeXParser implements Parser {
 					}
 				}
 			} else {
-				// Direct mapping
-				(entry as Record<string, unknown>)[cslField] = decodedValue;
+				// Direct mapping - entry has index signature for dynamic access
+				entry[cslField] = decodedValue;
 			}
 		}
 
