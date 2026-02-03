@@ -46,3 +46,15 @@ export const createMockProcess = (): any => ({
 		throw new Error("process.exit called");
 	}),
 });
+
+/**
+ * Converts Node's mock.calls format to array format for easier assertions.
+ * Node's mock: calls[i].arguments -> array
+ *
+ * @param mockFn - A Node.js mock function
+ * @returns Array of call arguments arrays
+ */
+export const callsToArray = (mockFn: any): any[][] => {
+	if (!mockFn?.mock?.calls) return [];
+	return mockFn.mock.calls.map((call: any) => call.arguments ?? call);
+};
