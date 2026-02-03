@@ -3,6 +3,9 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 
 import { mock, type Mock } from "node:test";
 
@@ -54,6 +57,7 @@ export const createMockProcess = (): any => ({
  * @param mockFn - A Node.js mock function
  * @returns Array of call arguments arrays
  */
+ 
 export const callsToArray = (mockFn: any): any[][] => {
 	if (!mockFn?.mock?.calls) return [];
 	return mockFn.mock.calls.map((call: any) => call.arguments ?? call);
