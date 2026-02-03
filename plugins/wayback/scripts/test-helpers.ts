@@ -4,23 +4,30 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mock } from "node:test";
+import { mock, type Mock } from "node:test";
+
+/**
+ * Mock function with setImplementation method
+ */
+export interface MutableMockFn extends Mock<(...args: unknown[]) => unknown> {
+	setImplementation: (impl: (...args: unknown[]) => unknown) => void;
+}
 
 /**
  * Creates a mutable mock function whose implementation can be changed.
  * Uses a closure to store the current implementation so the function reference stays stable.
  */
-export const createMutableMock = (): any => {
-	let impl: any = () => undefined;
+export const createMutableMock = (): MutableMockFn => {
+	let impl: (...args: unknown[]) => unknown = () => undefined;
 
-	const fn = mock.fn((...args: any[]) => impl(args));
+	const baseFn = mock.fn((...args: unknown[]) => impl(...args));
 
-	// @ts-expect-error - Adding custom method
-	fn.setImplementation = (newImpl: any) => {
-		impl = newImpl;
-	};
-
-	return fn;
+	// Add setImplementation method using Object.assign to avoid type assertions
+	return Object.assign(baseFn, {
+		setImplementation: (newImpl: (...args: unknown[]) => unknown) => {
+			impl = newImpl;
+		},
+	});
 };
 
 /**

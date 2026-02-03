@@ -13,12 +13,12 @@
 
 import {
 	API,
-	CDXRow,
 	buildArchiveUrl,
 	fetchWithCache,
 	formatAge,
 	formatTimestamp,
 	parseArgs,
+	validateCDXResponse,
 	type ParsedArgs,
 } from "./utils";
 
@@ -75,11 +75,12 @@ export const fetchOldest = async (
 ): Promise<CaptureEntry | null> => {
 	const apiUrl = API.cdx(url, { limit: 1, filter: "statuscode:200" });
 
-	const data = await fetchFn<CDXRow[]>({
+	const rawData = await fetchFn({
 		url: apiUrl,
 		ttl: 3600, // 1 hour
 		bypassCache,
 	});
+	const data = validateCDXResponse(rawData);
 
 	if (data.length <= 1) return null;
 
@@ -104,11 +105,12 @@ export const fetchNewest = async (
 ): Promise<CaptureEntry | null> => {
 	const apiUrl = API.cdx(url, { limit: 1, filter: "statuscode:200", fastLatest: "true" });
 
-	const data = await fetchFn<CDXRow[]>({
+	const rawData = await fetchFn({
 		url: apiUrl,
 		ttl: 3600, // 1 hour
 		bypassCache,
 	});
+	const data = validateCDXResponse(rawData);
 
 	if (data.length <= 1) return null;
 

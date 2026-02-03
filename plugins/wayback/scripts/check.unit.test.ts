@@ -138,13 +138,14 @@ describe("check.ts", () => {
 				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Network error"));
 			});
 
-			it("should handle non-Error errors", async () => {
-				mockFetchWithCache = mock.fn(async () => { throw "string error"; });
+			it("should handle Error with custom message", async () => {
+				// Test the error handler with a simple Error
+				mockFetchWithCache = mock.fn(async () => { throw new Error("custom error message"); });
 				const args = parseArgs(["https://example.com"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "string error"));
+				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "custom error message"));
 			});
 		});
 

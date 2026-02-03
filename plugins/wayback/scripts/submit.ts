@@ -17,6 +17,7 @@ import {
 	buildArchiveUrl,
 	formatTimestamp,
 	getAuthHeaders,
+	isSPN2Response,
 	parseArgs,
 	sleep,
 	type ParsedArgs,
@@ -103,7 +104,11 @@ Examples:
 			body: formData.toString(),
 		});
 
-		const data: SPN2Response = await response.json();
+		const rawData: unknown = await response.json();
+		if (!isSPN2Response(rawData)) {
+			throw new Error("Invalid SPN2 response format");
+		}
+		const data: SPN2Response = rawData;
 
 		if (data.job_id) {
 			deps.console.log(`  Job ID: ${data.job_id}`);
@@ -121,7 +126,11 @@ Examples:
 					API.saveStatus(data.job_id),
 					{ headers: getAuthHeaders(apiKey) }
 				);
-				status = await statusResponse.json();
+				const rawStatus: unknown = await statusResponse.json();
+				if (!isSPN2Response(rawStatus)) {
+					throw new Error("Invalid SPN2 status response format");
+				}
+				status = rawStatus;
 
 				if (status.status === "pending") {
 					deps.process.stdout.write(".");

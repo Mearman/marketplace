@@ -5,6 +5,7 @@
 import { createCacheManager } from "../../../lib/cache";
 import { parseArgs as sharedParseArgs } from "../../../lib/args";
 import { formatAge as sharedFormatAge, sleep as sharedSleep } from "../../../lib/helpers";
+import { isRecord, isArray, isString, isBoolean } from "../../../lib/type-guards";
 import type { CacheEntry } from "../../../lib/cache";
 
 // ============================================================================
@@ -65,7 +66,12 @@ export const API = {
 		return apiUrl;
 	},
 	cdx: (url: string, params: Record<string, string | number> = {}) => {
-		const searchParams = new URLSearchParams({ url, output: "json", ...params } as Record<string, string>);
+		// Convert all values to strings for URLSearchParams
+		const stringParams: Record<string, string> = { url, output: "json" };
+		for (const [key, value] of Object.entries(params)) {
+			stringParams[key] = String(value);
+		}
+		const searchParams = new URLSearchParams(stringParams);
 		return `https://web.archive.org/cdx/search/cdx?${searchParams}`;
 	},
 	save: "https://web.archive.org/save",
@@ -128,3 +134,86 @@ export const getAuthHeaders = (apiKey?: string): Record<string, string> => {
 	}
 	return headers;
 };
+
+// ============================================================================
+// Type Guards for API Responses
+// ============================================================================
+
+/**
+ * Type guard for CDXRow array response
+ */
+export function isCDXResponse(value: unknown): value is CDXRow[] {
+	if (!isArray(value)) return false;
+	// CDX responses are arrays of arrays with string elements
+	for (const row of value) {
+		if (!isArray(row)) return false;
+		for (const cell of row) {
+			if (!isString(cell)) return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * Type guard for a single snapshot in AvailableResponse
+ */
+function isSnapshot(value: unknown): value is { available: boolean; url: string; timestamp: string; status: string } {
+	return (
+		isRecord(value) &&
+		isBoolean(value.available) &&
+		isString(value.url) &&
+		isString(value.timestamp) &&
+		isString(value.status)
+	);
+}
+
+/**
+ * Type guard for AvailableResponse
+ */
+export function isAvailableResponse(value: unknown): value is AvailableResponse {
+	if (!isRecord(value)) return false;
+	if (!isRecord(value.archived_snapshots)) return false;
+	const snapshots = value.archived_snapshots;
+	// closest is optional
+	if ("closest" in snapshots && snapshots.closest !== undefined) {
+		if (!isSnapshot(snapshots.closest)) return false;
+	}
+	return true;
+}
+
+/**
+ * Type guard for SPN2Response
+ */
+export function isSPN2Response(value: unknown): value is SPN2Response {
+	if (!isRecord(value)) return false;
+	// All fields are optional, but if present they should be strings
+	if ("url" in value && value.url !== undefined && !isString(value.url)) return false;
+	if ("job_id" in value && value.job_id !== undefined && !isString(value.job_id)) return false;
+	if ("status" in value && value.status !== undefined && !isString(value.status)) return false;
+	if ("status_ext" in value && value.status_ext !== undefined && !isString(value.status_ext)) return false;
+	if ("message" in value && value.message !== undefined && !isString(value.message)) return false;
+	if ("timestamp" in value && value.timestamp !== undefined && !isString(value.timestamp)) return false;
+	if ("original_url" in value && value.original_url !== undefined && !isString(value.original_url)) return false;
+	if ("screenshot" in value && value.screenshot !== undefined && !isString(value.screenshot)) return false;
+	return true;
+}
+
+/**
+ * Validate and cast CDX response
+ */
+export function validateCDXResponse(data: unknown): CDXRow[] {
+	if (!isCDXResponse(data)) {
+		throw new Error("Invalid CDX response format");
+	}
+	return data;
+}
+
+/**
+ * Validate and cast AvailableResponse
+ */
+export function validateAvailableResponse(data: unknown): AvailableResponse {
+	if (!isAvailableResponse(data)) {
+		throw new Error("Invalid availability response format");
+	}
+	return data;
+}

@@ -13,13 +13,13 @@
 import { writeFile } from "fs/promises";
 import {
 	API,
-	AvailableResponse,
-	CDXRow,
 	buildScreenshotUrl,
 	fetchWithCache,
 	formatAge,
 	formatTimestamp,
 	parseArgs,
+	validateAvailableResponse,
+	validateCDXResponse,
 	type ParsedArgs,
 } from "./utils";
 
@@ -61,13 +61,15 @@ export const listScreenshots = async (
 	const cdxUrl = API.cdx(screenshotUrl, { limit: 50 });
 
 	const response = await fetch(cdxUrl);
-	const data: CDXRow[] = await response.json();
+	const rawData: unknown = await response.json();
+	const data = validateCDXResponse(rawData);
 
 	if (data.length <= 1) {
 		// Try querying with image mimetype filter
 		const altCdxUrl = API.cdx(url, { limit: 50, filter: "mimetype:image.*" });
 		const altResponse = await fetch(altCdxUrl);
-		const altData: CDXRow[] = await altResponse.json();
+		const altRawData: unknown = await altResponse.json();
+		const altData = validateCDXResponse(altRawData);
 
 		if (altData.length <= 1) {
 			deps.console.log("No screenshots found");
@@ -112,7 +114,8 @@ export const checkScreenshotAvailable = async (
 
 	try {
 		const response = await fetch(cdxUrl);
-		const data: CDXRow[] = await response.json();
+		const rawData: unknown = await response.json();
+		const data = validateCDXResponse(rawData);
 
 		// CDX returns header row + data rows, so length > 1 means screenshot exists
 		return data.length > 1;
@@ -144,13 +147,14 @@ const getScreenshot = async (
 	} else {
 		const availUrl = API.availability(url);
 
-		const availData = await deps.fetchWithCache<AvailableResponse>({
+		const rawAvailData = await deps.fetchWithCache({
 			url: availUrl,
 			ttl: 86400, // 24 hours
 			bypassCache: noCache,
 		});
+		const availData = validateAvailableResponse(rawAvailData);
 
-		const closest = availData.archived_snapshots?.closest;
+		const closest = availData.archived_snapshots.closest;
 		if (!closest?.available) {
 			deps.console.log("✗ No archived version found");
 			deps.console.log("  Use wayback-submit to archive this URL first.");

@@ -11,13 +11,13 @@
 
 import {
 	API,
-	CDXRow,
 	buildArchiveUrl,
 	buildScreenshotUrl,
 	fetchWithCache,
 	formatAge,
 	formatTimestamp,
 	parseArgs,
+	validateCDXResponse,
 	type ParsedArgs,
 } from "./utils";
 
@@ -55,7 +55,8 @@ export const fetchScreenshotTimestamps = async (url: string): Promise<Set<string
 
 	try {
 		const response = await fetch(cdxUrl);
-		const data: string[][] = await response.json();
+		const rawData: unknown = await response.json();
+		const data = validateCDXResponse(rawData);
 
 		const timestamps = new Set<string>();
 		for (let i = 1; i < data.length; i++) {
@@ -99,11 +100,12 @@ Examples:
 
 	const apiUrl = API.cdx(url, { limit, filter: "statuscode:200" });
 
-	const data = await deps.fetchWithCache<CDXRow[]>({
+	const rawData = await deps.fetchWithCache({
 		url: apiUrl,
 		ttl: 3600, // 1 hour
 		bypassCache: flags.has("no-cache"),
 	});
+	const data = validateCDXResponse(rawData);
 
 	if (data.length <= 1) {
 		deps.console.log("No snapshots found");

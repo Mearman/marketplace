@@ -14,6 +14,7 @@
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
+import { isErrnoException } from "../../../lib/type-guards";
 
 const CACHE_DIR = path.join(os.tmpdir(), "wayback-cache");
 
@@ -80,7 +81,7 @@ const clearCache = async (verbose: boolean, deps: Dependencies): Promise<void> =
 
 		deps.console.log("✓ Cache cleared");
 	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+		if (isErrnoException(error) && error.code === "ENOENT") {
 			deps.console.log("Cache directory not found or already empty");
 		} else {
 			handleError(error, "clear", deps);
@@ -120,7 +121,7 @@ const showStatus = async (verbose: boolean, deps: Dependencies): Promise<void> =
 			}
 		}
 	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+		if (isErrnoException(error) && error.code === "ENOENT") {
 			deps.console.log(`Cache directory: ${CACHE_DIR}`);
 			deps.console.log("Cached files: 0");
 			deps.console.log("\nCache directory does not exist yet (no API calls made)");

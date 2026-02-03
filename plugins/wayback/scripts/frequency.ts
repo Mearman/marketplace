@@ -16,6 +16,7 @@ import {
 	formatTimestamp,
 	parseArgs,
 	parseTimestamp,
+	validateCDXResponse,
 	type ParsedArgs,
 } from "./utils";
 
@@ -84,10 +85,11 @@ export const fetchCaptures = async (
 		filter: "statuscode:200",
 	});
 
-	const data = await fetchFn<CDXRow[]>({
+	const rawData = await fetchFn({
 		url: apiUrl,
 		ttl: 3600, // 1 hour
 	});
+	const data = validateCDXResponse(rawData);
 
 	// Skip header row
 	return data.length > 1 ? data.slice(1) : [];
@@ -247,7 +249,7 @@ Examples:
 		deps.process.exit(0);
 	}
 
-	let result = calculateFrequency(captures, fromTimestamp, toTimestamp);
+	const result = calculateFrequency(captures, fromTimestamp, toTimestamp);
 
 	if (full) {
 		result.byYear = groupByYear(captures);

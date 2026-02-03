@@ -11,12 +11,12 @@
 
 import {
 	API,
-	AvailableResponse,
 	buildArchiveUrl,
 	fetchWithCache,
 	formatAge,
 	formatTimestamp,
 	parseArgs,
+	validateAvailableResponse,
 	type ParsedArgs,
 } from "./utils";
 
@@ -78,11 +78,12 @@ Examples:
 	}
 
 	try {
-		const data = await deps.fetchWithCache<AvailableResponse>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 86400, // 24 hours
 			bypassCache: flags.has("no-cache"),
 		});
+		const data = validateAvailableResponse(rawData);
 
 		const snapshot = data.archived_snapshots.closest;
 		if (snapshot?.available) {
