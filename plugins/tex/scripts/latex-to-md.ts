@@ -17,14 +17,14 @@ export function latexToMarkdown(latex: string): string {
 	const codeBlocks: string[] = [];
 
 	// Extract verbatim blocks
-	markdown = markdown.replace(/\\begin\{verbatim\}([\s\S]*?)\\end\{verbatim\}/g, (_match, content) => {
+	markdown = markdown.replace(/\\begin\{verbatim\}([\s\S]*?)\\end\{verbatim\}/g, (_match, content: string) => {
 		const placeholder = `<<<CODEBLOCK${codeBlocks.length}>>>`;
 		codeBlocks.push(content);
 		return placeholder;
 	});
 
 	// Extract lstlisting blocks
-	markdown = markdown.replace(/\\begin\{lstlisting\}([\s\S]*?)\\end\{lstlisting\}/g, (_match, content) => {
+	markdown = markdown.replace(/\\begin\{lstlisting\}([\s\S]*?)\\end\{lstlisting\}/g, (_match, content: string) => {
 		const placeholder = `<<<CODEBLOCK${codeBlocks.length}>>>`;
 		codeBlocks.push(content);
 		return placeholder;
@@ -49,10 +49,10 @@ export function latexToMarkdown(latex: string): string {
 	markdown = markdown.replace(/\\verb\|([^|]+)\|/g, "`$1`");
 
 	// Lists
-	markdown = markdown.replace(/\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/g, (_, items) => {
+	markdown = markdown.replace(/\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/g, (_, items: string) => {
 		return items.replace(/\\item\s+/g, "- ").trim();
 	});
-	markdown = markdown.replace(/\\begin\{enumerate\}([\s\S]*?)\\end\{enumerate\}/g, (_, items) => {
+	markdown = markdown.replace(/\\begin\{enumerate\}([\s\S]*?)\\end\{enumerate\}/g, (_, items: string) => {
 		let counter = 1;
 		return items.replace(/\\item\s+/g, () => `${counter++}. `).trim();
 	});
@@ -69,7 +69,7 @@ export function latexToMarkdown(latex: string): string {
 	markdown = markdown.replace(/\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}/g, "![]($1)");
 
 	// Blockquotes
-	markdown = markdown.replace(/\\begin\{quote\}([\s\S]*?)\\end\{quote\}/g, (_, content) => {
+	markdown = markdown.replace(/\\begin\{quote\}([\s\S]*?)\\end\{quote\}/g, (_, content: string) => {
 		return content
 			.trim()
 			.split("\n")

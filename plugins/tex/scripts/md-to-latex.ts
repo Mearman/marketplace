@@ -39,7 +39,7 @@ export function markdownToLatex(markdown: string): string {
 	latex = latex.replace(/^#\s+(.+)$/gm, "\\chapter{$1}");
 
 	// Images (before links, since images use [])
-	latex = latex.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+	latex = latex.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt: string, src: string) => {
 		if (alt) {
 			return `\\begin{figure}[h]\n\\centering\n\\includegraphics{${src}}\n\\caption{${alt}}\n\\end{figure}`;
 		}
@@ -59,7 +59,7 @@ export function markdownToLatex(markdown: string): string {
 
 	// Ordered lists (before unordered to avoid conflicts)
 	const orderedListItems: string[] = [];
-	latex = latex.replace(/^(\d+)\.\s+(.+)$/gm, (_match, _num, item) => {
+	latex = latex.replace(/^(\d+)\.\s+(.+)$/gm, (_match, _num: string, item: string) => {
 		const placeholder = `<<<ORDEREDITEM${orderedListItems.length}>>>`;
 		orderedListItems.push(item);
 		return placeholder;
@@ -77,7 +77,7 @@ export function markdownToLatex(markdown: string): string {
 
 	// Unordered lists
 	const unorderedListItems: string[] = [];
-	latex = latex.replace(/^(\s*)[-*+]\s+(.+)$/gm, (_match, _indent, item) => {
+	latex = latex.replace(/^(\s*)[-*+]\s+(.+)$/gm, (_match, _indent: string, item: string) => {
 		const placeholder = `<<<UNORDEREDITEM${unorderedListItems.length}>>>`;
 		unorderedListItems.push(item);
 		return placeholder;
