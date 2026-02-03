@@ -25,6 +25,11 @@ const CACHE_DIR = path.join(os.tmpdir(), "wayback-cache");
 export interface Dependencies {
 	console: Console;
 	process: NodeJS.Process;
+	fs: {
+		readdir: typeof fs.readdir;
+		stat: typeof fs.stat;
+		unlink: typeof fs.unlink;
+	};
 }
 
 // ============================================================================
@@ -47,8 +52,8 @@ export const handleError = (
 
 const clearCache = async (verbose: boolean, deps: Dependencies): Promise<void> => {
 	try {
-		const files = await fs.readdir(CACHE_DIR);
-		const cacheFiles = files.filter((f) => f.endsWith(".json"));
+		const files = await deps.fs.readdir(CACHE_DIR);
+		const cacheFiles = files.filter((f: string) => f.endsWith(".json"));
 
 		if (cacheFiles.length === 0) {
 			deps.console.log("Cache is already empty");
@@ -58,9 +63,9 @@ const clearCache = async (verbose: boolean, deps: Dependencies): Promise<void> =
 		if (verbose) {
 			let totalSize = 0;
 			const fileStats = await Promise.all(
-				cacheFiles.map(async (f) => {
+				cacheFiles.map(async (f: string) => {
 					const filePath = path.join(CACHE_DIR, f);
-					const stat = await fs.stat(filePath);
+					const stat = await deps.fs.stat(filePath);
 					totalSize += stat.size;
 					return { file: f, size: stat.size };
 				})
@@ -76,7 +81,7 @@ const clearCache = async (verbose: boolean, deps: Dependencies): Promise<void> =
 		}
 
 		await Promise.all(
-			cacheFiles.map((f) => fs.unlink(path.join(CACHE_DIR, f)))
+			cacheFiles.map((f: string) => deps.fs.unlink(path.join(CACHE_DIR, f)))
 		);
 
 		deps.console.log("✓ Cache cleared");
@@ -91,8 +96,8 @@ const clearCache = async (verbose: boolean, deps: Dependencies): Promise<void> =
 
 const showStatus = async (verbose: boolean, deps: Dependencies): Promise<void> => {
 	try {
-		const files = await fs.readdir(CACHE_DIR);
-		const cacheFiles = files.filter((f) => f.endsWith(".json"));
+		const files = await deps.fs.readdir(CACHE_DIR);
+		const cacheFiles = files.filter((f: string) => f.endsWith(".json"));
 
 		deps.console.log(`Cache directory: ${CACHE_DIR}`);
 		deps.console.log(`Cached files: ${cacheFiles.length}`);
@@ -100,16 +105,16 @@ const showStatus = async (verbose: boolean, deps: Dependencies): Promise<void> =
 		if (verbose && cacheFiles.length > 0) {
 			let totalSize = 0;
 			const fileStats = await Promise.all(
-				cacheFiles.map(async (f) => {
+				cacheFiles.map(async (f: string) => {
 					const filePath = path.join(CACHE_DIR, f);
-					const stat = await fs.stat(filePath);
+					const stat = await deps.fs.stat(filePath);
 					totalSize += stat.size;
 					return { file: f, size: stat.size, modified: stat.mtime };
 				})
 			);
 
 			// Sort by modification time (newest first)
-			fileStats.sort((a, b) => b.modified.getTime() - a.modified.getTime());
+			fileStats.sort((a: { modified: Date }, b: { modified: Date }) => b.modified.getTime() - a.modified.getTime());
 
 			deps.console.log(`\nTotal size: ${(totalSize / 1024).toFixed(2)} KB\n`);
 
@@ -182,6 +187,7 @@ Examples:
 const defaultDeps: Dependencies = {
 	console,
 	process,
+	fs: { readdir: fs.readdir, stat: fs.stat, unlink: fs.unlink },
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) {

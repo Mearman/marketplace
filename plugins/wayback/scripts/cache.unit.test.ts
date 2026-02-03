@@ -5,6 +5,7 @@
 import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert";
 import { main, handleError } from "./cache.js";
+import { callsToArray } from "./test-helpers.js";
 
 describe("cache.ts", () => {
 	let mockConsole: any;
@@ -43,6 +44,15 @@ describe("cache.ts", () => {
 				unlink: mockUnlink,
 			},
 		};
+		Object.defineProperty(deps.fs, "readdir", {
+			get() { return mockReaddir; }
+		});
+		Object.defineProperty(deps.fs, "stat", {
+			get() { return mockStat; }
+		});
+		Object.defineProperty(deps.fs, "unlink", {
+			get() { return mockUnlink; }
+		});
 	});
 
 	describe("main", () => {
@@ -52,7 +62,7 @@ describe("cache.ts", () => {
 
 			await main(args, deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("already empty")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("already empty")));
 		});
 
 		it("should execute status command", async () => {
@@ -61,7 +71,7 @@ describe("cache.ts", () => {
 
 			await main(args, deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Cache directory:")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Cache directory:")));
 		});
 
 		it("should show usage message when no command", async () => {
@@ -69,7 +79,7 @@ describe("cache.ts", () => {
 
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
 		});
 
 		it("should reject unknown command", async () => {
@@ -77,7 +87,7 @@ describe("cache.ts", () => {
 
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "Unknown command: unknown"));
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "Unknown command: unknown"));
 		});
 
 		it("should handle --verbose flag", async () => {
@@ -87,7 +97,7 @@ describe("cache.ts", () => {
 			await main(args, deps);
 
 			// Should not have verbose output for empty cache
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Cached files: 0")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Cached files: 0")));
 		});
 
 		it("should clear cache files", async () => {
@@ -99,7 +109,7 @@ describe("cache.ts", () => {
 
 			await main(args, deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Clearing 2 cache file(s)")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Clearing 2 cache file(s)")));
 		});
 
 		it("should show status with files", async () => {
@@ -109,7 +119,7 @@ describe("cache.ts", () => {
 
 			await main(args, deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "Cached files: 2"));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => call[0] === "Cached files: 2"));
 		});
 
 		it("should show verbose status with files", async () => {
@@ -124,8 +134,8 @@ describe("cache.ts", () => {
 
 			await main(args, deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Total size:")));
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Cache entries")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Total size:")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Cache entries")));
 		});
 
 		it("should show verbose status with age formatting", async () => {
@@ -140,7 +150,7 @@ describe("cache.ts", () => {
 
 			await main(args, deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("30m ago")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("30m ago")));
 		});
 
 		it("should handle ENOENT error in status", async () => {
@@ -152,7 +162,7 @@ describe("cache.ts", () => {
 
 			await main(args, deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("does not exist yet")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("does not exist yet")));
 		});
 
 		it("should show verbose clear output", async () => {
@@ -164,7 +174,7 @@ describe("cache.ts", () => {
 
 			await main(args, deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("KB)")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("KB)")));
 		});
 
 		it("should handle ENOENT error in clear", async () => {
@@ -176,7 +186,7 @@ describe("cache.ts", () => {
 
 			await main(args, deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("not found")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("not found")));
 		});
 	});
 
@@ -185,8 +195,8 @@ describe("cache.ts", () => {
 			const error = new Error("Cache error");
 			assert.throws(() => handleError(error, "clear", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Cache error"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "Cache error"));
+			assert.strictEqual(callsToArray(mockProcess.exit)[0]?.[0], 1);
 		});
 	});
 });
