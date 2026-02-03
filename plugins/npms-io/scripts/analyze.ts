@@ -14,9 +14,9 @@ import {
 	formatNumber,
 	formatScore,
 	fetchWithCache,
-	NpmsPackage,
 	parseArgs,
-	ParsedArgs,
+	validateNpmsPackage,
+	type ParsedArgs,
 } from "./utils";
 
 export interface Dependencies {
@@ -60,12 +60,13 @@ Examples:
 	deps.console.log(`Analyzing: ${packageName}`);
 
 	const noCache = flags.has("no-cache");
-	const data = await deps.fetchWithCache<NpmsPackage>({
+	const rawData = await deps.fetchWithCache({
 		url: apiUrl,
 		ttl: 21600, // 6 hours
 		cacheKey: `analyze-${packageName}`,
 		bypassCache: noCache,
 	});
+	const data = validateNpmsPackage(rawData);
 
 	const metadata = data.collected.metadata;
 	const score = data.score;
@@ -96,7 +97,7 @@ Examples:
 	deps.console.log();
 
 	// npm statistics
-	if (npm && npm.downloadsAccumulated && npm.downloadsAccumulated.length > 0) {
+	if (npm?.downloadsAccumulated && npm.downloadsAccumulated.length > 0) {
 		deps.console.log("npm Statistics:");
 		deps.console.log(`  Week: ${formatNumber(npm.weekDownloads)} downloads`);
 		deps.console.log(`  Month: ${formatNumber(npm.monthDownloads)} downloads`);
@@ -108,16 +109,16 @@ Examples:
 	// GitHub activity
 	if (github) {
 		deps.console.log("GitHub Activity:");
-		if (github.stars !== undefined) {
+		if (github.stars != null) {
 			deps.console.log(`  Stars: ${formatNumber(github.stars)}`);
 		}
-		if (github.forks !== undefined) {
+		if (github.forks != null) {
 			deps.console.log(`  Forks: ${formatNumber(github.forks)}`);
 		}
-		if (github.openIssues !== undefined) {
+		if (github.openIssues != null) {
 			deps.console.log(`  Open Issues: ${formatNumber(github.openIssues)}`);
 		}
-		if (github.contributors !== undefined) {
+		if (github.contributors != null) {
 			deps.console.log(`  Contributors: ${formatNumber(github.contributors)}`);
 		}
 		if (github.latestCommit) {
@@ -127,11 +128,11 @@ Examples:
 
 		// Project health
 		deps.console.log("Project Health:");
-		deps.console.log(`  ${github.participatesInCoc ? "✓" : "✗"} Participates in CoC`);
-		deps.console.log(`  ${github.hasContributingGuide ? "✓" : "✗"} Has contributing guide`);
-		deps.console.log(`  ${github.hasLicense ? "✓" : "✗"} Has license`);
-		deps.console.log(`  ${github.hasSecurityPolicy ? "✓" : "✗"} Has security policy`);
-		deps.console.log(`  ${github.hasOpenDiscussions ? "✓" : "✗"} Has open discussions`);
+		deps.console.log(`  ${github.participatesInCoc === true ? "✓" : "✗"} Participates in CoC`);
+		deps.console.log(`  ${github.hasContributingGuide === true ? "✓" : "✗"} Has contributing guide`);
+		deps.console.log(`  ${github.hasLicense === true ? "✓" : "✗"} Has license`);
+		deps.console.log(`  ${github.hasSecurityPolicy === true ? "✓" : "✗"} Has security policy`);
+		deps.console.log(`  ${github.hasOpenDiscussions === true ? "✓" : "✗"} Has open discussions`);
 		deps.console.log();
 
 		// Recent releases

@@ -5,6 +5,7 @@
 import { createCacheManager } from "../../../lib/cache";
 import { parseArgs as sharedParseArgs } from "../../../lib/args";
 import { formatNumber as sharedFormatNumber, sleep as sharedSleep } from "../../../lib/helpers";
+import { isRecord, isString, isNumber, isArray } from "../../../lib/type-guards";
 import type { CacheEntry } from "../../../lib/cache";
 
 // ============================================================================
@@ -29,7 +30,7 @@ export interface NpmsPackage {
       maintainers?: NpmsPerson[];
       publishers?: NpmsPerson[];
     };
-    npm: {
+    npm?: {
       downloads: number[];
       downloadsAccumulated: number[];
       weekDownloads: number;
@@ -37,26 +38,26 @@ export interface NpmsPackage {
       quarterDownloads: number;
       yearDownloads: number;
     };
-    github: {
-      stars: number;
-      forks: number;
-      subscribers: number;
-      issues: {
+    github?: {
+      stars?: number;
+      forks?: number;
+      subscribers?: number;
+      issues?: {
         open: number;
         closed: number;
         total: number;
       };
-      forksCount: number;
-      forksOpen: number;
-      forksClosed: number;
-      stargazers: number;
-      subscribersCount: number;
-      openIssues: number;
-      closedIssues: number;
-      issueComments: number;
-      contributors: number;
-      commitCount: number;
-      latestCommit: {
+      forksCount?: number;
+      forksOpen?: number;
+      forksClosed?: number;
+      stargazers?: number;
+      subscribersCount?: number;
+      openIssues?: number;
+      closedIssues?: number;
+      issueComments?: number;
+      contributors?: number;
+      commitCount?: number;
+      latestCommit?: {
         sha: string;
         date: string;
         message: string;
@@ -65,16 +66,16 @@ export interface NpmsPackage {
           email: string;
         };
       };
-      recentReleases: NpmsRelease[];
-      firstRelease: NpmsRelease;
-      latestRelease: NpmsRelease;
-      participatesInCoc: boolean;
-      hasCustomCodeOfConduct: boolean;
-      hasOpenDiscussions: boolean;
-      hasContributingGuide: boolean;
-      hasLicense: boolean;
-      hasSecurityPolicy: boolean;
-      hasSecurityAudit: boolean;
+      recentReleases?: NpmsRelease[];
+      firstRelease?: NpmsRelease;
+      latestRelease?: NpmsRelease;
+      participatesInCoc?: boolean;
+      hasCustomCodeOfConduct?: boolean;
+      hasOpenDiscussions?: boolean;
+      hasContributingGuide?: boolean;
+      hasLicense?: boolean;
+      hasSecurityPolicy?: boolean;
+      hasSecurityAudit?: boolean;
     };
   };
   score: {
@@ -175,3 +176,79 @@ export const formatAge = (dateStr: string): string => {
 export const formatScore = (score: number): string => {
 	return (score * 100).toFixed(0);
 };
+
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+/**
+ * Type guard for NpmsPackage
+ */
+export function isNpmsPackage(value: unknown): value is NpmsPackage {
+	if (!isRecord(value)) return false;
+	if (!isRecord(value.collected)) return false;
+	if (!isRecord(value.collected.metadata)) return false;
+	if (!isString(value.collected.metadata.name)) return false;
+	return true;
+}
+
+/**
+ * Type guard for NpmsSuggestion
+ */
+export function isNpmsSuggestion(value: unknown): value is NpmsSuggestion {
+	return (
+		isRecord(value) &&
+		isString(value.name) &&
+		isNumber(value.score) &&
+		isNumber(value.searchScore)
+	);
+}
+
+/**
+ * Type guard for NpmsSuggestion array
+ */
+export function isNpmsSuggestionArray(value: unknown): value is NpmsSuggestion[] {
+	return isArray(value) && value.every(isNpmsSuggestion);
+}
+
+/**
+ * Type guard for NpmsMgetResponse
+ */
+export function isNpmsMgetResponse(value: unknown): value is NpmsMgetResponse {
+	if (!isRecord(value)) return false;
+	for (const key of Object.keys(value)) {
+		const item = value[key];
+		if (item !== null && !isNpmsPackage(item)) return false;
+	}
+	return true;
+}
+
+/**
+ * Validate and cast NpmsPackage
+ */
+export function validateNpmsPackage(data: unknown): NpmsPackage {
+	if (!isNpmsPackage(data)) {
+		throw new Error("Invalid npms.io package response");
+	}
+	return data;
+}
+
+/**
+ * Validate and cast NpmsSuggestion array
+ */
+export function validateNpmsSuggestions(data: unknown): NpmsSuggestion[] {
+	if (!isNpmsSuggestionArray(data)) {
+		throw new Error("Invalid npms.io suggestions response");
+	}
+	return data;
+}
+
+/**
+ * Validate and cast NpmsMgetResponse
+ */
+export function validateNpmsMgetResponse(data: unknown): NpmsMgetResponse {
+	if (!isNpmsMgetResponse(data)) {
+		throw new Error("Invalid npms.io mget response");
+	}
+	return data;
+}

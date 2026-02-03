@@ -203,11 +203,11 @@ describe("suggest.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls;
+				const logCalls = mockConsole.log.mock.calls as string[][];
 				// Find the index of "2. pkg2"
-				const pkg2Index = logCalls.findIndex((call: any[]) => call[0] === "2. pkg2");
+				const pkg2Index = logCalls.findIndex((call) => call[0] === "2. pkg2");
 				// The call after it should NOT be a blank line (it should be the score)
-				assert.ok(logCalls[pkg2Index + 1].length > 0);
+				assert.ok(logCalls[pkg2Index + 1] && logCalls[pkg2Index + 1].length > 0);
 			});
 		});
 

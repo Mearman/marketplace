@@ -11,9 +11,9 @@
 import {
 	API,
 	fetchWithCache,
-	NpmsSuggestion,
 	parseArgs,
-	ParsedArgs,
+	validateNpmsSuggestions,
+	type ParsedArgs,
 } from "./utils";
 
 export interface Dependencies {
@@ -60,12 +60,13 @@ Examples:
 	deps.console.log(`Searching for: "${query}"`);
 
 	try {
-		const data = await deps.fetchWithCache<NpmsSuggestion[]>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 3600, // 1 hour
 			cacheKey: `suggest-${query}-${size}`,
 			bypassCache: flags.has("no-cache"),
 		});
+		const data = validateNpmsSuggestions(rawData);
 
 		// Limit results to requested size
 		const results = data.slice(0, size);

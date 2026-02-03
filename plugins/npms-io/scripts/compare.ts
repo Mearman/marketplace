@@ -12,9 +12,9 @@ import {
 	formatNumber,
 	formatScore,
 	fetchWithCache,
-	NpmsMgetResponse,
-	NpmsPackage,
 	parseArgs,
+	validateNpmsMgetResponse,
+	type NpmsPackage,
 } from "./utils";
 
 export interface Dependencies {
@@ -52,7 +52,7 @@ Examples:
 	deps.console.log(`Comparing: ${packages.join(" vs ")}`);
 
 	try {
-		const data = await deps.fetchWithCache<NpmsMgetResponse>({
+		const rawData = await deps.fetchWithCache({
 			url: API.mget(),
 			ttl: 21600, // 6 hours
 			cacheKey: `compare-${packages.join("-")}`,
@@ -63,15 +63,17 @@ Examples:
 				body: JSON.stringify(packages),
 			},
 		});
+		const data = validateNpmsMgetResponse(rawData);
 
 		// Process results
 		const results: Array<{ name: string; data: NpmsPackage | null }> = packages.map((name) => ({
 			name,
-			data: data[name] || null,
+			data: data[name] ?? null,
 		}));
 
-		// Filter out packages with no data
-		const available = results.filter((r) => r.data !== null);
+		// Filter out packages with no data - use type guard to narrow
+		type AvailableResult = { name: string; data: NpmsPackage };
+		const available: AvailableResult[] = results.filter((r): r is AvailableResult => r.data !== null);
 		const missing = results.filter((r) => r.data === null);
 
 		if (available.length === 0) {
@@ -99,55 +101,55 @@ Examples:
 
 		// Scores
 		const scoresRow = "Overall".padEnd(15) +
-      available.map((r) => `${formatScore(r.data!.score.final)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
+      available.map((r) => `${formatScore(r.data.score.final)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
 		deps.console.log(scoresRow);
 
 		const qualityRow = "Quality".padEnd(15) +
-      available.map((r) => `${formatScore(r.data!.score.detail.quality)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
+      available.map((r) => `${formatScore(r.data.score.detail.quality)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
 		deps.console.log(qualityRow);
 
 		const popularityRow = "Popularity".padEnd(15) +
-      available.map((r) => `${formatScore(r.data!.score.detail.popularity)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
+      available.map((r) => `${formatScore(r.data.score.detail.popularity)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
 		deps.console.log(popularityRow);
 
 		const maintenanceRow = "Maintenance".padEnd(15) +
-      available.map((r) => `${formatScore(r.data!.score.detail.maintenance)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
+      available.map((r) => `${formatScore(r.data.score.detail.maintenance)}/100`.padEnd(Math.max(12, maxWidth))).join("  ");
 		deps.console.log(maintenanceRow);
 
 		deps.console.log(separator);
 
 		// Version
 		const versionRow = "Version".padEnd(15) +
-      available.map((r) => r.data!.collected.metadata.version.padEnd(Math.max(12, maxWidth))).join("  ");
+      available.map((r) => r.data.collected.metadata.version.padEnd(Math.max(12, maxWidth))).join("  ");
 		deps.console.log(versionRow);
 
 		// GitHub stats
 		const starsRow = "Stars".padEnd(15) +
       available.map((r) => {
-      	const stars = r.data!.collected.github?.stars;
-      	return stars ? formatNumber(stars).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
+      	const stars = r.data.collected.github?.stars;
+      	return stars != null ? formatNumber(stars).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
       }).join("  ");
 		deps.console.log(starsRow);
 
 		const forksRow = "Forks".padEnd(15) +
       available.map((r) => {
-      	const forks = r.data!.collected.github?.forks;
-      	return forks ? formatNumber(forks).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
+      	const forks = r.data.collected.github?.forks;
+      	return forks != null ? formatNumber(forks).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
       }).join("  ");
 		deps.console.log(forksRow);
 
 		const issuesRow = "Issues".padEnd(15) +
       available.map((r) => {
-      	const issues = r.data!.collected.github?.openIssues;
-      	return issues ? formatNumber(issues).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
+      	const issues = r.data.collected.github?.openIssues;
+      	return issues != null ? formatNumber(issues).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
       }).join("  ");
 		deps.console.log(issuesRow);
 
 		// Downloads
 		const downloadsRow = "Downloads/Mo".padEnd(15) +
       available.map((r) => {
-      	const dl = r.data!.collected.npm?.monthDownloads;
-      	return dl ? formatNumber(dl).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
+      	const dl = r.data.collected.npm?.monthDownloads;
+      	return dl != null ? formatNumber(dl).padEnd(Math.max(12, maxWidth)) : "N/A".padEnd(Math.max(12, maxWidth));
       }).join("  ");
 		deps.console.log(downloadsRow);
 
@@ -161,9 +163,9 @@ Examples:
 
 		// Recommendation
 		const best = available.reduce((best, current) =>
-      current.data!.score.final > best.data!.score.final ? current : best
+			current.data.score.final > best.data.score.final ? current : best
 		);
-		deps.console.log(`Highest overall score: ${best.name} (${formatScore(best.data!.score.final)}/100)`);
+		deps.console.log(`Highest overall score: ${best.name} (${formatScore(best.data.score.final)}/100)`);
 		deps.console.log();
 	} catch (error) {
 		handleError(error, deps);

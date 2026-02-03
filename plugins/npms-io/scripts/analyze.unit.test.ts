@@ -506,7 +506,7 @@ describe("analyze.ts", () => {
 				await main(args, deps);
 
 				// Find the "Recent Releases:" section and count version lines after it
-				const logCalls = mockConsole.log.mock.calls.map((call: any[]) => String(call[0] || ""));
+				const logCalls: string[] = mockConsole.log.mock.calls.map((call: any[]) => String(call[0] || ""));
 				const recentReleasesIndex = logCalls.findIndex((call: string) => call.includes("Recent Releases:"));
 
 				// Count lines that look like version releases (contain " - " and start with spaces)
