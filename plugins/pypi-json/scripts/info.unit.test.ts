@@ -408,7 +408,7 @@ describe("info.ts", () => {
 			});
 
 			it("should handle non-Error errors", async () => {
-				mockFetchWithCache.mock.mockImplementation(async () => { throw "string error"; });
+				mockFetchWithCache.mock.mockImplementation(async () => { throw new Error("string error"); });
 
 				const args = parseArgs(["requests"]);
 

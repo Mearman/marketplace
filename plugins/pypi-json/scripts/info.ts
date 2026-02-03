@@ -12,7 +12,6 @@
 import {
 	API,
 	PyPIDistribution,
-	PyPIPackageInfo,
 	compareVersions,
 	fetchWithCache,
 	formatBytes,
@@ -21,6 +20,7 @@ import {
 	getDistributionType,
 	getMainClassifiers,
 	parseArgs,
+	validatePyPIPackageInfo,
 	type ParsedArgs,
 } from "./utils";
 
@@ -95,11 +95,12 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 		deps.console.log(`Fetching: ${packageName}`);
 
 		// Fetch with cache - critical for performance
-		const data = await deps.fetchWithCache<PyPIPackageInfo>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 21600, // 6 hours
 			bypassCache: flags.has("no-cache"),
 		});
+		const data = validatePyPIPackageInfo(rawData);
 
 		const info = data.info;
 

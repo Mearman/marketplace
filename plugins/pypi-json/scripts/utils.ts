@@ -5,6 +5,7 @@
 import { createCacheManager } from "../../../lib/cache";
 import { parseArgs as sharedParseArgs, type ParsedArgs } from "../../../lib/args";
 import { formatNumber as sharedFormatNumber } from "../../../lib/helpers";
+import { isRecord, isString, isArray, isBoolean } from "../../../lib/type-guards";
 
 // ============================================================================
 // Types
@@ -102,7 +103,8 @@ export function formatBytes(bytes: number): string {
 	const k = 1024;
 	const sizes = ["B", "KB", "MB", "GB"];
 	const i = Math.floor(Math.log(bytes) / Math.log(k));
-	return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+	const size = sizes[i] ?? "B";
+	return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${size}`;
 }
 
 /**
@@ -239,10 +241,48 @@ export function compareVersions(v1: string, v2: string): number {
 	const length = Math.max(v1parts.length, v2parts.length);
 
 	for (let i = 0; i < length; i++) {
-		const v1part = v1parts[i] || 0;
-		const v2part = v2parts[i] || 0;
+		const v1part = v1parts[i] ?? 0;
+		const v2part = v2parts[i] ?? 0;
 		if (v1part > v2part) return 1;
 		if (v1part < v2part) return -1;
 	}
 	return 0;
+}
+
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+/**
+ * Type guard for PyPIDistribution
+ */
+export function isPyPIDistribution(value: unknown): value is PyPIDistribution {
+	if (!isRecord(value)) return false;
+	if (!isString(value.filename)) return false;
+	if (!isString(value.url)) return false;
+	if (!isBoolean(value.yanked)) return false;
+	return true;
+}
+
+/**
+ * Type guard for PyPIPackageInfo
+ */
+export function isPyPIPackageInfo(value: unknown): value is PyPIPackageInfo {
+	if (!isRecord(value)) return false;
+	if (!isRecord(value.info)) return false;
+	if (!isString(value.info.name)) return false;
+	if (!isString(value.info.version)) return false;
+	if (!isRecord(value.releases)) return false;
+	if (!isArray(value.urls)) return false;
+	return true;
+}
+
+/**
+ * Validate and cast PyPIPackageInfo
+ */
+export function validatePyPIPackageInfo(data: unknown): PyPIPackageInfo {
+	if (!isPyPIPackageInfo(data)) {
+		throw new Error("Invalid PyPI package response");
+	}
+	return data;
 }
