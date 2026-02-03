@@ -6,6 +6,7 @@ import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert";
 import { main, handleError, listScreenshots, checkScreenshotAvailable } from "./screenshot.js";
 import { parseArgs } from "./utils.js";
+import { callsToArray } from "./test-helpers.js";
 
 // Mock fetch and writeFile
 let mockGlobalFetch: any;
@@ -35,6 +36,7 @@ describe("screenshot.ts", () => {
 
 		// Mock global fetch
 		mockGlobalFetch = mock.fn();
+globalThis.fetch = mockGlobalFetch;
 		globalThis.fetch = mockGlobalFetch;
 
 		// Mock writeFile
@@ -48,6 +50,12 @@ describe("screenshot.ts", () => {
 				writeFile: mockWriteFile,
 			},
 		};
+		Object.defineProperty(deps, "fetchWithCache", {
+			get() { return mockFetchWithCache; }
+		});
+		Object.defineProperty(deps.fs, "writeFile", {
+			get() { return mockWriteFile; }
+		});
 	});
 
 	describe("main", () => {
@@ -59,25 +67,27 @@ describe("screenshot.ts", () => {
 						["20240101120000", "https://example.com", "image/png", "200", "digest", "1000"],
 					],
 				}));
+globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--list", "https://example.com"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Screenshots for: https://example.com")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Total:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Screenshots for: https://example.com")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Total:")));
 			});
 
 			it("should show message when no screenshots found", async () => {
 				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [["timestamp"]],
 				}));
+globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--list", "https://example.com"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "No screenshots found"));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => call[0] === "No screenshots found"));
 			});
 		});
 
@@ -87,7 +97,9 @@ describe("screenshot.ts", () => {
 					archived_snapshots: {
 						closest: {
 							available: true,
+							url: "https://example.com",
 							timestamp: "20240101120000",
+							status: "200",
 						},
 					},
 				}));
@@ -97,13 +109,14 @@ describe("screenshot.ts", () => {
 						["20240101120000", "web.archive.org/screenshot/https://example.com", "image/png", "200", "digest", "1000"],
 					],
 				}));
+globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["https://example.com"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Fetching most recent screenshot")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("URL:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Fetching most recent screenshot")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("URL:")));
 			});
 
 			it("should handle --timestamp flag", async () => {
@@ -113,12 +126,13 @@ describe("screenshot.ts", () => {
 						["20240101120000", "web.archive.org/screenshot/https://example.com", "image/png", "200", "digest", "1000"],
 					],
 				}));
+globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--timestamp=20240101120000", "https://example.com"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Fetching screenshot from 2024-01-01 12:00")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Fetching screenshot from 2024-01-01 12:00")));
 			});
 
 			it("should use --no-cache flag", async () => {
@@ -126,7 +140,9 @@ describe("screenshot.ts", () => {
 					archived_snapshots: {
 						closest: {
 							available: true,
+							url: "https://example.com",
 							timestamp: "20240101120000",
+							status: "200",
 						},
 					},
 				}));
@@ -136,12 +152,13 @@ describe("screenshot.ts", () => {
 						["20240101120000", "web.archive.org/screenshot/https://example.com", "image/png", "200", "digest", "1000"],
 					],
 				}));
+globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--no-cache", "https://example.com"]);
 
 				await main(args, deps);
 
-				assert.strictEqual(mockFetchWithCache.mock.calls[0][0].bypassCache, true);
+				assert.strictEqual(callsToArray(mockFetchWithCache)[0]?.[0]?.bypassCache, true);
 			});
 		});
 
@@ -151,8 +168,8 @@ describe("screenshot.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx screenshot.ts <url>")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx screenshot.ts <url>")));
 			});
 		});
 
@@ -164,21 +181,19 @@ describe("screenshot.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Network error"));
+				assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "Network error"));
 			});
 		});
 
 		describe("screenshot download", () => {
-			beforeEach(() => {
-				mock.reset();
-			});
-
 			it("should download screenshot when --download is provided", async () => {
 				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
 						closest: {
 							available: true,
+							url: "https://example.com",
 							timestamp: "20240101120000",
+							status: "200",
 						},
 					},
 				}));
@@ -196,15 +211,16 @@ describe("screenshot.ts", () => {
 						arrayBuffer: async () => new ArrayBuffer(1024),
 					};
 				});
+globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
 
 				await main(args, deps);
 
-				assert.strictEqual(mockWriteFile.mock.calls.length, 1);
-				assert.strictEqual(mockWriteFile.mock.calls[0][0], "screenshot.png");
-				assert.strictEqual(Buffer.isBuffer(mockWriteFile.mock.calls[0][1]), true);
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✓ Downloaded to: screenshot.png")));
+				assert.strictEqual(callsToArray(mockWriteFile).length, 1);
+				assert.strictEqual(callsToArray(mockWriteFile)[0]?.[0], "screenshot.png");
+				assert.strictEqual(Buffer.isBuffer(callsToArray(mockWriteFile)[0]?.[1]), true);
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("✓ Downloaded to: screenshot.png")));
 			});
 
 			it("should handle HTTP error when downloading screenshot", async () => {
@@ -212,7 +228,9 @@ describe("screenshot.ts", () => {
 					archived_snapshots: {
 						closest: {
 							available: true,
+							url: "https://example.com",
 							timestamp: "20240101120000",
+							status: "200",
 						},
 					},
 				}));
@@ -230,12 +248,13 @@ describe("screenshot.ts", () => {
 						status: 404,
 					};
 				});
+globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ Screenshot not available (404)")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ Screenshot not available (404)")));
 			});
 
 			it("should show message when --download not provided", async () => {
@@ -243,7 +262,9 @@ describe("screenshot.ts", () => {
 					archived_snapshots: {
 						closest: {
 							available: true,
+							url: "https://example.com",
 							timestamp: "20240101120000",
+							status: "200",
 						},
 					},
 				}));
@@ -253,20 +274,17 @@ describe("screenshot.ts", () => {
 						["20240101120000", "url", "image/png", "200", "digest", "1000"],
 					],
 				}));
+globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["https://example.com"]);
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Use --download=PATH to save the screenshot")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Use --download=PATH to save the screenshot")));
 			});
 		});
 
 		describe("screenshot unavailable scenarios", () => {
-			beforeEach(() => {
-				mock.reset();
-			});
-
 			it("should exit when screenshot not available at specified timestamp", async () => {
 				mockFetchWithCache = mock.fn(async () => ({
 					archived_snapshots: {
@@ -279,13 +297,14 @@ describe("screenshot.ts", () => {
 				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [["timestamp"]],
 				}));
+globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--timestamp=20240101120000", "https://example.com"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ No screenshot found at 2024-01-01 12:00")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Use --list to see available screenshots.")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ No screenshot found at 2024-01-01 12:00")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Use --list to see available screenshots.")));
 			});
 
 			it("should exit when no archived version found", async () => {
@@ -301,7 +320,7 @@ describe("screenshot.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ No archived version found")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ No archived version found")));
 			});
 
 			it("should handle write errors when downloading screenshot", async () => {
@@ -309,7 +328,9 @@ describe("screenshot.ts", () => {
 					archived_snapshots: {
 						closest: {
 							available: true,
+							url: "https://example.com",
 							timestamp: "20240101120000",
+							status: "200",
 						},
 					},
 				}));
@@ -327,13 +348,14 @@ describe("screenshot.ts", () => {
 						arrayBuffer: async () => new ArrayBuffer(1024),
 					};
 				});
+globalThis.fetch = mockGlobalFetch;
 				mockWriteFile = mock.fn(async () => { throw new Error("Write permission denied"); });
 
 				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Write permission denied"));
+				assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "Write permission denied"));
 			});
 		});
 	});
@@ -346,6 +368,7 @@ describe("screenshot.ts", () => {
 					["20240101120000", "url", "image/png", "200", "digest", "1000"],
 				],
 			}));
+globalThis.fetch = mockGlobalFetch;
 
 			const result = await checkScreenshotAvailable("https://example.com", deps);
 
@@ -356,6 +379,7 @@ describe("screenshot.ts", () => {
 			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [["timestamp"]],
 			}));
+globalThis.fetch = mockGlobalFetch;
 
 			const result = await checkScreenshotAvailable("https://example.com", deps);
 
@@ -364,6 +388,7 @@ describe("screenshot.ts", () => {
 
 		it("should return false on error", async () => {
 			mockGlobalFetch = mock.fn(async () => { throw new Error("Network error"); });
+globalThis.fetch = mockGlobalFetch;
 
 			const result = await checkScreenshotAvailable("https://example.com", deps);
 
@@ -377,6 +402,7 @@ describe("screenshot.ts", () => {
 					["20240101120000", "url", "image/png", "200", "digest", "1000"],
 				],
 			}));
+globalThis.fetch = mockGlobalFetch;
 
 			const result = await checkScreenshotAvailable("https://example.com", deps, "20240101120000");
 
@@ -392,21 +418,23 @@ describe("screenshot.ts", () => {
 					["20240101120000", "https://example.com", "image/png", "200", "digest", "1000"],
 				],
 			}));
+globalThis.fetch = mockGlobalFetch;
 
 			await listScreenshots("https://example.com", deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Screenshots for: https://example.com")));
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Total:")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Screenshots for: https://example.com")));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Total:")));
 		});
 
 		it("should show message when no screenshots found", async () => {
 			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [["timestamp"]],
 			}));
+globalThis.fetch = mockGlobalFetch;
 
 			await listScreenshots("https://example.com", deps);
 
-			assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "No screenshots found"));
+			assert.ok(callsToArray(mockConsole.log).some((call: any[]) => call[0] === "No screenshots found"));
 		});
 	});
 
@@ -415,8 +443,8 @@ describe("screenshot.ts", () => {
 			const error = new Error("Screenshot error");
 			assert.throws(() => handleError(error, "https://example.com", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Screenshot error"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "Screenshot error"));
+			assert.strictEqual(callsToArray(mockProcess.exit)[0]?.[0], 1);
 		});
 	});
 });

@@ -31,6 +31,9 @@ export interface Dependencies {
 	fetchWithCache: typeof fetchWithCache;
 	console: Console;
 	process: NodeJS.Process;
+	fs: {
+		writeFile: typeof writeFile;
+	};
 }
 
 // ============================================================================
@@ -170,8 +173,8 @@ const getScreenshot = async (
 			deps.process.exit(1);
 		}
 
-		screenshotUrl = buildScreenshotUrl(closest.timestamp, url);
-		deps.console.log(`Fetching most recent screenshot (${formatTimestamp(closest.timestamp)})...`);
+		screenshotUrl = buildScreenshotUrl(closest.timestamp!, url);
+		deps.console.log(`Fetching most recent screenshot (${formatTimestamp(closest.timestamp!)})...`);
 	}
 
 	deps.console.log(`URL: ${screenshotUrl}`);
@@ -187,7 +190,7 @@ const getScreenshot = async (
 			}
 
 			const buffer = await response.arrayBuffer();
-			await writeFile(downloadPath, Buffer.from(buffer));
+			await deps.fs.writeFile(downloadPath, Buffer.from(buffer));
 			deps.console.log(`\n✓ Downloaded to: ${downloadPath}`);
 		} catch (error) {
 			handleError(error, url, deps);
@@ -244,6 +247,7 @@ const defaultDeps: Dependencies = {
 	fetchWithCache,
 	console,
 	process,
+	fs: { writeFile },
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
