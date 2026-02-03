@@ -66,7 +66,7 @@ Examples:
 		let exists: boolean;
 
 		try {
-			await deps.fetchWithCache<{ exists: boolean; timestamp: number }>({
+			await deps.fetchWithCache({
 				url: apiUrl,
 				ttl: 3600, // 1 hour
 				cacheKey: `exists-${packageName}`,

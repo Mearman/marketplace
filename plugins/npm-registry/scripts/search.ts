@@ -12,8 +12,8 @@
 import {
 	API,
 	fetchWithCache,
-	NpmSearchResponse,
 	parseArgs,
+	validateNpmSearchResponse,
 	type ParsedArgs,
 } from "./utils";
 
@@ -70,12 +70,13 @@ Examples:
 	deps.console.log(`Searching: "${query}"`);
 
 	try {
-		const data = await deps.fetchWithCache<NpmSearchResponse>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 3600, // 1 hour
 			cacheKey: `${query}-${size}-${from}`,
 			bypassCache: flags.has("no-cache"),
 		});
+		const data = validateNpmSearchResponse(rawData);
 
 		if (data.objects.length === 0) {
 			deps.console.log(`No packages found for "${query}"`);

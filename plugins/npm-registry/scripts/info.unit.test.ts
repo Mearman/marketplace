@@ -165,7 +165,7 @@ describe("info.ts", () => {
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
 			const calls = callsToArray(mockConsole.log);
-			assert.ok(calls.some(call => call[0] === 'Package "react" not found'));
+			assert.ok(calls.some(call => call[0] === "Package \"react\" not found"));
 		});
 	});
 
@@ -175,7 +175,7 @@ describe("info.ts", () => {
 			assert.throws(() => handleError(error, "react", { console: mockConsole, process: mockProcess }));
 
 			const calls = callsToArray(mockConsole.log);
-			assert.strictEqual(calls[0][0], 'Package "react" not found');
+			assert.strictEqual(calls[0][0], "Package \"react\" not found");
 			const exitCalls = callsToArray(mockProcess.exit);
 			assert.strictEqual(exitCalls[0][0], 1);
 		});

@@ -5,6 +5,7 @@
 import { createCacheManager } from "../../../lib/cache";
 import { parseArgs as sharedParseArgs } from "../../../lib/args";
 import { formatNumber as sharedFormatNumber, sleep as sharedSleep } from "../../../lib/helpers";
+import { isRecord, isString, isNumber, isArray } from "../../../lib/type-guards";
 import type { CacheEntry } from "../../../lib/cache";
 
 // ============================================================================
@@ -168,3 +169,115 @@ export const parseRepositoryUrl = (repo: NpmRepository | string | undefined): st
 // ============================================================================
 
 export type { ParsedArgs } from "../../../lib/args";
+
+// ============================================================================
+// Type Guards for API Responses
+// ============================================================================
+
+/**
+ * Type guard for NpmDownloadsPoint
+ */
+function isNpmDownloadsPoint(value: unknown): value is NpmDownloadsPoint {
+	return isRecord(value) && isNumber(value.downloads) && isString(value.day);
+}
+
+/**
+ * Type guard for NpmDownloadsResponse
+ */
+export function isNpmDownloadsResponse(value: unknown): value is NpmDownloadsResponse {
+	return (
+		isRecord(value) &&
+		isArray(value.downloads) &&
+		value.downloads.every(isNpmDownloadsPoint) &&
+		isString(value.start) &&
+		isString(value.end) &&
+		isString(value.package)
+	);
+}
+
+/**
+ * Type guard for NpmPerson
+ */
+export function isNpmPerson(value: unknown): value is NpmPerson {
+	if (!isRecord(value)) return false;
+	if ("name" in value && value.name !== undefined && !isString(value.name)) return false;
+	if ("email" in value && value.email !== undefined && !isString(value.email)) return false;
+	if ("url" in value && value.url !== undefined && !isString(value.url)) return false;
+	return true;
+}
+
+/**
+ * Type guard for NpmRepository
+ */
+export function isNpmRepository(value: unknown): value is NpmRepository {
+	if (!isRecord(value)) return false;
+	if ("type" in value && value.type !== undefined && !isString(value.type)) return false;
+	if ("url" in value && value.url !== undefined && !isString(value.url)) return false;
+	return true;
+}
+
+/**
+ * Type guard for NpmPackage (partial check for commonly used fields)
+ */
+export function isNpmPackage(value: unknown): value is NpmPackage {
+	if (!isRecord(value)) return false;
+	if (!isString(value.name)) return false;
+	if (!isString(value.version)) return false;
+	// description is required by our interface
+	if (!isString(value.description) && value.description !== undefined) return false;
+	return true;
+}
+
+/**
+ * Type guard for NpmSearchResult
+ */
+function isNpmSearchResult(value: unknown): value is NpmSearchResult {
+	if (!isRecord(value)) return false;
+	if (!isRecord(value.package)) return false;
+	const pkg = value.package;
+	if (!isString(pkg.name) || !isString(pkg.version)) return false;
+	return true;
+}
+
+/**
+ * Type guard for NpmSearchResponse
+ */
+export function isNpmSearchResponse(value: unknown): value is NpmSearchResponse {
+	return (
+		isRecord(value) &&
+		isArray(value.objects) &&
+		value.objects.every(isNpmSearchResult) &&
+		isNumber(value.total) &&
+		isString(value.time)
+	);
+}
+
+/**
+ * Validate and cast NpmDownloadsResponse
+ */
+export function validateNpmDownloadsResponse(data: unknown): NpmDownloadsResponse {
+	if (!isNpmDownloadsResponse(data)) {
+		throw new Error("Invalid npm downloads response format");
+	}
+	return data;
+}
+
+/**
+ * Validate and cast NpmPackage
+ */
+export function validateNpmPackage(data: unknown): NpmPackage {
+	if (!isNpmPackage(data)) {
+		throw new Error("Invalid npm package response format");
+	}
+	return data;
+}
+
+/**
+ * Validate and cast NpmSearchResponse
+ */
+export function validateNpmSearchResponse(data: unknown): NpmSearchResponse {
+	if (!isNpmSearchResponse(data)) {
+		throw new Error("Invalid npm search response format");
+	}
+	return data;
+}

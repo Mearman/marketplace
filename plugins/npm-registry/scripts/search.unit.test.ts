@@ -89,7 +89,7 @@ describe("search.ts", () => {
 			await main(args, deps);
 
 			const calls = callsToArray(mockConsole.log);
-			assert.strictEqual(calls[0][0], 'Searching: "express"');
+			assert.strictEqual(calls[0][0], "Searching: \"express\"");
 			assert.ok(calls.some(call => call[0]?.includes("Found 50,000 package(s)")));
 			assert.ok(calls.some(call => call[0]?.includes("1. express (4.18.2)")));
 			assert.ok(calls.some(call => call[0]?.includes("Fast, unopinionated")));
@@ -108,7 +108,7 @@ describe("search.ts", () => {
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
 			const calls = callsToArray(mockConsole.log);
-			assert.ok(calls.some(call => call[0]?.includes('No packages found for "nonexistentpackage12345"')));
+			assert.ok(calls.some(call => call[0]?.includes("No packages found for \"nonexistentpackage12345\"")));
 			const exitCalls = callsToArray(mockProcess.exit);
 			assert.strictEqual(exitCalls[0][0], 0);
 		});
@@ -120,7 +120,7 @@ describe("search.ts", () => {
 			await main(args, deps);
 
 			const calls = callsToArray(mockConsole.log);
-			assert.strictEqual(calls[0][0], 'Searching: "express"');
+			assert.strictEqual(calls[0][0], "Searching: \"express\"");
 			assert.ok(calls.some(call => call[0]?.includes("21. express (4.18.2)")));
 			assert.ok(calls.some(call => call[0]?.includes("22. react (18.2.0)")));
 		});
@@ -137,7 +137,7 @@ describe("search.ts", () => {
 			await main(args, deps);
 
 			const calls = callsToArray(mockConsole.log);
-			assert.strictEqual(calls[0][0], 'Searching: "express"');
+			assert.strictEqual(calls[0][0], "Searching: \"express\"");
 			const fetchCalls = callsToArray(mockFetchWithCache);
 			assert.strictEqual(fetchCalls[0][0].cacheKey, "express-1-0");
 		});

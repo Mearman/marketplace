@@ -10,9 +10,9 @@
 import {
 	API,
 	fetchWithCache,
-	NpmPackage,
 	parseArgs,
 	parseRepositoryUrl,
+	validateNpmPackage,
 	type ParsedArgs,
 } from "./utils";
 
@@ -69,16 +69,17 @@ Examples:
 	deps.console.log(`Fetching: ${packageName}`);
 
 	try {
-		const data = await deps.fetchWithCache<NpmPackage>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 21600, // 6 hours
 			cacheKey: packageName,
 			bypassCache: flags.has("no-cache"),
 		});
+		const data = validateNpmPackage(rawData);
 
 		// Display package information
 		deps.console.log();
-		deps.console.log(`${data.name}`);
+		deps.console.log(data.name);
 		deps.console.log("-".repeat(data.name.length));
 
 		if (data.description) {
@@ -86,7 +87,7 @@ Examples:
 		}
 
 		const latestVersion = data["dist-tags"]?.latest || Object.keys(data.versions || {}).pop();
-		deps.console.log(`Latest: ${latestVersion}`);
+		deps.console.log(`Latest: ${latestVersion ?? "unknown"}`);
 
 		if (data.license) {
 			deps.console.log(`License: ${data.license}`);
@@ -143,7 +144,7 @@ Examples:
 			if (versions.length > 0) {
 				deps.console.log("\nVersions (last 5):");
 				versions.forEach(([version, date]) => {
-					const d = new Date(date as string);
+					const d = new Date(date);
 					deps.console.log(`  ${version} - Published ${d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}`);
 				});
 			}

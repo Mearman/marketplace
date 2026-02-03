@@ -431,7 +431,7 @@ describe("downloads.ts", () => {
 			);
 
 			const calls = callsToArray(mockConsole.log);
-			assert.ok(calls.some(call => call[0]?.includes('Package "nonexistent" not found')));
+			assert.ok(calls.some(call => call[0]?.includes("Package \"nonexistent\" not found")));
 		});
 
 		it("should calculate correct day count across month boundaries", async () => {

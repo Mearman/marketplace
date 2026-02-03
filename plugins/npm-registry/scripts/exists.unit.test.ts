@@ -40,7 +40,7 @@ describe("exists.ts", () => {
 
 				const calls = callsToArray(mockConsole.log);
 				assert.strictEqual(calls[0][0], "Checking: react");
-				assert.ok(calls.some(call => call[0]?.includes('✓ Package "react" exists')));
+				assert.ok(calls.some(call => call[0]?.includes("✓ Package \"react\" exists")));
 				assert.ok(calls.some(call => call[0]?.includes("https://www.npmjs.com/package/react")));
 				assert.ok(calls.some(call => call[0] === "  Published: Yes"));
 			});
@@ -56,7 +56,7 @@ describe("exists.ts", () => {
 
 				const calls = callsToArray(mockConsole.log);
 				assert.strictEqual(calls[0][0], "Checking: @babel/core");
-				assert.ok(calls.some(call => call[0]?.includes('✓ Package "@babel/core" exists')));
+				assert.ok(calls.some(call => call[0]?.includes("✓ Package \"@babel/core\" exists")));
 			});
 
 			it("should handle package with hyphens", async () => {
@@ -70,7 +70,7 @@ describe("exists.ts", () => {
 
 				const calls = callsToArray(mockConsole.log);
 				assert.strictEqual(calls[0][0], "Checking: my-awesome-package");
-				assert.ok(calls.some(call => call[0]?.includes('✓ Package "my-awesome-package" exists')));
+				assert.ok(calls.some(call => call[0]?.includes("✓ Package \"my-awesome-package\" exists")));
 			});
 		});
 
@@ -83,7 +83,7 @@ describe("exists.ts", () => {
 
 				const calls = callsToArray(mockConsole.log);
 				assert.strictEqual(calls[0][0], "Checking: my-new-package");
-				assert.ok(calls.some(call => call[0]?.includes('✗ Package "my-new-package" does not exist')));
+				assert.ok(calls.some(call => call[0]?.includes("✗ Package \"my-new-package\" does not exist")));
 				assert.ok(calls.some(call => call[0] === "  The name is available for use"));
 			});
 

@@ -2,7 +2,7 @@
  * Test helpers for migrating from Vitest to Node.js built-in test runner
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
 
 import { mock } from "node:test";
 

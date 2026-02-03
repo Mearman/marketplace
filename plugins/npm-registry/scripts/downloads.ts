@@ -12,8 +12,8 @@ import {
 	API,
 	fetchWithCache,
 	formatNumber,
-	NpmDownloadsResponse,
 	parseArgs,
+	validateNpmDownloadsResponse,
 	type ParsedArgs,
 } from "./utils";
 
@@ -72,12 +72,13 @@ Examples:
 	deps.console.log(`Fetching downloads for: ${packageName} (${period})`);
 
 	try {
-		const data = await deps.fetchWithCache<NpmDownloadsResponse>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 86400, // 24 hours
 			cacheKey: `downloads-${period}-${packageName}`,
 			bypassCache: flags.has("no-cache"),
 		});
+		const data = validateNpmDownloadsResponse(rawData);
 
 		// Calculate statistics
 		const totalDownloads = data.downloads.reduce((sum, point) => sum + point.downloads, 0);
