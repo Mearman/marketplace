@@ -15,19 +15,10 @@
 		"remark-lint": "remark plugins/*/skills/*/SKILL.md",
 		"remark-lint:all": "remark plugins/*/skills/*/SKILL.md --fr",
 		"typecheck": "tsc --noEmit",
-		"test": "tsx --test",
-		"test:run": "tsx --test --test-only",
-		"test:coverage": "c8 tsx --test",
-		"test:watch": "tsx --test --watch"
-	},
-	"dependencies": {
-		"ajv": "8.17.1",
-		"ajv-draft-04": "1.0.0",
-		"ajv-formats": "3.0.1",
-		"jsonc-parser": "3.3.1",
-		"vscode-json-languageservice": "5.7.1",
-		"vscode-languageserver": "9.0.1",
-		"vscode-languageserver-textdocument": "1.0.11"
+		"test": "vitest",
+		"test:run": "vitest run",
+		"test:coverage": "vitest run --coverage",
+		"test:ui": "vitest --ui"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "20.3.1",
@@ -42,7 +33,8 @@
 		"@types/unist": "3.0.3",
 		"@typescript-eslint/eslint-plugin": "8.53.0",
 		"@typescript-eslint/parser": "8.53.0",
-		"c8": "10.1.3",
+		"@vitest/coverage-v8": "^4.0.17",
+		"@vitest/ui": "4.0.17",
 		"eslint": "9.39.2",
 		"eslint-plugin-jsonc": "2.21.0",
 		"husky": "9.1.7",
@@ -57,7 +49,9 @@
 		"unist-util-generated": "3.0.0",
 		"unist-util-is": "6.0.1",
 		"unist-util-visit": "5.0.0",
-		"vfile": "6.0.3"
+		"vfile": "6.0.3",
+		"vite-tsconfig-paths": "6.0.4",
+		"vitest": "4.0.17"
 	},
 	"packageManager": "pnpm@9.15.9",
 	"engines": {
