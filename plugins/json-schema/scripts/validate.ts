@@ -33,6 +33,17 @@ export interface Dependencies {
 }
 
 // ============================================================================
+// Type Guards
+// ============================================================================
+
+/**
+ * Type guard for Record<string, unknown>.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// ============================================================================
 // Ajv Instance Factory
 // ============================================================================
 
@@ -123,12 +134,12 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 	// Read and parse both files
 	const data = await readAndParseJson(jsonFile, deps);
 	const schemaParsed = await readAndParseJson(schemaFile, deps);
-	if (typeof schemaParsed !== "object" || schemaParsed === null || Array.isArray(schemaParsed)) {
+	if (!isRecord(schemaParsed)) {
 		deps.console.error("Error: Schema must be a JSON object");
 		deps.process.exit(1);
 		return;
 	}
-	const schema = schemaParsed as Record<string, unknown>;
+	const schema = schemaParsed;
 
 	// Detect draft version from schema
 	const schemaUriValue = schema.$schema;

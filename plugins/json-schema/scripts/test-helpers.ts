@@ -60,6 +60,7 @@ export const callsToArray = (mockFn: MockFn | null | undefined): unknown[][] => 
  * Tests are exempt from ESLint's no-assertion rule.
  */
 export const callsToArrayTyped = <T extends unknown[]>(mockFn: MockFn | null | undefined): T[] => {
+	// eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Test helper requires assertion
 	return callsToArray(mockFn) as T[];
 };
 
@@ -123,7 +124,9 @@ export const createMockConsole = (): MockConsole => {
 		getLogCalls: () => logCalls,
 		getErrorCalls: () => errorCalls,
 		// Typed versions for tests (tests are exempt from ESLint's no-assertion rule)
+		// eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Test helper requires assertion
 		getLogCallsTyped: <T extends unknown[] = string[]>() => logCalls as T[],
+		// eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Test helper requires assertion
 		getErrorCallsTyped: <T extends unknown[] = string[]>() => errorCalls as T[],
 	};
 };

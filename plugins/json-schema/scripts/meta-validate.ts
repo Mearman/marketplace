@@ -33,6 +33,17 @@ export interface Dependencies {
 }
 
 // ============================================================================
+// Type Guards
+// ============================================================================
+
+/**
+ * Type guard for Record<string, unknown>.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// ============================================================================
 // Ajv Instance Factory
 // ============================================================================
 
@@ -83,10 +94,10 @@ const readAndParseSchema = async (
 
 	try {
 		const parsed: unknown = JSON.parse(schemaContent);
-		if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+		if (!isRecord(parsed)) {
 			return handleError(new Error("Schema must be a JSON object"), "parsing JSON", deps);
 		}
-		return parsed as Record<string, unknown>;
+		return parsed;
 	} catch (error) {
 		return handleError(error, "parsing JSON", deps);
 	}

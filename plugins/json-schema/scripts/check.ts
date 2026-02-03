@@ -38,6 +38,13 @@ export interface Dependencies {
 // Schema Fetching
 // ============================================================================
 
+/**
+ * Type guard for Record<string, unknown>.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 const fetchSchemaFromUrl = async (
 	url: string,
 	bypassCache: boolean
@@ -48,10 +55,10 @@ const fetchSchemaFromUrl = async (
 		bypassCache,
 	});
 	// Validate the result is a record
-	if (typeof result !== "object" || result === null || Array.isArray(result)) {
+	if (!isRecord(result)) {
 		throw new Error("Schema must be a JSON object");
 	}
-	return result as Record<string, unknown>;
+	return result;
 };
 
 // ============================================================================
@@ -129,11 +136,10 @@ const resolveSchema = async (
 	const schemaPath = path.resolve(basePath, schemaRef);
 
 	const schema = await readAndParseJson(schemaPath, deps);
-	if (typeof schema !== "object" || schema === null || Array.isArray(schema)) {
+	if (!isRecord(schema)) {
 		return handleError(new Error("Schema must be a JSON object"), `reading ${schemaRef}`, deps);
 	}
-	// Type narrowed: schema is now `object & ~null & ~array` = Record-like
-	return schema as Record<string, unknown>;
+	return schema;
 };
 
 // ============================================================================
