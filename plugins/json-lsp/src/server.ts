@@ -49,7 +49,7 @@ const documents = new TextDocuments<LSPTextDocument>(LSPTextDocument);
 let jsonLanguageService: LanguageService;
 
 // Schema configuration
-let schemaAssociations: Record<string, string[]> = {};
+const schemaAssociations: Record<string, string[]> = {};
 
 // JSON document cache
 const jsonDocumentsCache: Map<string, JSONDocument> = new Map();
@@ -71,7 +71,7 @@ connection.onInitialize(
 					const fs = await import("node:fs");
 					const filePath = uri.replace("file://", "");
 					try {
-						return fs.promises.readFile(filePath, "utf-8");
+						return await fs.promises.readFile(filePath, "utf-8");
 					} catch (error) {
 						connection.console.error(`Failed to read schema file: ${filePath}`);
 						throw error;
@@ -171,8 +171,9 @@ async function loadSchemaAssociations(): Promise<void> {
 			`Loaded SchemaStore catalog with ${catalog.length} entries`,
 		);
 	} catch (error) {
+		const errorMessage = error instanceof Error ? error.message : String(error);
 		connection.console.warn(
-			`Failed to load SchemaStore catalog, using built-in associations only: ${error}`,
+			`Failed to load SchemaStore catalog, using built-in associations only: ${errorMessage}`,
 		);
 	}
 }
@@ -182,17 +183,17 @@ async function loadSchemaAssociations(): Promise<void> {
  */
 connection.onNotification(
 	DidChangeConfigurationNotification.type,
-	async () => {
+	() => {
 		// Reload schema associations if settings changed
-		await loadSchemaAssociations();
+		void loadSchemaAssociations().then(() => {
+			// Clear JSON document cache
+			jsonDocumentsCache.clear();
 
-		// Clear JSON document cache
-		jsonDocumentsCache.clear();
-
-		// Re-validate all open documents
-		for (const doc of documents.all()) {
-			validateDocument(doc);
-		}
+			// Re-validate all open documents
+			for (const doc of documents.all()) {
+				void validateDocument(doc);
+			}
+		});
 	},
 );
 
@@ -220,7 +221,7 @@ async function validateDocument(textDocument: LSPTextDocument): Promise<void> {
 		undefined,
 	);
 
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	void connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
 /**
@@ -235,7 +236,7 @@ documents.onDidChangeContent(
 );
 
 documents.onDidClose((event: { document: LSPTextDocument }): void => {
-	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
+	void connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 	jsonDocumentsCache.delete(event.document.uri);
 });
 
@@ -292,6 +293,46 @@ connection.onHover(
 );
 
 /**
+ * Type guard to check if symbol is a DocumentSymbol (has range, no location).
+ */
+function isDocumentSymbol(
+	symbol: { name: string; kind: SymbolKind } & Record<string, unknown>
+): symbol is DocumentSymbol {
+	return "range" in symbol && !("location" in symbol);
+}
+
+/**
+ * Type guard for SymbolInformation-like objects.
+ */
+interface SymbolInfoLike extends Record<string, unknown> {
+	name: string;
+	kind: SymbolKind;
+	location: { range: Range };
+}
+
+function isSymbolInformation(
+	symbol: { name: string; kind: SymbolKind } & Record<string, unknown>
+): symbol is SymbolInfoLike {
+	return "location" in symbol &&
+		typeof symbol.location === "object" &&
+		symbol.location !== null &&
+		"range" in symbol.location;
+}
+
+/**
+ * Helper to convert a DocumentSymbol to our normalized format.
+ */
+function convertDocumentSymbol(symbol: DocumentSymbol): DocumentSymbol {
+	return {
+		name: symbol.name,
+		kind: symbol.kind === SymbolKind.Property ? SymbolKind.Property : SymbolKind.Object,
+		range: symbol.range,
+		selectionRange: symbol.selectionRange,
+		children: symbol.children?.map(convertDocumentSymbol),
+	};
+}
+
+/**
  * Handle document symbol requests.
  */
 connection.onDocumentSymbol(
@@ -305,28 +346,31 @@ connection.onDocumentSymbol(
 
 		const symbols = jsonLanguageService.findDocumentSymbols(document, jsonDoc);
 
-		return symbols.map((symbol) => {
-			// Handle both SymbolInformation and DocumentSymbol types
-			const isSymbolInformation = "location" in symbol;
-			const range = isSymbolInformation
-				? (symbol as unknown as { location: { range: Range } }).location.range
-				: (symbol as unknown as DocumentSymbol).range;
-			const docSymbol = symbol as unknown as DocumentSymbol;
+		// findDocumentSymbols returns SymbolInformation[] | DocumentSymbol[]
+		if (symbols.length === 0) {
+			return [];
+		}
 
-			return {
-				name: symbol.name,
-				kind: symbol.kind === SymbolKind.Property ? SymbolKind.Property : SymbolKind.Object,
-				range: range,
-				selectionRange: docSymbol.selectionRange ?? range,
-				children: docSymbol.children?.map(
-					(child: DocumentSymbol): DocumentSymbol => ({
-						name: child.name,
-						kind: child.kind === SymbolKind.Property ? SymbolKind.Property : SymbolKind.Object,
-						range: child.range,
-						selectionRange: child.selectionRange,
-					}),
-				),
-			};
+		// Map each symbol - they could be either type
+		return symbols.map((symbol) => {
+			// Check if it's a DocumentSymbol (has range property directly)
+			if (isDocumentSymbol(symbol)) {
+				return convertDocumentSymbol(symbol);
+			}
+
+			// It must be a SymbolInformation (has location.range)
+			// This is guaranteed by the vscode-json-languageservice return type
+			if (isSymbolInformation(symbol)) {
+				return {
+					name: symbol.name,
+					kind: symbol.kind === SymbolKind.Property ? SymbolKind.Property : SymbolKind.Object,
+					range: symbol.location.range,
+					selectionRange: symbol.location.range,
+				};
+			}
+
+			// This should be unreachable - throw to satisfy TypeScript
+			throw new Error("Unexpected symbol type from findDocumentSymbols");
 		});
 	},
 );
@@ -370,7 +414,8 @@ connection.onDocumentLinks(async (params: DocumentLinkParams): Promise<DocumentL
 
 	const jsonDoc = getJSONDocument(document);
 
-	return jsonLanguageService.findLinks(document, jsonDoc) ?? [];
+	const links = jsonLanguageService.findLinks(document, jsonDoc);
+	return links;
 });
 
 // Listen for document events

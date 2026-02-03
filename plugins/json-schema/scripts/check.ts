@@ -42,11 +42,16 @@ const fetchSchemaFromUrl = async (
 	url: string,
 	bypassCache: boolean
 ): Promise<Record<string, unknown>> => {
-	return fetchWithCache<Record<string, unknown>>({
+	const result = await fetchWithCache({
 		url,
 		ttl: 86400, // 24 hours
 		bypassCache,
 	});
+	// Validate the result is a record
+	if (typeof result !== "object" || result === null || Array.isArray(result)) {
+		throw new Error("Schema must be a JSON object");
+	}
+	return result as Record<string, unknown>;
 };
 
 // ============================================================================
@@ -123,7 +128,12 @@ const resolveSchema = async (
 	const basePath = path.dirname(path.resolve(jsonFilePath));
 	const schemaPath = path.resolve(basePath, schemaRef);
 
-	return await readAndParseJson(schemaPath, deps) as Record<string, unknown>;
+	const schema = await readAndParseJson(schemaPath, deps);
+	if (typeof schema !== "object" || schema === null || Array.isArray(schema)) {
+		return handleError(new Error("Schema must be a JSON object"), `reading ${schemaRef}`, deps);
+	}
+	// Type narrowed: schema is now `object & ~null & ~array` = Record-like
+	return schema as Record<string, unknown>;
 };
 
 // ============================================================================
@@ -163,7 +173,15 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 		return;
 	}
 
-	const schemaRef = (data as Record<string, unknown>).$schema as string;
+	// Type guard already verified: data is object with $schema property
+	const dataRecord: Record<string, unknown> = data;
+	const schemaRefValue = dataRecord.$schema;
+	if (typeof schemaRefValue !== "string") {
+		deps.console.error(`Error: $schema must be a string in ${jsonFile}`);
+		deps.process.exit(1);
+		return;
+	}
+	const schemaRef = schemaRefValue;
 
 	if (verbose) {
 		deps.console.log(`Validating: ${jsonFile}`);
@@ -201,12 +219,16 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 	};
 
 	if (!valid && validate.errors) {
-		result.errors = validate.errors.map((e: ErrorObject): ValidationError => ({
-			path: e.instancePath || "/",
-			message: e.message || "Unknown error",
-			keyword: e.keyword,
-			params: e.params as Record<string, unknown>,
-		}));
+		result.errors = validate.errors.map((e: ErrorObject): ValidationError => {
+			// e.params is typed as Record<string, unknown> in newer Ajv
+			const params: Record<string, unknown> = e.params;
+			return {
+				path: e.instancePath || "/",
+				message: e.message || "Unknown error",
+				keyword: e.keyword,
+				params,
+			};
+		});
 	}
 
 	// Output result

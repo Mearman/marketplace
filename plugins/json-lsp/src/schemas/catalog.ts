@@ -23,15 +23,24 @@ function isSchemaStoreCatalogEntry(value: unknown): value is SchemaStoreCatalog 
 		return false;
 	}
 
-	const entry = value as Record<string, unknown>;
+	// Use in operator for type-safe property checking on narrowed object
+	if (!("name" in value) || typeof value.name !== "string") {
+		return false;
+	}
+	if (!("description" in value) || typeof value.description !== "string") {
+		return false;
+	}
+	if (!("fileMatch" in value) || !Array.isArray(value.fileMatch)) {
+		return false;
+	}
+	if (!value.fileMatch.every((item: unknown) => typeof item === "string")) {
+		return false;
+	}
+	if (!("url" in value) || typeof value.url !== "string") {
+		return false;
+	}
 
-	return (
-		typeof entry.name === "string" &&
-    typeof entry.description === "string" &&
-    Array.isArray(entry.fileMatch) &&
-    entry.fileMatch.every((item) => typeof item === "string") &&
-    typeof entry.url === "string"
-	);
+	return true;
 }
 
 /**
@@ -68,15 +77,15 @@ export async function fetchSchemaStoreCatalog(
 			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 		}
 
-		const data = await response.json();
+		const data: unknown = await response.json();
 
 		// Validate response data structure
 		if (!isSchemaStoreCatalog(data)) {
 			throw new Error("Invalid SchemaStore catalog response format");
 		}
 
-		// Filter out entries without fileMatch
-		return data.filter((entry) => entry.fileMatch && entry.fileMatch.length > 0);
+		// Filter out entries without fileMatch (always truthy after validation)
+		return data.filter((entry) => entry.fileMatch.length > 0);
 	} catch (error) {
 		throw new Error(
 			`Failed to fetch SchemaStore catalog: ${error instanceof Error ? error.message : String(error)}`,
@@ -120,7 +129,8 @@ export function catalogToAssociations(
 
 	for (const entry of catalog) {
 		for (const pattern of entry.fileMatch) {
-			if (!associations[pattern]) {
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Object index access can be undefined
+			if (associations[pattern] === undefined) {
 				associations[pattern] = [];
 			}
 			associations[pattern].push(entry.url);

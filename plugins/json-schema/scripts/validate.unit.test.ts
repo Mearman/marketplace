@@ -43,8 +43,8 @@ describe("validate.ts", () => {
 
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Usage:")
 			));
 		});
@@ -54,8 +54,8 @@ describe("validate.ts", () => {
 
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("--schema")
 			));
 		});
@@ -72,8 +72,8 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("\u2713 Valid")
 			));
 		});
@@ -88,11 +88,11 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Schema:")
 			));
-			assert.ok(logCalls.some((call: string[]) =>
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("File:")
 			));
 		});
@@ -109,11 +109,11 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("\u2717 Invalid")
 			));
-			assert.ok(logCalls.some((call: string[]) =>
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("name")
 			));
 		});
@@ -128,8 +128,8 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("must be string")
 			));
 		});
@@ -144,8 +144,8 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes(">= 0")
 			));
 		});
@@ -162,8 +162,8 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json", "--all-errors"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("2 errors")
 			));
 		});
@@ -180,7 +180,7 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json", "--format=json"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
 			const jsonOutput = logCalls[logCalls.length - 1][0];
 			const parsed = JSON.parse(jsonOutput);
 			assert.strictEqual(parsed.valid, true);
@@ -196,8 +196,8 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json", "--format=json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const logCalls = mockConsole.getLogCalls();
-			const jsonOutput = logCalls.find((call: string[]) => {
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			const jsonOutput = logCalls.find((call) => {
 				try {
 					JSON.parse(call[0]);
 					return true;
@@ -224,8 +224,8 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -240,8 +240,8 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -255,8 +255,8 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -274,8 +274,8 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -292,14 +292,14 @@ describe("validate.ts", () => {
 			const args = parseArgs(["data.json", "--schema=schema.json", "--verbose"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Validating:")
 			));
-			assert.ok(logCalls.some((call: string[]) =>
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Schema:")
 			));
-			assert.ok(logCalls.some((call: string[]) =>
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Draft:")
 			));
 		});

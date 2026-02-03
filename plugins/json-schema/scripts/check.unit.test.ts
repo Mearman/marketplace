@@ -46,8 +46,8 @@ describe("check.ts", () => {
 
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Usage:")
 			));
 		});
@@ -61,8 +61,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("No $schema property")
 			));
 		});
@@ -74,8 +74,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("schema-validate")
 			));
 		});
@@ -95,8 +95,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("\u2713 Valid")
 			));
 		});
@@ -114,8 +114,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json", "--all-errors"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("\u2717 Invalid")
 			));
 		});
@@ -133,8 +133,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("\u2713 Valid")
 			));
 		});
@@ -150,8 +150,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -171,7 +171,7 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json", "--format=json"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
 			const jsonOutput = logCalls[logCalls.length - 1][0];
 			const parsed = JSON.parse(jsonOutput);
 			assert.strictEqual(parsed.valid, true);
@@ -192,11 +192,11 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json", "--verbose"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("$schema:")
 			));
-			assert.ok(logCalls.some((call: string[]) =>
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Draft:")
 			));
 		});
@@ -209,8 +209,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["nonexistent.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -221,8 +221,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -240,8 +240,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -262,8 +262,8 @@ describe("check.ts", () => {
 			const args = parseArgs(["data.json", "--all-errors"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("2 errors")
 			));
 		});

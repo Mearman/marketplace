@@ -33,8 +33,8 @@ describe("meta-validate.ts", () => {
 
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Usage:")
 			));
 		});
@@ -44,8 +44,8 @@ describe("meta-validate.ts", () => {
 
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("--draft")
 			));
 		});
@@ -65,8 +65,8 @@ describe("meta-validate.ts", () => {
 			const args = parseArgs(["schema.json"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("\u2713 Valid")
 			));
 		});
@@ -81,8 +81,8 @@ describe("meta-validate.ts", () => {
 			const args = parseArgs(["schema.json"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("draft-07")
 			));
 		});
@@ -96,8 +96,8 @@ describe("meta-validate.ts", () => {
 			const args = parseArgs(["schema.json", "--draft=draft-04"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("draft-04")
 			));
 		});
@@ -114,8 +114,8 @@ describe("meta-validate.ts", () => {
 			const args = parseArgs(["schema.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("\u2717 Invalid")
 			));
 		});
@@ -141,8 +141,8 @@ describe("meta-validate.ts", () => {
 			const args = parseArgs(["nonexistent.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -153,8 +153,8 @@ describe("meta-validate.ts", () => {
 			const args = parseArgs(["schema.json"]);
 			await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-			const errorCalls = mockConsole.getErrorCalls();
-			assert.ok(errorCalls.some((call: string[]) =>
+			const errorCalls = mockConsole.getErrorCallsTyped<[string, ...unknown[]]>();
+			assert.ok(errorCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Error")
 			));
 		});
@@ -170,7 +170,7 @@ describe("meta-validate.ts", () => {
 			const args = parseArgs(["schema.json", "--format=json"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
 			const jsonOutput = logCalls[logCalls.length - 1][0];
 			const parsed = JSON.parse(jsonOutput);
 			assert.strictEqual(parsed.valid, true);
@@ -186,11 +186,11 @@ describe("meta-validate.ts", () => {
 			const args = parseArgs(["schema.json", "--verbose"]);
 			await main(args, deps);
 
-			const logCalls = mockConsole.getLogCalls();
-			assert.ok(logCalls.some((call: string[]) =>
+			const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Validating:")
 			));
-			assert.ok(logCalls.some((call: string[]) =>
+			assert.ok(logCalls.some((call) =>
 				typeof call[0] === "string" && call[0].includes("Draft:")
 			));
 		});
@@ -209,8 +209,8 @@ describe("meta-validate.ts", () => {
 				const args = parseArgs(["schema.json", `--draft=${draft}`]);
 				await main(args, deps);
 
-				const logCalls = mockConsole.getLogCalls();
-				assert.ok(logCalls.some((call: string[]) =>
+				const logCalls = mockConsole.getLogCallsTyped<[string, ...unknown[]]>();
+				assert.ok(logCalls.some((call) =>
 					typeof call[0] === "string" && call[0].includes("\u2713 Valid")
 				));
 			});

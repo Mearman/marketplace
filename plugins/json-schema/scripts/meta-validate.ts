@@ -82,7 +82,11 @@ const readAndParseSchema = async (
 	}
 
 	try {
-		return JSON.parse(schemaContent) as Record<string, unknown>;
+		const parsed: unknown = JSON.parse(schemaContent);
+		if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+			return handleError(new Error("Schema must be a JSON object"), "parsing JSON", deps);
+		}
+		return parsed as Record<string, unknown>;
 	} catch (error) {
 		return handleError(error, "parsing JSON", deps);
 	}
@@ -107,7 +111,15 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 	}
 
 	const schemaFile = positional[0];
-	const draftOption = options.get("draft") as DraftVersion | undefined;
+	const draftOptionValue = options.get("draft");
+	const draftOption: DraftVersion | undefined =
+		draftOptionValue === "draft-04" ||
+		draftOptionValue === "draft-06" ||
+		draftOptionValue === "draft-07" ||
+		draftOptionValue === "2019-09" ||
+		draftOptionValue === "2020-12"
+			? draftOptionValue
+			: undefined;
 	const strict = flags.has("strict");
 	const verbose = flags.has("verbose");
 	const outputFormat = options.get("format") || "text";
@@ -116,7 +128,9 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 	const schema = await readAndParseSchema(schemaFile, deps);
 
 	// Detect or use specified draft version
-	const schemaUri = schema.$schema as string | undefined;
+	const schemaUriValue = schema.$schema;
+	const schemaUri: string | undefined =
+		typeof schemaUriValue === "string" ? schemaUriValue : undefined;
 	const draft = draftOption || detectDraftVersion(schemaUri);
 
 	if (verbose) {
@@ -141,9 +155,25 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 	} catch (error) {
 		result.valid = false;
 
-		if (error instanceof Error && "errors" in error && Array.isArray((error as { errors: unknown[] }).errors)) {
-			const ajvErrors = (error as { errors: Array<{ instancePath?: string; message?: string; keyword?: string; params?: Record<string, unknown> }> }).errors;
-			result.errors = ajvErrors.map((e): ValidationError => ({
+		// Type guard for AJV error with errors array
+		interface AjvErrorWithErrors {
+			errors: Array<{
+				instancePath?: string;
+				message?: string;
+				keyword?: string;
+				params?: Record<string, unknown>;
+			}>;
+		}
+		function isAjvErrorWithErrors(err: unknown): err is Error & AjvErrorWithErrors {
+			if (!(err instanceof Error)) return false;
+			if (!("errors" in err)) return false;
+			// Use Reflect.get for type-safe property access
+			const errorsValue: unknown = Reflect.get(err, "errors");
+			return Array.isArray(errorsValue);
+		}
+
+		if (isAjvErrorWithErrors(error)) {
+			result.errors = error.errors.map((e): ValidationError => ({
 				path: e.instancePath || "/",
 				message: e.message || "Unknown error",
 				keyword: e.keyword || "unknown",

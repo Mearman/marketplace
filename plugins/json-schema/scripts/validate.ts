@@ -107,7 +107,14 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 	}
 
 	const jsonFile = positional[0];
-	const schemaFile = options.get("schema")!;
+	// We already checked options.has("schema") above
+	const schemaFileOption = options.get("schema");
+	if (!schemaFileOption) {
+		deps.console.error("Error: --schema option is required");
+		deps.process.exit(1);
+		return;
+	}
+	const schemaFile = schemaFileOption;
 	const allErrors = flags.has("all-errors");
 	const strict = flags.has("strict");
 	const verbose = flags.has("verbose");
@@ -115,10 +122,18 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 
 	// Read and parse both files
 	const data = await readAndParseJson(jsonFile, deps);
-	const schema = await readAndParseJson(schemaFile, deps) as Record<string, unknown>;
+	const schemaParsed = await readAndParseJson(schemaFile, deps);
+	if (typeof schemaParsed !== "object" || schemaParsed === null || Array.isArray(schemaParsed)) {
+		deps.console.error("Error: Schema must be a JSON object");
+		deps.process.exit(1);
+		return;
+	}
+	const schema = schemaParsed as Record<string, unknown>;
 
 	// Detect draft version from schema
-	const schemaUri = schema.$schema as string | undefined;
+	const schemaUriValue = schema.$schema;
+	const schemaUri: string | undefined =
+		typeof schemaUriValue === "string" ? schemaUriValue : undefined;
 	const draft = detectDraftVersion(schemaUri);
 
 	if (verbose) {
@@ -148,12 +163,16 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 	};
 
 	if (!valid && validate.errors) {
-		result.errors = validate.errors.map((e: ErrorObject): ValidationError => ({
-			path: e.instancePath || "/",
-			message: e.message || "Unknown error",
-			keyword: e.keyword,
-			params: e.params as Record<string, unknown>,
-		}));
+		result.errors = validate.errors.map((e: ErrorObject): ValidationError => {
+			// e.params is typed as Record<string, unknown> in newer Ajv
+			const params: Record<string, unknown> = e.params;
+			return {
+				path: e.instancePath || "/",
+				message: e.message || "Unknown error",
+				keyword: e.keyword,
+				params,
+			};
+		});
 	}
 
 	// Output result
