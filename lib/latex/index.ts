@@ -206,11 +206,11 @@ export function decodeLatex(text: string): string {
 	// Handle additional patterns with regex
 	// Accent commands without braces: \'e -> é
 	// Match each accent type explicitly (double-escape backslash for regex)
-	result = result.replace(/\\\\'(\w)/g, (match, char) => LATEX_TO_UNICODE["\\'{" + char + "}"] || match);
-	result = result.replace(/\\\\`(\w)/g, (match, char) => LATEX_TO_UNICODE["\\`{" + char + "}"] || match);
-	result = result.replace(/\\\\\^(\w)/g, (match, char) => LATEX_TO_UNICODE["\\^{" + char + "}"] || match);
-	result = result.replace(/\\\\"(\w)/g, (match, char) => LATEX_TO_UNICODE["\\\"{" + char + "}"] || match);
-	result = result.replace(/\\\\~(\w)/g, (match, char) => LATEX_TO_UNICODE["\\~{" + char + "}"] || match);
+	result = result.replace(/\\\\'(\w)/g, (match: string, char: string) => LATEX_TO_UNICODE["\\'{" + char + "}"] || match);
+	result = result.replace(/\\\\`(\w)/g, (match: string, char: string) => LATEX_TO_UNICODE["\\`{" + char + "}"] || match);
+	result = result.replace(/\\\\\^(\w)/g, (match: string, char: string) => LATEX_TO_UNICODE["\\^{" + char + "}"] || match);
+	result = result.replace(/\\\\"(\w)/g, (match: string, char: string) => LATEX_TO_UNICODE["\\\"{" + char + "}"] || match);
+	result = result.replace(/\\\\~(\w)/g, (match: string, char: string) => LATEX_TO_UNICODE["\\~{" + char + "}"] || match);
 
 	return result;
 }
