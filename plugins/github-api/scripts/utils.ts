@@ -5,6 +5,7 @@
 import { createCacheManager } from "../../../lib/cache";
 import { parseArgs as sharedParseArgs } from "../../../lib/args";
 import { formatNumber as sharedFormatNumber, sleep as sharedSleep } from "../../../lib/helpers";
+import { isRecord, isString, isNumber } from "../../../lib/type-guards";
 import type { CacheEntry } from "../../../lib/cache";
 
 // ============================================================================
@@ -212,3 +213,106 @@ export const formatDate = (dateStr: string): string => {
 export const base64Decode = (str: string): string => {
 	return Buffer.from(str, "base64").toString("utf-8");
 };
+
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+/**
+ * Type guard for GitHub User
+ */
+export function isGitHubUser(value: unknown): value is GitHubUser {
+	if (!isRecord(value)) return false;
+	return isString(value.login) && isNumber(value.id);
+}
+
+/**
+ * Type guard for GitHub Repository
+ */
+export function isGitHubRepository(value: unknown): value is GitHubRepository {
+	if (!isRecord(value)) return false;
+	return (
+		isNumber(value.id) &&
+		isString(value.name) &&
+		isString(value.full_name) &&
+		isRecord(value.owner)
+	);
+}
+
+/**
+ * Type guard for GitHub Readme
+ */
+export function isGitHubReadme(value: unknown): value is GitHubReadme {
+	if (!isRecord(value)) return false;
+	return (
+		isString(value.name) &&
+		isString(value.path) &&
+		isString(value.content) &&
+		isString(value.encoding)
+	);
+}
+
+/**
+ * Type guard for rate limit resource
+ */
+function isRateLimitResource(value: unknown): value is { limit: number; used: number; remaining: number; reset: number } {
+	return (
+		isRecord(value) &&
+		isNumber(value.limit) &&
+		isNumber(value.used) &&
+		isNumber(value.remaining) &&
+		isNumber(value.reset)
+	);
+}
+
+/**
+ * Type guard for GitHub Rate Limit
+ */
+export function isGitHubRateLimit(value: unknown): value is GitHubRateLimit {
+	if (!isRecord(value)) return false;
+	if (!isRecord(value.resources)) return false;
+	return (
+		isRateLimitResource(value.resources.core) &&
+		isRateLimitResource(value.resources.search)
+	);
+}
+
+/**
+ * Validate and cast GitHubRepository
+ */
+export function validateGitHubRepository(data: unknown): GitHubRepository {
+	if (!isGitHubRepository(data)) {
+		throw new Error("Invalid GitHub repository response");
+	}
+	return data;
+}
+
+/**
+ * Validate and cast GitHubUser
+ */
+export function validateGitHubUser(data: unknown): GitHubUser {
+	if (!isGitHubUser(data)) {
+		throw new Error("Invalid GitHub user response");
+	}
+	return data;
+}
+
+/**
+ * Validate and cast GitHubReadme
+ */
+export function validateGitHubReadme(data: unknown): GitHubReadme {
+	if (!isGitHubReadme(data)) {
+		throw new Error("Invalid GitHub readme response");
+	}
+	return data;
+}
+
+/**
+ * Validate and cast GitHubRateLimit
+ */
+export function validateGitHubRateLimit(data: unknown): GitHubRateLimit {
+	if (!isGitHubRateLimit(data)) {
+		throw new Error("Invalid GitHub rate limit response");
+	}
+	return data;
+}

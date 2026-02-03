@@ -14,10 +14,10 @@ import {
 	formatNumber,
 	fetchWithCache,
 	getAuthHeaders,
-	GitHubRepository,
 	getTokenFromEnv,
 	parseArgs,
 	parseRepositoryUrl,
+	validateGitHubRepository,
 	type ParsedArgs,
 } from "./utils";
 
@@ -98,17 +98,18 @@ Examples:
 	try {
 		const headers = deps.getAuthHeaders(token);
 
-		const data = await deps.fetchWithCache<GitHubRepository>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 1800, // 30 minutes
 			fetchOptions: { headers },
 			bypassCache: flags.has("no-cache"),
 			cacheKey: `repo-${owner}-${repo}`,
 		});
+		const data = validateGitHubRepository(rawData);
 
 		// Display repository information
 		deps.console.log();
-		deps.console.log(`${data.full_name}`);
+		deps.console.log(data.full_name);
 		deps.console.log("-".repeat(data.full_name.length));
 
 		if (data.description) {
@@ -142,7 +143,7 @@ Examples:
 		deps.console.log(`  Wiki: ${data.has_wiki ? "Enabled" : "Disabled"}`);
 		deps.console.log(`  Pages: ${data.has_pages ? "Enabled" : "Disabled"}`);
 
-		if (data.topics && data.topics.length > 0) {
+		if (data.topics.length > 0) {
 			deps.console.log(`\nTopics: ${data.topics.slice(0, 10).join(", ")}`);
 			if (data.topics.length > 10) {
 				deps.console.log(`  (and ${data.topics.length - 10} more)`);

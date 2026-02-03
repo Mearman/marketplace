@@ -12,9 +12,9 @@ import {
 	API,
 	fetchWithCache,
 	getAuthHeaders,
-	GitHubRateLimit,
 	getTokenFromEnv,
 	parseArgs,
+	validateGitHubRateLimit,
 	type ParsedArgs,
 } from "./utils";
 
@@ -85,13 +85,14 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 	try {
 		const headers = deps.getAuthHeaders(token);
 
-		const data = await deps.fetchWithCache<GitHubRateLimit>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 300, // 5 minutes
 			fetchOptions: { headers },
 			bypassCache: flags.has("no-cache"),
 			cacheKey: "rate-limit",
 		});
+		const data = validateGitHubRateLimit(rawData);
 
 		// Display rate limit information
 		deps.console.log();

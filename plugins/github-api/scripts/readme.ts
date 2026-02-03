@@ -13,10 +13,10 @@ import {
 	base64Decode,
 	fetchWithCache,
 	getAuthHeaders,
-	GitHubReadme,
 	getTokenFromEnv,
 	parseArgs,
 	parseRepositoryUrl,
+	validateGitHubReadme,
 	type ParsedArgs,
 } from "./utils";
 
@@ -98,13 +98,14 @@ Examples:
 	try {
 		const headers = deps.getAuthHeaders(token);
 
-		const data = await deps.fetchWithCache<GitHubReadme>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 3600, // 1 hour
 			fetchOptions: { headers },
 			bypassCache: flags.has("no-cache"),
 			cacheKey: `readme-${owner}-${repo}`,
 		});
+		const data = validateGitHubReadme(rawData);
 
 		// Decode and display README
 		const content = deps.base64Decode(data.content);

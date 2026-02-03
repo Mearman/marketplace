@@ -14,9 +14,9 @@ import {
 	formatNumber,
 	fetchWithCache,
 	getAuthHeaders,
-	GitHubUser,
 	getTokenFromEnv,
 	parseArgs,
+	validateGitHubUser,
 	type ParsedArgs,
 } from "./utils";
 
@@ -81,13 +81,14 @@ Examples:
 	try {
 		const headers = deps.getAuthHeaders(token);
 
-		const data = await deps.fetchWithCache<GitHubUser>({
+		const rawData = await deps.fetchWithCache({
 			url: apiUrl,
 			ttl: 3600, // 1 hour
 			fetchOptions: { headers },
 			bypassCache: flags.has("no-cache"),
 			cacheKey: `user-${username}`,
 		});
+		const data = validateGitHubUser(rawData);
 
 		// Display user information
 		deps.console.log();
@@ -111,7 +112,7 @@ Examples:
 		deps.console.log(`  Type: ${data.type === "User" ? "User" : "Organization"}`);
 		deps.console.log(`  Created: ${formatDate(data.created_at)}`);
 		deps.console.log(`  Updated: ${formatDate(data.updated_at)}`);
-		if (data.hireable !== null && data.hireable !== undefined) {
+		if (data.hireable !== null) {
 			deps.console.log(`  Hireable: ${data.hireable ? "Yes" : "No"}`);
 		}
 
