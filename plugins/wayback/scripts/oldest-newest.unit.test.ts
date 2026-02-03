@@ -6,6 +6,7 @@ import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert";
 import { main, handleError, fetchOldest, fetchNewest, formatCompact, formatFull, type OldestNewestResult } from "./oldest-newest.js";
 import { parseArgs } from "./utils.js";
+import { callsToArray } from "./test-helpers.js";
 
 describe("oldest-newest.ts", () => {
 	let mockConsole: any;
@@ -34,6 +35,9 @@ describe("oldest-newest.ts", () => {
 			console: mockConsole,
 			process: mockProcess,
 		};
+Object.defineProperty(deps, "fetchWithCache", {
+	get() { return mockFetchWithCache; }
+});
 	});
 
 	describe("main", () => {
@@ -57,7 +61,7 @@ describe("oldest-newest.ts", () => {
 				await main(args, deps);
 
 				// Should use compact format (no emoji, no URLs)
-				const logCalls = mockConsole.log.mock.calls.map((c: any[]) => c[0]).join(" ");
+				const logCalls = callsToArray(mockConsole.log).map((c: any[]) => c[0]).join(" ");
 				assert.ok(logCalls.includes("1998-12-01"));
 				assert.ok(logCalls.includes("2024-01-15"));
 				assert.ok(!logCalls.includes("📜"));
@@ -83,10 +87,10 @@ describe("oldest-newest.ts", () => {
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("📜 OLDEST:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("🆕 NEWEST:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("web.archive.org")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Archive span:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("📜 OLDEST:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("🆕 NEWEST:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("web.archive.org")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Archive span:")));
 			});
 
 			it("should output JSON with --json flag", async () => {
@@ -107,7 +111,7 @@ describe("oldest-newest.ts", () => {
 
 				await main(args, deps);
 
-				const jsonOutput = mockConsole.log.mock.calls
+				const jsonOutput = callsToArray(mockConsole.log)
 					.map((c: any[]) => c[0])
 					.find((call: string) => call.startsWith("{"));
 				assert.ok(jsonOutput !== undefined);
@@ -128,8 +132,8 @@ describe("oldest-newest.ts", () => {
 				await main(args, deps);
 
 				// Should only call fetch once (for oldest)
-				assert.strictEqual(mockFetchWithCache.mock.calls.length, 1);
-				assert.ok(!mockFetchWithCache.mock.calls[0][0].url.includes("fastLatest"));
+				assert.strictEqual(callsToArray(mockFetchWithCache).length, 1);
+				assert.ok(!callsToArray(mockFetchWithCache)[0]?.[0].url.includes("fastLatest"));
 			});
 
 			it("should fetch only newest with --newest-only", async () => {
@@ -143,8 +147,8 @@ describe("oldest-newest.ts", () => {
 				await main(args, deps);
 
 				// Should only call fetch once (for newest)
-				assert.strictEqual(mockFetchWithCache.mock.calls.length, 1);
-				assert.ok(mockFetchWithCache.mock.calls[0][0].url.includes("fastLatest=true"));
+				assert.strictEqual(callsToArray(mockFetchWithCache).length, 1);
+				assert.ok(callsToArray(mockFetchWithCache)[0]?.[0].url.includes("fastLatest=true"));
 			});
 
 			it("should bypass cache with --no-cache flag", async () => {
@@ -158,7 +162,7 @@ describe("oldest-newest.ts", () => {
 				await main(args, deps);
 
 				// Both oldest and newest should be called with bypassCache: true
-				const calls = mockFetchWithCache.mock.calls;
+				const calls = callsToArray(mockFetchWithCache);
 				assert.ok(calls.length > 0);
 				assert.ok(calls.every((call: any[]) => call[0]?.bypassCache === true));
 			});
@@ -170,7 +174,7 @@ describe("oldest-newest.ts", () => {
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("No captures found")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("No captures found")));
 			});
 
 			it("should handle only oldest found (newest missing)", async () => {
@@ -188,7 +192,7 @@ describe("oldest-newest.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls.map((c: any[]) => c[0]);
+				const logCalls = callsToArray(mockConsole.log).map((c: any[]) => c[0]);
 				assert.ok(logCalls.some((call: string) => call.includes("1998-12-01")));
 				assert.ok(logCalls.some((call: string) => call.includes("No captures found")));
 			});
@@ -208,7 +212,7 @@ describe("oldest-newest.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls.map((c: any[]) => c[0]);
+				const logCalls = callsToArray(mockConsole.log).map((c: any[]) => c[0]);
 				assert.ok(logCalls.some((call: string) => call.includes("2024-01-15")));
 				assert.ok(logCalls.some((call: string) => call.includes("No captures found")));
 			});
@@ -220,8 +224,8 @@ describe("oldest-newest.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx oldest-newest.ts <url>")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx oldest-newest.ts <url>")));
 			});
 		});
 
@@ -303,8 +307,8 @@ describe("oldest-newest.ts", () => {
 
 			await fetchNewest("https://example.com", mockFetchWithCache);
 
-			assert.ok(mockFetchWithCache.mock.calls[0][0].url.includes("fastLatest=true"));
-			assert.strictEqual(mockFetchWithCache.mock.calls[0][0].ttl, 3600);
+			assert.ok(callsToArray(mockFetchWithCache)[0]?.[0].url.includes("fastLatest=true"));
+			assert.strictEqual(callsToArray(mockFetchWithCache)[0]?.[0].ttl, 3600);
 		});
 	});
 
@@ -481,15 +485,15 @@ describe("oldest-newest.ts", () => {
 			const error = new Error("Query failed");
 			assert.throws(() => handleError(error, "https://example.com", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Query failed"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "Query failed"));
+			assert.strictEqual(callsToArray(mockProcess.exit)[0]?.[0], 1);
 		});
 
 		it("should handle non-Error objects", () => {
 			assert.throws(() => handleError("String error", "https://example.com", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "String error"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "String error"));
+			assert.strictEqual(callsToArray(mockProcess.exit)[0]?.[0], 1);
 		});
 	});
 });

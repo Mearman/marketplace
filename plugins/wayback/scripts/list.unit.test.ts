@@ -6,6 +6,7 @@ import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert";
 import { main, handleError, fetchScreenshotTimestamps } from "./list.js";
 import { parseArgs } from "./utils.js";
+import { callsToArray } from "./test-helpers.js";
 
 // Mock fetch
 let mockGlobalFetch: any;
@@ -37,6 +38,7 @@ describe("list.ts", () => {
 
 		// Mock global fetch
 		mockGlobalFetch = mock.fn();
+globalThis.fetch = mockGlobalFetch;
 		globalThis.fetch = mockGlobalFetch;
 
 		deps = {
@@ -44,6 +46,9 @@ describe("list.ts", () => {
 			console: mockConsole,
 			process: mockProcess,
 		};
+		Object.defineProperty(deps, "fetchWithCache", {
+			get() { return mockFetchWithCache; }
+		});
 	});
 
 	describe("main", () => {
@@ -58,8 +63,8 @@ describe("list.ts", () => {
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Fetching last 10 snapshots for: https://example.com")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Total:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Fetching last 10 snapshots for: https://example.com")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Total:")));
 			});
 
 			it("should use --no-raw flag", async () => {
@@ -73,7 +78,7 @@ describe("list.ts", () => {
 				await main(args, deps);
 
 				// Should not contain "id_/" modifier
-				const logCalls = mockConsole.log.mock.calls.map((c: any[]) => c[0]).join(" ");
+				const logCalls = callsToArray(mockConsole.log).map((c: any[]) => c[0]).join(" ");
 				assert.ok(!logCalls.includes("id_/"));
 			});
 
@@ -81,6 +86,7 @@ describe("list.ts", () => {
 				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [["2024010112"], ["2024010113"]],
 				}));
+globalThis.fetch = mockGlobalFetch;
 				mockFetchWithCache = mock.fn(async () => [
 					["timestamp", "url", "mime", "status", "digest", "length"],
 					["20240101120000", "https://example.com", "text/html", "200", "digest", "1000"],
@@ -90,7 +96,7 @@ describe("list.ts", () => {
 
 				await main(args, deps);
 
-				assert.ok(mockProcess.stdout.write.mock.calls.some((call: any[]) => call[0] === "Checking for screenshots..."));
+				assert.ok(callsToArray(mockProcess.stdout.write).some((call: any[]) => call[0] === "Checking for screenshots..."));
 			});
 
 			it("should bypass cache with --no-cache flag", async () => {
@@ -103,7 +109,7 @@ describe("list.ts", () => {
 
 				await main(args, deps);
 
-				assert.strictEqual(mockFetchWithCache.mock.calls[0][0].bypassCache, true);
+				assert.strictEqual(callsToArray(mockFetchWithCache)[0]?.[0].bypassCache, true);
 			});
 		});
 
@@ -113,8 +119,8 @@ describe("list.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx list.ts <url>")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx list.ts <url>")));
 			});
 
 			it("should handle no snapshots found", async () => {
@@ -124,7 +130,7 @@ describe("list.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "No snapshots found"));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => call[0] === "No snapshots found"));
 			});
 		});
 
@@ -149,6 +155,7 @@ describe("list.ts", () => {
 					["20240101130000"],
 				],
 			}));
+globalThis.fetch = mockGlobalFetch;
 
 			const result = await fetchScreenshotTimestamps("https://example.com");
 
@@ -158,6 +165,7 @@ describe("list.ts", () => {
 
 		it("should return empty set on error", async () => {
 			mockGlobalFetch = mock.fn(async () => { throw new Error("Network error"); });
+globalThis.fetch = mockGlobalFetch;
 
 			const result = await fetchScreenshotTimestamps("https://example.com");
 
@@ -171,8 +179,8 @@ describe("list.ts", () => {
 			const error = new Error("List failed");
 			assert.throws(() => handleError(error, "https://example.com", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "List failed"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "List failed"));
+			assert.strictEqual(callsToArray(mockProcess.exit)[0]?.[0], 1);
 		});
 	});
 });
