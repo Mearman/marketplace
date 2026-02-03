@@ -69,7 +69,7 @@ Examples:
 		// Using d=404 means Gravatar returns 404 if no image exists
 		let exists = false;
 		try {
-			await deps.fetchWithCache<boolean>({
+			await deps.fetchWithCache({
 				url,
 				bypassCache: flags.has("no-cache"),
 				fetchOptions: {

@@ -81,3 +81,26 @@ export const getGravatarProfileUrl = (email: string): string => {
 	const hash = md5(email);
 	return `https://www.gravatar.com/${hash}`;
 };
+
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+const VALID_DEFAULTS: readonly string[] = ["mp", "identicon", "monsterid", "wavatar", "retro", "robohash", "blank"];
+const VALID_RATINGS: readonly string[] = ["g", "pg", "r", "x"];
+
+export type GravatarRating = "g" | "pg" | "r" | "x";
+
+/**
+ * Type guard for GravatarDefault
+ */
+export function isGravatarDefault(value: string): value is GravatarDefault {
+	return VALID_DEFAULTS.includes(value);
+}
+
+/**
+ * Type guard for Gravatar rating
+ */
+export function isGravatarRating(value: string): value is GravatarRating {
+	return VALID_RATINGS.includes(value);
+}

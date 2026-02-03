@@ -222,7 +222,7 @@ describe("check.ts", () => {
 
 			it("should handle non-Error errors", async () => {
 				mockFetchWithCache = mock.fn(async () => {
-					throw "string error";
+					throw new Error("string error");
 				});
 				deps.fetchWithCache = mockFetchWithCache;
 				const args = parseArgs(["user@example.com"]);

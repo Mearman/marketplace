@@ -13,8 +13,9 @@
 import {
 	buildGravatarUrl,
 	fetchWithCache,
-	GravatarDefault,
 	GravatarUrlOptions,
+	isGravatarDefault,
+	isGravatarRating,
 	md5,
 	parseArgs,
 	type ParsedArgs,
@@ -81,22 +82,20 @@ Examples:
 
 	const defaultType = options.get("default");
 	if (defaultType) {
-		const validDefaults = ["mp", "identicon", "monsterid", "wavatar", "retro", "robohash", "blank"];
-		if (validDefaults.includes(defaultType)) {
-			urlOptions.default = defaultType as GravatarDefault;
+		if (isGravatarDefault(defaultType)) {
+			urlOptions.default = defaultType;
 		} else {
-			deps.console.error(`Error: Invalid default type. Must be one of: ${validDefaults.join(", ")}`);
+			deps.console.error("Error: Invalid default type. Must be one of: mp, identicon, monsterid, wavatar, retro, robohash, blank");
 			deps.process.exit(1);
 		}
 	}
 
 	const rating = options.get("rating");
 	if (rating) {
-		const validRatings = ["g", "pg", "r", "x"];
-		if (validRatings.includes(rating)) {
-			urlOptions.rating = rating as "g" | "pg" | "r" | "x";
+		if (isGravatarRating(rating)) {
+			urlOptions.rating = rating;
 		} else {
-			deps.console.error(`Error: Invalid rating level. Must be one of: ${validRatings.join(", ")}`);
+			deps.console.error("Error: Invalid rating level. Must be one of: g, pg, r, x");
 			deps.process.exit(1);
 		}
 	}
@@ -109,11 +108,15 @@ Examples:
 		const url = buildGravatarUrl(email, urlOptions);
 
 		// Download image using fetchWithCache
-		const buffer = await deps.fetchWithCache<ArrayBuffer>({
+		const buffer = await deps.fetchWithCache({
 			url,
 			bypassCache: flags.has("no-cache"),
 			parseResponse: async (response) => response.arrayBuffer(),
 		});
+
+		if (!(buffer instanceof ArrayBuffer)) {
+			throw new Error("Invalid response: expected ArrayBuffer");
+		}
 
 		// Write to file
 		await deps.writeFile(outputFile, Buffer.from(buffer));
