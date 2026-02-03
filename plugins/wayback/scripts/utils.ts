@@ -18,9 +18,9 @@ export interface AvailableResponse {
   archived_snapshots: {
     closest?: {
       available: boolean;
-      url: string;
-      timestamp: string;
-      status: string;
+      url?: string;
+      timestamp?: string;
+      status?: string;
     };
   };
 }
@@ -157,14 +157,21 @@ export function isCDXResponse(value: unknown): value is CDXRow[] {
 /**
  * Type guard for a single snapshot in AvailableResponse
  */
-function isSnapshot(value: unknown): value is { available: boolean; url: string; timestamp: string; status: string } {
-	return (
-		isRecord(value) &&
-		isBoolean(value.available) &&
-		isString(value.url) &&
-		isString(value.timestamp) &&
-		isString(value.status)
-	);
+function isSnapshot(value: unknown): value is { available: boolean; url?: string; timestamp?: string; status?: string } {
+	// Must have available as boolean
+	if (!isRecord(value) || typeof value.available !== "boolean") {
+		return false;
+	}
+	// When available is true, must have url, timestamp, and status
+	if (value.available) {
+		return (
+			isString(value.url) &&
+			isString(value.timestamp) &&
+			isString(value.status)
+		);
+	}
+	// When available is false, other fields are optional
+	return true;
 }
 
 /**
