@@ -6,6 +6,7 @@ import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert";
 import { main, handleError } from "./check.js";
 import { parseArgs } from "./utils.js";
+import { callsToArray } from "./test-helpers.js";
 
 describe("check.ts", () => {
 	let mockConsole: any;
@@ -34,6 +35,9 @@ describe("check.ts", () => {
 			console: mockConsole,
 			process: mockProcess,
 		};
+Object.defineProperty(deps, "fetchWithCache", {
+	get() { return mockFetchWithCache; }
+});
 	});
 
 	describe("main", () => {
@@ -54,10 +58,10 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "Checking: https://example.com"));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✓ Archived")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Timestamp:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("URL:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => call[0] === "Checking: https://example.com"));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("✓ Archived")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Timestamp:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("URL:")));
 			});
 
 			it("should display not archived when no snapshot", async () => {
@@ -73,15 +77,15 @@ describe("check.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ Not archived")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Use wayback-submit")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("✗ Not archived")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Use wayback-submit")));
 			});
 
 			it("should use --no-raw flag", async () => {
 				const mockData = {
 					archived_snapshots: {
 						closest: {
-							available: true,
+							available: true,							url: "https://example.com",
 							timestamp: "20240101120000",
 							status: "200",
 						},
@@ -93,7 +97,7 @@ describe("check.ts", () => {
 				await main(args, deps);
 
 				// When --no-raw is used, the URL should NOT contain "id_/" (modifier is empty)
-				const logCalls = mockConsole.log.mock.calls.map((c: any[]) => c[0]).join(" ");
+				const logCalls = callsToArray(mockConsole.log).map((c: any[]) => c[0]).join(" ");
 				assert.ok(!logCalls.includes("id_/"));
 			});
 
@@ -102,6 +106,7 @@ describe("check.ts", () => {
 					archived_snapshots: {
 						closest: {
 							available: true,
+							url: "https://example.com",
 							timestamp: "20240101120000",
 							status: "200",
 						},
@@ -112,7 +117,7 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				assert.strictEqual(mockFetchWithCache.mock.calls[0][0].bypassCache, true);
+				assert.strictEqual(callsToArray(mockFetchWithCache)[0]?.[0]?.bypassCache, true);
 			});
 		});
 
@@ -122,9 +127,9 @@ describe("check.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx check.ts <url>")));
-				assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx check.ts <url>")));
+				assert.strictEqual(callsToArray(mockProcess.exit)[0]?.[0], 1);
 			});
 		});
 
@@ -135,7 +140,7 @@ describe("check.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Network error"));
+				assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "Network error"));
 			});
 
 			it("should handle Error with custom message", async () => {
@@ -145,7 +150,7 @@ describe("check.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "custom error message"));
+				assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "custom error message"));
 			});
 		});
 
@@ -155,6 +160,7 @@ describe("check.ts", () => {
 					archived_snapshots: {
 						closest: {
 							available: true,
+							url: "https://example.com",
 							timestamp: "20240101120000",
 							status: "200",
 						},
@@ -165,7 +171,7 @@ describe("check.ts", () => {
 
 				await main(args, deps);
 
-				const logCalls = mockConsole.log.mock.calls;
+				const logCalls = callsToArray(mockConsole.log);
 				assert.deepStrictEqual(logCalls[1], []); // blank line after checking
 				assert.deepStrictEqual(logCalls[logCalls.length - 1], []); // blank line at end
 			});
@@ -177,21 +183,21 @@ describe("check.ts", () => {
 			const error = new Error("Check failed");
 			assert.throws(() => handleError(error, "https://example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Check failed"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "Check failed"));
+			assert.strictEqual(callsToArray(mockProcess.exit)[0]?.[0], 1);
 		});
 
 		it("should log non-Error errors as strings", () => {
 			assert.throws(() => handleError("string error", "https://example.com", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "string error"));
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "string error"));
 		});
 
 		it("should ignore url parameter", () => {
 			const error = new Error("Test error");
 			assert.throws(() => handleError(error, "any-url", { console: mockConsole, process: mockProcess }), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Test error"));
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "Test error"));
 		});
 	});
 });

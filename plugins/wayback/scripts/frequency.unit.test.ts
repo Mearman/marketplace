@@ -6,6 +6,7 @@ import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert";
 import { main, handleError, fetchCaptures, calculateFrequency, groupByYear, formatCompact, formatFull, parseDateToTimestamp, type FrequencyResult } from "./frequency.js";
 import { parseArgs } from "./utils.js";
+import { callsToArray } from "./test-helpers.js";
 
 describe("frequency.ts", () => {
 	let mockConsole: any;
@@ -34,6 +35,9 @@ describe("frequency.ts", () => {
 			console: mockConsole,
 			process: mockProcess,
 		};
+Object.defineProperty(deps, "fetchWithCache", {
+	get() { return mockFetchWithCache; }
+});
 	});
 
 	describe("main", () => {
@@ -54,8 +58,8 @@ describe("frequency.ts", () => {
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("5 captures over")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Average:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("5 captures over")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Average:")));
 			});
 
 			it("should analyze frequency with date range", async () => {
@@ -70,7 +74,7 @@ describe("frequency.ts", () => {
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Fetching capture data")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Fetching capture data")));
 			});
 
 			it("should output full breakdown with --full flag", async () => {
@@ -85,8 +89,8 @@ describe("frequency.ts", () => {
 
 				await main(args, deps);
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("📊 CAPTURE FREQUENCY ANALYSIS")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("By year:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("📊 CAPTURE FREQUENCY ANALYSIS")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("By year:")));
 			});
 
 			it("should output JSON with --json flag", async () => {
@@ -100,7 +104,7 @@ describe("frequency.ts", () => {
 
 				await main(args, deps);
 
-				const jsonOutput = mockConsole.log.mock.calls
+				const jsonOutput = callsToArray(mockConsole.log)
 					.map((c: any[]) => c[0])
 					.find((call: string) => call.startsWith("{"));
 				assert.ok(jsonOutput !== undefined);
@@ -116,7 +120,7 @@ describe("frequency.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => call[0] === "No captures found in the specified date range."));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => call[0] === "No captures found in the specified date range."));
 			});
 		});
 
@@ -126,8 +130,8 @@ describe("frequency.ts", () => {
 
 				await assert.rejects(() => main(args, deps), { message: "process.exit called" });
 
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
-				assert.ok(mockConsole.log.mock.calls.some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx frequency.ts <url>")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("Usage:")));
+				assert.ok(callsToArray(mockConsole.log).some((call: any[]) => typeof call[0] === "string" && call[0].includes("npx tsx frequency.ts <url>")));
 			});
 		});
 
@@ -336,15 +340,15 @@ describe("frequency.ts", () => {
 			const error = new Error("Analysis failed");
 			assert.throws(() => handleError(error, "https://example.com", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "Analysis failed"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "Analysis failed"));
+			assert.strictEqual(callsToArray(mockProcess.exit)[0]?.[0], 1);
 		});
 
 		it("should handle non-Error objects", () => {
 			assert.throws(() => handleError("String error", "https://example.com", deps), { message: "process.exit called" });
 
-			assert.ok(mockConsole.error.mock.calls.some((call: any[]) => call[0] === "\nError:" && call[1] === "String error"));
-			assert.strictEqual(mockProcess.exit.mock.calls[0][0], 1);
+			assert.ok(callsToArray(mockConsole.error).some((call: any[]) => call[0] === "\nError:" && call[1] === "String error"));
+			assert.strictEqual(callsToArray(mockProcess.exit)[0]?.[0], 1);
 		});
 	});
 });
