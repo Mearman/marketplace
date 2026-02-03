@@ -50,8 +50,11 @@ export interface RetryOptions {
 
 /**
  * Options for fetchWithCache method
+ *
+ * Note: fetchWithCache returns `unknown` for type safety. Callers should
+ * validate the returned data using type guards before use.
  */
-export interface FetchWithCacheOptions<T = unknown> {
+export interface FetchWithCacheOptions {
 	/**
 	 * URL to fetch
 	 */
@@ -71,9 +74,10 @@ export interface FetchWithCacheOptions<T = unknown> {
 
 	/**
 	 * Custom function to parse the response
+	 * Returns unknown - caller should validate the result
 	 * @default (response) => response.json()
 	 */
-	parseResponse?: (response: Response) => Promise<T>;
+	parseResponse?: (response: Response) => Promise<unknown>;
 
 	/**
 	 * Fetch options (headers, method, etc.)

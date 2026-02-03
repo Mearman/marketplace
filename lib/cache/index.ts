@@ -25,6 +25,18 @@ import { sleep } from "../helpers";
 
 export type { CacheEntry, RetryOptions, FetchWithCacheOptions, CacheManagerOptions } from "./types";
 
+// Local type guards to avoid circular deps with lib/type-guards
+function isCacheEntry(value: unknown): value is { data: unknown; localCacheTimestamp: number } {
+	if (typeof value !== "object" || value === null) return false;
+	if (!("data" in value) || !("localCacheTimestamp" in value)) return false;
+	// After narrowing with 'in', we can access the property
+	return typeof value.localCacheTimestamp === "number";
+}
+
+function isErrnoException(value: unknown): value is NodeJS.ErrnoException {
+	return value instanceof Error && "code" in value;
+}
+
 export interface CacheManager {
 	/**
 	 * Generate a cache key from URL and parameters
@@ -38,16 +50,16 @@ export interface CacheManager {
 	 * Retrieve cached data if not expired
 	 * @param key - Cache key from getCacheKey()
 	 * @param ttlSeconds - Time to live in seconds
-	 * @returns Cache entry with data and timestamp, or null if not found/expired
+	 * @returns Cache entry with data (as unknown) and timestamp, or null if not found/expired
 	 */
-	getCached<T = unknown>(key: string, ttlSeconds: number): Promise<CacheEntry<T> | null>;
+	getCached(key: string, ttlSeconds: number): Promise<CacheEntry | null>;
 
 	/**
 	 * Store data in cache with current timestamp
 	 * @param key - Cache key from getCacheKey()
 	 * @param data - Data to cache
 	 */
-	setCached<T = unknown>(key: string, data: T): Promise<void>;
+	setCached(key: string, data: unknown): Promise<void>;
 
 	/**
 	 * Clear all cache files for this namespace
@@ -57,9 +69,9 @@ export interface CacheManager {
 	/**
 	 * Fetch data with automatic caching and retry logic
 	 * @param options - Fetch and cache options
-	 * @returns Fetched or cached data
+	 * @returns Fetched or cached data (as unknown - caller must validate)
 	 */
-	fetchWithCache<T = unknown>(options: FetchWithCacheOptions<T>): Promise<T>;
+	fetchWithCache(options: FetchWithCacheOptions): Promise<unknown>;
 
 	/**
 	 * The cache directory path for this namespace
@@ -96,34 +108,41 @@ export function createCacheManager(namespace: string, options?: CacheManagerOpti
 		return createHash("sha256").update(input).digest("hex").slice(0, 16);
 	};
 
-	const getCached = async <T = unknown>(
+	const getCached = async (
 		key: string,
 		ttlSeconds: number
-	): Promise<CacheEntry<T> | null> => {
+	): Promise<CacheEntry | null> => {
 		try {
 			const filePath = path.join(CACHE_DIR, `${key}.json`);
 			const content = await fs.readFile(filePath, "utf-8");
-			const entry: CacheEntry<T> = JSON.parse(content);
+			const parsed: unknown = JSON.parse(content);
 
-			const expiresAt = entry.localCacheTimestamp + ttlSeconds * 1000;
+			// Validate cache entry structure using type guard
+			if (!isCacheEntry(parsed)) {
+				return null;
+			}
+
+			// TypeScript now knows parsed has the CacheEntry shape
+			const expiresAt = parsed.localCacheTimestamp + ttlSeconds * 1000;
 			if (Date.now() > expiresAt) {
 				// Cache expired, delete it
 				await fs.unlink(filePath).catch(() => {});
 				return null;
 			}
 
-			return entry;
+			// Return the validated entry - caller validates the data shape
+			return { data: parsed.data, localCacheTimestamp: parsed.localCacheTimestamp };
 		} catch {
 			// File doesn't exist or is invalid
 			return null;
 		}
 	};
 
-	const setCached = async <T = unknown>(key: string, data: T): Promise<void> => {
+	const setCached = async (key: string, data: unknown): Promise<void> => {
 		try {
 			await ensureCacheDir();
 			const filePath = path.join(CACHE_DIR, `${key}.json`);
-			const entry: CacheEntry<T> = {
+			const entry: CacheEntry = {
 				data,
 				localCacheTimestamp: Date.now(),
 			};
@@ -141,7 +160,7 @@ export function createCacheManager(namespace: string, options?: CacheManagerOpti
 			await Promise.all(cacheFiles.map((f) => fs.unlink(path.join(CACHE_DIR, f))));
 			console.log(`Cleared ${cacheFiles.length} cache file(s) from ${CACHE_DIR}`);
 		} catch (error) {
-			if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+			if (isErrnoException(error) && error.code === "ENOENT") {
 				console.log("Cache directory not found or empty");
 			} else {
 				console.error("Error clearing cache:", error);
@@ -155,11 +174,11 @@ export function createCacheManager(namespace: string, options?: CacheManagerOpti
 	 * @param options - Retry options
 	 * @returns Delay in milliseconds
 	 */
-	const calculateDelay = (attempt: number, options: Required<RetryOptions>): number => {
-		const baseDelay = options.initialDelay * Math.pow(options.backoffMultiplier, attempt);
-		const cappedDelay = Math.min(baseDelay, options.maxDelay);
+	const calculateDelay = (attempt: number, retryOpts: Required<RetryOptions>): number => {
+		const baseDelay = retryOpts.initialDelay * Math.pow(retryOpts.backoffMultiplier, attempt);
+		const cappedDelay = Math.min(baseDelay, retryOpts.maxDelay);
 
-		if (options.jitter) {
+		if (retryOpts.jitter) {
 			// Add random jitter (0-50% of delay) to prevent thundering herd
 			const jitterAmount = Math.random() * cappedDelay * 0.5;
 			return cappedDelay + jitterAmount;
@@ -182,7 +201,7 @@ export function createCacheManager(namespace: string, options?: CacheManagerOpti
 	): Promise<Response> => {
 		// Merge: hardcoded defaults < defaultRetryOptions < call-specific retryOptions
 		const mergedOptions = { ...defaultRetryOptions, ...retryOptions };
-		const options: Required<RetryOptions> = {
+		const opts: Required<RetryOptions> = {
 			maxRetries: mergedOptions.maxRetries ?? 3,
 			initialDelay: mergedOptions.initialDelay ?? 1000,
 			maxDelay: mergedOptions.maxDelay ?? 30000,
@@ -193,16 +212,16 @@ export function createCacheManager(namespace: string, options?: CacheManagerOpti
 
 		let lastError: Error | null = null;
 
-		for (let attempt = 0; attempt <= options.maxRetries; attempt++) {
+		for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
 			try {
 				const response = await fetch(url, fetchOptions);
 
 				// Check if status is retryable
-				if (!response.ok && options.retryableStatuses.includes(response.status)) {
-					if (attempt < options.maxRetries) {
-						const delay = calculateDelay(attempt, options);
+				if (!response.ok && opts.retryableStatuses.includes(response.status)) {
+					if (attempt < opts.maxRetries) {
+						const delay = calculateDelay(attempt, opts);
 						console.debug(
-							`Retry ${attempt + 1}/${options.maxRetries} after ${Math.round(delay)}ms (status ${response.status})`
+							`Retry ${attempt + 1}/${opts.maxRetries} after ${Math.round(delay)}ms (status ${response.status})`
 						);
 						await sleep(delay);
 						continue; // Retry
@@ -212,11 +231,15 @@ export function createCacheManager(namespace: string, options?: CacheManagerOpti
 				return response; // Success or non-retryable error
 
 			} catch (error) {
-				lastError = error as Error;
-				if (attempt < options.maxRetries) {
-					const delay = calculateDelay(attempt, options);
+				if (error instanceof Error) {
+					lastError = error;
+				} else {
+					lastError = new Error(String(error));
+				}
+				if (attempt < opts.maxRetries) {
+					const delay = calculateDelay(attempt, opts);
 					console.debug(
-						`Retry ${attempt + 1}/${options.maxRetries} after ${Math.round(delay)}ms (network error)`
+						`Retry ${attempt + 1}/${opts.maxRetries} after ${Math.round(delay)}ms (network error)`
 					);
 					await sleep(delay);
 					continue; // Retry network error
@@ -229,22 +252,30 @@ export function createCacheManager(namespace: string, options?: CacheManagerOpti
 	};
 
 	/**
+	 * Default response parser - returns unknown for type safety
+	 */
+	const defaultParseResponse = async (response: Response): Promise<unknown> => {
+		const result: unknown = await response.json();
+		return result;
+	};
+
+	/**
 	 * Fetch data with automatic caching and retry logic
 	 * @param options - Fetch and cache options
-	 * @returns Fetched or cached data
+	 * @returns Fetched or cached data (as unknown - caller must validate)
 	 */
-	const fetchWithCache = async <T = unknown>(
-		options: FetchWithCacheOptions<T>
-	): Promise<T> => {
+	const fetchWithCache = async (
+		fetchCacheOptions: FetchWithCacheOptions
+	): Promise<unknown> => {
 		const {
 			url,
 			ttl: providedTTL,
 			cacheKey: providedKey,
-			parseResponse = async (response: Response) => response.json() as Promise<T>,
+			parseResponse = defaultParseResponse,
 			fetchOptions = {},
 			retryOptions = {},
 			bypassCache = false,
-		} = options;
+		} = fetchCacheOptions;
 
 		// Use provided TTL or fall back to default
 		const ttl = providedTTL ?? defaultTTL;
@@ -254,7 +285,7 @@ export function createCacheManager(namespace: string, options?: CacheManagerOpti
 
 		// Check cache first (unless bypassing)
 		if (!bypassCache) {
-			const cached = await getCached<T>(cacheKey, ttl);
+			const cached = await getCached(cacheKey, ttl);
 			if (cached !== null) {
 				return cached.data;
 			}

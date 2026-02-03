@@ -63,7 +63,7 @@ describe("createCacheManager", () => {
 			const testData = { message: "Hello, cache!", count: 42 };
 
 			await cacheManager.setCached(key, testData);
-			const cached = await cacheManager.getCached<typeof testData>(key, 3600);
+			const cached = await cacheManager.getCached(key, 3600);
 
 			assert.notStrictEqual(cached, null);
 			assert.deepStrictEqual(cached?.data, testData);
@@ -96,9 +96,9 @@ describe("createCacheManager", () => {
 			await cacheManager.setCached(key + "-array", arrayData);
 			await cacheManager.setCached(key + "-object", objectData);
 
-			const cachedString = await cacheManager.getCached<string>(key + "-string", 3600);
-			const cachedArray = await cacheManager.getCached<number[]>(key + "-array", 3600);
-			const cachedObject = await cacheManager.getCached<typeof objectData>(key + "-object", 3600);
+			const cachedString = await cacheManager.getCached(key + "-string", 3600);
+			const cachedArray = await cacheManager.getCached(key + "-array", 3600);
+			const cachedObject = await cacheManager.getCached(key + "-object", 3600);
 
 			assert.strictEqual(cachedString?.data, stringData);
 			assert.deepStrictEqual(cachedArray?.data, arrayData);
@@ -113,7 +113,7 @@ describe("createCacheManager", () => {
 			await cacheManager.setCached(key, data1);
 			await cacheManager.setCached(key, data2);
 
-			const cached = await cacheManager.getCached<typeof data2>(key, 3600);
+			const cached = await cacheManager.getCached(key, 3600);
 			assert.deepStrictEqual(cached?.data, data2);
 		});
 	});
