@@ -53,12 +53,13 @@ const config: UserConfig = {
 
 					// For other types (feat, fix, etc.), scope must not be empty
 					// Check if scope is missing or null
+					const typeLabel = type ?? "unknown";
 					if (scope === null || scope === undefined) {
-						return [false, "scope may not be empty for type '" + type + "'"];
+						return [false, `scope may not be empty for type '${typeLabel}'`];
 					}
 					// Also check for empty string (though this shouldn't happen with parsed commits)
 					if (scope === "") {
-						return [false, "scope may not be empty for type '" + type + "'"];
+						return [false, `scope may not be empty for type '${typeLabel}'`];
 					}
 					return [true];
 				},
