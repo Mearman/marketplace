@@ -98,6 +98,17 @@ export const mockTimers = {
 };
 
 /**
+ * Mock response shape that matches the Response interface subset we need
+ */
+interface MockResponse {
+	ok: boolean;
+	status: number;
+	statusText: string;
+	json: () => Promise<unknown>;
+	text: () => Promise<string>;
+}
+
+/**
  * Mock fetch response helper
  * @param options - Response configuration
  * @returns A mock Response object
@@ -107,16 +118,15 @@ export const createMockFetchResponse = (options: {
 	status?: number;
 	statusText?: string;
 	data?: unknown;
-}): Response => {
+}): MockResponse => {
 	const { ok, status = 200, statusText = "OK", data } = options;
-	const response = {
+	return {
 		ok,
 		status,
 		statusText,
 		json: mock.fn(async () => data),
 		text: mock.fn(async () => JSON.stringify(data)),
 	};
-	return response as unknown as Response;
 };
 
 /**
@@ -136,14 +146,17 @@ export const restoreAllMocks = () => {
 
 /**
  * Spy on an object's method
- * @param object - The object containing the method
- * @param methodName - The name of the method to spy on
  *
- * Note: The method must exist on the object at runtime.
+ * Note: Use mock.method() directly from 'node:test'. This wrapper is provided
+ * for documentation purposes. Node's mock.method has complex generic types
+ * that require the Function type which ESLint disallows.
+ *
+ * @example
+ * import { mock } from "node:test";
+ * const obj = { myMethod: () => 42 };
+ * mock.method(obj, "myMethod");
  */
-export const spyOn = (object: object, methodName: string) => {
-	return mock.method(object as any, methodName as any);
-};
+export { mock };
 
 /**
  * Type for dependencies in script tests
