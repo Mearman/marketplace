@@ -1,0 +1,15 @@
+{
+  "name": "json-tools-server",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "server.ts",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^4.0.0-beta.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}

@@ -73,6 +73,12 @@
 			"source": "./plugins/json-lsp",
 			"description": "JSON Language Server: Provides validation, completion, hover, document symbols, and formatting for JSON and JSONC files with automatic schema association support",
 			"version": "0.2.0"
+		},
+		{
+			"name": "json-tools",
+			"source": "./plugins/json-tools",
+			"description": "JSON file manipulation toolkit with query, transform, edit, validate, and format capabilities using TypeScript",
+			"version": "0.1.0"
 		}
 	]
 }

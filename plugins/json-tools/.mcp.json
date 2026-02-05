@@ -1,0 +1,13 @@
+{
+  "json-server": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "tsx",
+      "${CLAUDE_PLUGIN_ROOT}/server/server.ts"
+    ],
+    "env": {
+      "NODE_ENV": "production"
+    }
+  }
+}

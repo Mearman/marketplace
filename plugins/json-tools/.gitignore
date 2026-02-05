@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+server/node_modules/
+
+# Backup files
+*.bak
+
+# Local settings
+.claude/*.local.md
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db

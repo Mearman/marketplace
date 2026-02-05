@@ -92,6 +92,16 @@ JSON Schema Validation: Tools for validating JSON schemas themselves, validating
 /plugin install json-schema@mearman
 ```
 
+### [json-tools](plugins/json-tools/) — v0.1.0
+
+json-toolsJSON file manipulation toolkit with query, transform, edit, validate, and format capabilities using TypeScript
+
+**Components:** 1 skill, 6 commands, MCP
+
+```bash
+/plugin install json-tools@mearman
+```
+
 ### [npm-registry](plugins/npm-registry/) — v0.2.0
 
 npm Registry: Tools for searching packages, getting metadata, checking existence, and fetching download statistics
