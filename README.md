@@ -92,7 +92,7 @@ JSON Schema Validation: Tools for validating JSON schemas themselves, validating
 /plugin install json-schema@mearman
 ```
 
-### [json-tools](plugins/json-tools/) — v0.1.0
+### [json-tools](plugins/json-tools/) — v0.2.0
 
 json-toolsJSON file manipulation toolkit with query, transform, edit, validate, and format capabilities using TypeScript
 
@@ -142,7 +142,7 @@ texLaTeX manipulation, generation, and conversion tools
 /plugin install tex@mearman
 ```
 
-### [wayback](plugins/wayback/) — v0.10.1
+### [wayback](plugins/wayback/) — v0.10.2
 
 Wayback Machine Archive: Tools for checking, submitting, listing, screenshotting, and cache management for archived URLs
 

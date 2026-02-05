@@ -1,3 +1,57 @@
+## [1.20.0](https://github.com/Mearman/marketplace/compare/v1.19.0...v1.20.0) (2026-02-05)
+
+### Features
+
+* **json-tools:** add JSON manipulation plugin with MCP server ([51709b0](https://github.com/Mearman/marketplace/commit/51709b09d497a6865643b7eabddc4360618577bc))
+* **lib:** add shared type guards library ([349f31c](https://github.com/Mearman/marketplace/commit/349f31c25f74f6ee613b72eea4bb75c26317e083))
+* **lib:** enable strict type assertions in ESLint ([9757519](https://github.com/Mearman/marketplace/commit/97575196a7a2f9dc18b9410dec3538abcec0f377))
+
+### Bug Fixes
+
+* **deps:** consolidate all dependencies in root package.json ([502e8f2](https://github.com/Mearman/marketplace/commit/502e8f25f91caeb956e8499a82364f4e8d607de4))
+* **lib:** improve null safety in commitlint scope validation ([31aee73](https://github.com/Mearman/marketplace/commit/31aee73d6d480ff1d74eea6d8cb1f5939abbe601))
+* **wayback:** add non-null assertions for available snapshot fields ([69e1421](https://github.com/Mearman/marketplace/commit/69e142136678fb543f8237f0a868fc7007c4d772))
+* **wayback:** use discriminated unions for ClosestSnapshot type ([b107a6b](https://github.com/Mearman/marketplace/commit/b107a6b9751d423d223c175444f385467f956166))
+
+### Code Refactoring
+
+* **bib:** replace type assertions with type guards ([90a7c00](https://github.com/Mearman/marketplace/commit/90a7c006f604349ffa7fef599d88b25e2142df5e))
+* **cve-search:** replace type assertions with type guards ([f5d67b2](https://github.com/Mearman/marketplace/commit/f5d67b2a7d00531d36dc57d73d5ba000a259764d))
+* **github-api:** replace type assertions with type guards ([7aea0b6](https://github.com/Mearman/marketplace/commit/7aea0b6a8454b39a14f065db0c60f7208cafb4e3))
+* **gravatar:** replace type assertions with type guards ([135fabd](https://github.com/Mearman/marketplace/commit/135fabd18c060625ff30e1520fb7c52c45762606))
+* **json-lsp:** replace type assertions with type guards ([58b74ac](https://github.com/Mearman/marketplace/commit/58b74ac1b8f2638330e94c8ae185792209f08631))
+* **json-schema:** replace type assertions with type guards ([e2095b9](https://github.com/Mearman/marketplace/commit/e2095b9c5f30954eea27a0319889259bb717e8e7))
+* **json-tools:** use Zod type guards instead of type assertions ([08d2c5d](https://github.com/Mearman/marketplace/commit/08d2c5d799f74e243893fa160b9ec5e7009e3d30))
+* **json-tools:** use Zod type guards instead of type assertions ([d1e54da](https://github.com/Mearman/marketplace/commit/d1e54dae0c29a4d3cb6ab2136b020f8fb5f8b029))
+* **lib:** add type guards for latex processing ([68a47e4](https://github.com/Mearman/marketplace/commit/68a47e4c5620b22e2b2caa33135dbe9be151f0ad))
+* **lib:** add type guards to build scripts ([f46e0ee](https://github.com/Mearman/marketplace/commit/f46e0eec1ba660ca0d1671b78933d172624218b4))
+* **lib:** improve type safety in test infrastructure ([bcb9167](https://github.com/Mearman/marketplace/commit/bcb91676e57e7a5c5d4599c5af3ee64d07e7f786))
+* **lib:** return unknown from cache API for type safety ([b7c122c](https://github.com/Mearman/marketplace/commit/b7c122c9b5661c4a07c2b61140bda7650c58a733))
+* **npm-registry:** replace type assertions with type guards ([8c9d3b5](https://github.com/Mearman/marketplace/commit/8c9d3b50b9680a574723816106cb0bd747a5b543))
+* **npms-io:** replace type assertions with type guards ([d567f1d](https://github.com/Mearman/marketplace/commit/d567f1d824af4e72c300fc45955ef3e904c807b4))
+* **pypi-json:** replace type assertions with type guards ([3188c6a](https://github.com/Mearman/marketplace/commit/3188c6a5aa06171ef28fb79b3c3840e5815dece6))
+* **tex:** replace type assertions with type guards ([9aa539d](https://github.com/Mearman/marketplace/commit/9aa539d627561c0e1df879120840b8b1c9850c02))
+* **wayback:** add fs dependency injection to cache script ([e1f1fa2](https://github.com/Mearman/marketplace/commit/e1f1fa2ff86f7f44b06940ca5ab7d6e23f6c9dd4))
+* **wayback:** fix isSnapshot type guard for optional fields ([6b5b52c](https://github.com/Mearman/marketplace/commit/6b5b52c649ab8934cc70fdbc10d371ae6e5a3b86))
+* **wayback:** replace type assertions with type guards ([14af81f](https://github.com/Mearman/marketplace/commit/14af81f4555182d76b376774a9884ee72b06e917))
+
+### Styles
+
+* apply ESLint auto-fix formatting to config files ([fa04a07](https://github.com/Mearman/marketplace/commit/fa04a07c70445c8eb2a589fbd2e421f73348d76c))
+
+### Tests
+
+* **wayback:** add callsToArray helper for Node.js test runner ([6454c90](https://github.com/Mearman/marketplace/commit/6454c90fccc6ccbd944eb9ea449b994deea61dcd))
+* **wayback:** add callsToArray helper for Node.js test runner compatibility ([6da9910](https://github.com/Mearman/marketplace/commit/6da9910bf95d0b9c38eb0050610d603b94f89c49))
+* **wayback:** fix screenshot tests and add fs dependency injection ([d9673b5](https://github.com/Mearman/marketplace/commit/d9673b59eaa32ca9433040e5beefe3d588b4a400))
+* **wayback:** use callsToArray and add mock getters in remaining tests ([db83e7d](https://github.com/Mearman/marketplace/commit/db83e7db590cd6b0fa83ef8e0ea7d79bd4c75cd2))
+* **wayback:** use callsToArray and add mock getters in tests ([4a1e77c](https://github.com/Mearman/marketplace/commit/4a1e77c73be30dc8f0d6afa253b08d12318afe22))
+
+### Chores
+
+* **deps:** add typescript-eslint unified package ([05bf7f3](https://github.com/Mearman/marketplace/commit/05bf7f3c9b9d28c57991704826d488a14fe56d69))
+* switch from vitest to Node.js test runner (tsx --test) ([830e9ce](https://github.com/Mearman/marketplace/commit/830e9ce84a164c193f48e10ef5b0303cbcbe455d))
+
 ## 1.19.0 (2026-01-22)
 
 * chore(json-lsp): add LSP dependencies to root package.json ([59da5f2](https://github.com/Mearman/marketplace/commit/59da5f2))

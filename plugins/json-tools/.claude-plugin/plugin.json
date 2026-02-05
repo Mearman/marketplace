@@ -1,5 +1,5 @@
 {
   "name": "json-tools",
   "description": "JSON file manipulation toolkit with query, transform, edit, validate, and format capabilities using TypeScript",
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

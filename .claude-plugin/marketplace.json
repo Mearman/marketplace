@@ -12,7 +12,7 @@
 			"name": "wayback",
 			"source": "./plugins/wayback",
 			"description": "Wayback Machine Archive: Tools for checking, submitting, listing, screenshotting, and cache management for archived URLs",
-			"version": "0.10.1"
+			"version": "0.10.2"
 		},
 		{
 			"name": "npm-registry",
@@ -78,7 +78,7 @@
 			"name": "json-tools",
 			"source": "./plugins/json-tools",
 			"description": "JSON file manipulation toolkit with query, transform, edit, validate, and format capabilities using TypeScript",
-			"version": "0.1.0"
+			"version": "0.2.0"
 		}
 	]
 }
