@@ -763,13 +763,6 @@ class JsonToolsServer {
 			return obj !== null && typeof obj === "object" && !Array.isArray(obj);
 		};
 
-		const mergeArray = (a: JsonData, b: JsonData): JsonData => {
-			if (Array.isArray(a) && Array.isArray(b)) {
-				return [...a, ...b];
-			}
-			return b;
-		};
-
 		return objects.reduce<Record<string, JsonData>>((prev, obj) => {
 			if (!isObject(obj)) return prev;
 
@@ -778,7 +771,11 @@ class JsonToolsServer {
 				const oVal = obj[key];
 
 				if (Array.isArray(pVal) && Array.isArray(oVal)) {
-					prev[key] = mergeArray(pVal, oVal);
+					// Both are arrays - concatenate them
+					const result: JsonData[] = [];
+					for (const item of pVal) result.push(item);
+					for (const item of oVal) result.push(item);
+					prev[key] = result;
 				} else if (isObject(pVal) && isObject(oVal)) {
 					const merged = this.deepMerge(pVal, oVal);
 					prev[key] = merged;
@@ -799,18 +796,23 @@ class JsonToolsServer {
 		const data = this.readJsonFile(file);
 
 		// Import and execute transform script
-		const scriptPath = path.resolve(script);
-		const transform = await import(scriptPath);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Dynamic import returns 'any' by design in TypeScript
+		const transform: Record<string, unknown> = await import(path.resolve(script));
 
 		// Type guard for transform function
-		const isTransformFunction = (fn: unknown): fn is (data: JsonData) => JsonData | Promise<JsonData> => {
+		// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- JsonData is intentionally unknown (validated at runtime)
+		type TransformFunction = (data: JsonData) => JsonData | Promise<JsonData>;
+		const isTransformFunction = (fn: unknown): fn is TransformFunction => {
 			return typeof fn === "function";
 		};
 
 		// Check default export first, then module export
+		const defaultExport = "default" in transform ? transform.default : undefined;
+
+		// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- JsonData is intentionally unknown (validated at runtime)
 		let transformFn: ((data: JsonData) => JsonData | Promise<JsonData>) | null = null;
-		if (isTransformFunction(transform.default)) {
-			transformFn = transform.default;
+		if (defaultExport !== undefined && isTransformFunction(defaultExport)) {
+			transformFn = defaultExport;
 		} else if (isTransformFunction(transform)) {
 			transformFn = transform;
 		}
