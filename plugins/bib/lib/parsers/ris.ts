@@ -209,10 +209,11 @@ export class RISParser implements Parser {
 
 			// Add field to current entry
 			if (currentEntry) {
-				if (!currentEntry.fields[tag]) {
-					currentEntry.fields[tag] = [];
+				if (!(tag in currentEntry.fields)) {
+					currentEntry.fields[tag] = [value];
+				} else {
+					currentEntry.fields[tag].push(value);
 				}
-				currentEntry.fields[tag].push(value);
 			}
 		}
 
@@ -282,9 +283,9 @@ export class RISParser implements Parser {
 			} else if (tag === "SP") {
 				// Start page - combine with EP if available
 				const startPage = values[0];
-				const endPage = fields.EP?.[0];
+				const endPage = ("EP" in fields) ? fields.EP[0] : undefined;
 				entry.page = endPage ? `${startPage}-${endPage}` : startPage;
-			} else if (tag === "EP" && !fields.SP) {
+			} else if (tag === "EP" && !("SP" in fields)) {
 				// End page only (unusual)
 				entry.page = values[0];
 			} else {
@@ -303,8 +304,8 @@ export class RISParser implements Parser {
    * Generate entry ID from author + year
    */
 	private generateId(fields: Record<string, string[]>, index: number): string {
-		const authors = fields.AU || fields.A1 || [];
-		const year = fields.PY || fields.Y1 || [];
+		const authors = ("AU" in fields) ? fields.AU : ("A1" in fields) ? fields.A1 : [];
+		const year = ("PY" in fields) ? fields.PY : ("Y1" in fields) ? fields.Y1 : [];
 
 		if (authors.length > 0) {
 			// Extract first author's last name

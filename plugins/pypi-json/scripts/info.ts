@@ -161,7 +161,7 @@ export const main = async (args: ParsedArgs, deps: Dependencies): Promise<void> 
 		}
 
 		// Display latest release files
-		if (flags.has("files") && data.urls && data.urls.length > 0) {
+		if (flags.has("files") && data.urls.length > 0) {
 			deps.console.log(`\nLatest Release Files (${data.urls.length} total):`);
 			data.urls.slice(0, 10).forEach((file: PyPIDistribution) => {
 				const size = file.size ? formatBytes(file.size) : "unknown";

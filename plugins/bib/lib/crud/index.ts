@@ -137,12 +137,9 @@ export function sortEntries(entries: BibEntry[], by: "id" | "author" | "year" = 
 			return aAuthor.localeCompare(bAuthor);
 		}
 
-		if (by === "year") {
-			const aYear = a.issued?.["date-parts"]?.[0]?.[0] || 0;
-			const bYear = b.issued?.["date-parts"]?.[0]?.[0] || 0;
-			return bYear - aYear; // Descending (newest first)
-		}
-
-		return 0;
+		// by === "year" (only remaining option)
+		const aYear = a.issued?.["date-parts"]?.[0]?.[0] || 0;
+		const bYear = b.issued?.["date-parts"]?.[0]?.[0] || 0;
+		return bYear - aYear; // Descending (newest first)
 	});
 }

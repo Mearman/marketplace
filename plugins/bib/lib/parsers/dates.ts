@@ -248,23 +248,24 @@ export function parseBibTeXDate(
  * @returns ISO date string (YYYY-MM-DD or YYYY-MM or YYYY)
  */
 export function serializeDate(date: DateVariable): string {
-	if (!date || !date["date-parts"] || date["date-parts"].length === 0) {
-		return date?.raw || "";
+	if (!date["date-parts"] || date["date-parts"].length === 0) {
+		return date.raw ?? "";
 	}
 
 	const dateParts = date["date-parts"][0];
 
-	if (!dateParts || dateParts.length === 0) {
-		return date.raw || "";
+	if (dateParts.length === 0) {
+		return date.raw ?? "";
 	}
 
 	const year = dateParts[0];
 	const month = dateParts[1];
 	const day = dateParts[2];
 
-	if (day !== undefined && month !== undefined) {
+	// Use array length to determine what fields are present
+	if (dateParts.length >= 3) {
 		return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-	} else if (month !== undefined) {
+	} else if (dateParts.length >= 2) {
 		return `${year}-${String(month).padStart(2, "0")}`;
 	} else {
 		return String(year);
@@ -282,13 +283,13 @@ export function serializeBibTeXDate(date: DateVariable): {
   month?: string;
   day?: string;
 } {
-	if (!date || !date["date-parts"] || date["date-parts"].length === 0) {
+	if (!date["date-parts"] || date["date-parts"].length === 0) {
 		return {};
 	}
 
 	const dateParts = date["date-parts"][0];
 
-	if (!dateParts || dateParts.length === 0) {
+	if (dateParts.length === 0) {
 		return {};
 	}
 
@@ -296,12 +297,13 @@ export function serializeBibTeXDate(date: DateVariable): {
 
 	result.year = String(dateParts[0]);
 
-	if (dateParts[1] !== undefined) {
+	// Use array length to determine what fields are present
+	if (dateParts.length >= 2) {
 		// Use BibTeX month macro
 		result.month = MONTH_MACROS[dateParts[1]] || String(dateParts[1]);
 	}
 
-	if (dateParts[2] !== undefined) {
+	if (dateParts.length >= 3) {
 		result.day = String(dateParts[2]);
 	}
 
@@ -317,23 +319,24 @@ export function serializeBibTeXDate(date: DateVariable): {
  * @returns RIS date string
  */
 export function serializeRISDate(date: DateVariable): string {
-	if (!date || !date["date-parts"] || date["date-parts"].length === 0) {
-		return date?.raw || "";
+	if (!date["date-parts"] || date["date-parts"].length === 0) {
+		return date.raw ?? "";
 	}
 
 	const dateParts = date["date-parts"][0];
 
-	if (!dateParts || dateParts.length === 0) {
-		return date.raw || "";
+	if (dateParts.length === 0) {
+		return date.raw ?? "";
 	}
 
 	const year = dateParts[0];
 	const month = dateParts[1];
 	const day = dateParts[2];
 
-	if (day !== undefined && month !== undefined) {
+	// Use array length to determine what fields are present
+	if (dateParts.length >= 3) {
 		return `${year}/${String(month).padStart(2, "0")}/${String(day).padStart(2, "0")}`;
-	} else if (month !== undefined) {
+	} else if (dateParts.length >= 2) {
 		return `${year}/${String(month).padStart(2, "0")}`;
 	} else {
 		return String(year);

@@ -330,12 +330,16 @@ export const BIBTEX_TYPE_SPECIFIC_FIELDS: Record<string, Record<string, string>>
  */
 export function getBibTeXField(cslField: string, entryType?: string): string | undefined {
 	// Check type-specific mappings first
-	if (entryType && BIBTEX_TYPE_SPECIFIC_FIELDS[entryType]?.[cslField]) {
-		return BIBTEX_TYPE_SPECIFIC_FIELDS[entryType][cslField];
+	const typeSpecificMapping = entryType ? BIBTEX_TYPE_SPECIFIC_FIELDS[entryType] : undefined;
+	if (typeSpecificMapping && cslField in typeSpecificMapping) {
+		return typeSpecificMapping[cslField];
 	}
 
 	// Fall back to general mapping
-	return FIELD_MAPPINGS[cslField]?.bibtex;
+	if (cslField in FIELD_MAPPINGS) {
+		return FIELD_MAPPINGS[cslField].bibtex;
+	}
+	return undefined;
 }
 
 /**
@@ -365,7 +369,10 @@ export function getCslFieldFromBibTeX(bibtexField: string): string | undefined {
  * Get RIS tag from CSL field
  */
 export function getRisTag(cslField: string): string | undefined {
-	return FIELD_MAPPINGS[cslField]?.ris;
+	if (cslField in FIELD_MAPPINGS) {
+		return FIELD_MAPPINGS[cslField].ris;
+	}
+	return undefined;
 }
 
 /**

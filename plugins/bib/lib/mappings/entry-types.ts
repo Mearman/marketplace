@@ -400,11 +400,11 @@ export function normalizeToCslType(type: string, format: "bibtex" | "biblatex" |
 	switch (format) {
 	case "bibtex":
 	case "biblatex":
-		return BIBTEX_TO_CSL[normalized] || "article";
+		return BIBTEX_TO_CSL[normalized] ?? "article";
 	case "ris":
-		return RIS_TO_CSL[type.toUpperCase().trim()] || "article";
+		return RIS_TO_CSL[type.toUpperCase().trim()] ?? "article";
 	case "endnote":
-		return ENDNOTE_TO_CSL[type] || "article";
+		return ENDNOTE_TO_CSL[type] ?? "article";
 	default:
 		return "article";
 	}
@@ -417,9 +417,9 @@ export function denormalizeFromCslType(
 	cslType: CSLItemType,
 	targetFormat: "bibtex" | "biblatex" | "ris" | "endnote"
 ): { type: string; lossy: boolean } {
-	const mapping = ENTRY_TYPE_MAPPINGS[cslType];
-
-	if (!mapping) {
+	// Use Object.prototype.hasOwnProperty to check if key exists
+	const hasMapping = Object.prototype.hasOwnProperty.call(ENTRY_TYPE_MAPPINGS, cslType);
+	if (!hasMapping) {
 		// Unknown CSL type - fallback to article/misc
 		return {
 			type: targetFormat === "bibtex" || targetFormat === "biblatex" ? "misc" : "GEN",
@@ -427,11 +427,12 @@ export function denormalizeFromCslType(
 		};
 	}
 
+	const mapping = ENTRY_TYPE_MAPPINGS[cslType];
 	const type = mapping[targetFormat];
 	const lossy = mapping.lossyToBibTeX && (targetFormat === "bibtex");
 
 	return {
-		type: type || "misc",
-		lossy: lossy || false,
+		type: type ?? "misc",
+		lossy: lossy ?? false,
 	};
 }

@@ -51,7 +51,7 @@ export class BibLaTeXParser implements Parser {
    * Validate BibLaTeX syntax (same as BibTeX)
    */
 	validate(content: string): ConversionWarning[] {
-		return this.bibtexParser.validate?.(content) || [];
+		return this.bibtexParser.validate(content);
 	}
 }
 
