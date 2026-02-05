@@ -1,3 +1,9 @@
+## [1.20.1](https://github.com/Mearman/marketplace/compare/v1.20.0...v1.20.1) (2026-02-05)
+
+### Bug Fixes
+
+* **lib:** resolve unnecessary conditional ESLint warnings ([8540ed9](https://github.com/Mearman/marketplace/commit/8540ed9fd337b2037576d9ab47368e62b08b78e5))
+
 ## [1.20.0](https://github.com/Mearman/marketplace/compare/v1.19.0...v1.20.0) (2026-02-05)
 
 ### Features
