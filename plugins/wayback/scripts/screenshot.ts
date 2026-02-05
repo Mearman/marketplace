@@ -173,8 +173,8 @@ const getScreenshot = async (
 			deps.process.exit(1);
 		}
 
-		screenshotUrl = buildScreenshotUrl(closest.timestamp!, url);
-		deps.console.log(`Fetching most recent screenshot (${formatTimestamp(closest.timestamp!)})...`);
+		screenshotUrl = buildScreenshotUrl(closest.timestamp, url);
+		deps.console.log(`Fetching most recent screenshot (${formatTimestamp(closest.timestamp)})...`);
 	}
 
 	deps.console.log(`URL: ${screenshotUrl}`);

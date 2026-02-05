@@ -88,12 +88,12 @@ Examples:
 		const snapshot = data.archived_snapshots.closest;
 		if (snapshot?.available) {
 			const modifier = noRaw ? "" : "id_";
-			const archiveUrl = buildArchiveUrl(snapshot.timestamp!, url, modifier);
+			const archiveUrl = buildArchiveUrl(snapshot.timestamp, url, modifier);
 
 			deps.console.log();
 			deps.console.log("✓ Archived");
-			deps.console.log(`  Timestamp: ${formatTimestamp(snapshot.timestamp!)} (${formatAge(snapshot.timestamp!)})`);
-			deps.console.log(`  Status: ${snapshot.status!}`);
+			deps.console.log(`  Timestamp: ${formatTimestamp(snapshot.timestamp)} (${formatAge(snapshot.timestamp)})`);
+			deps.console.log(`  Status: ${snapshot.status}`);
 			deps.console.log(`  URL: ${archiveUrl}`);
 			deps.console.log();
 		} else {

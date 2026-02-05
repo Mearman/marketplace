@@ -5,7 +5,7 @@
 import { createCacheManager } from "../../../lib/cache";
 import { parseArgs as sharedParseArgs } from "../../../lib/args";
 import { formatAge as sharedFormatAge, sleep as sharedSleep } from "../../../lib/helpers";
-import { isRecord, isArray, isString, isBoolean } from "../../../lib/type-guards";
+import { isRecord, isArray, isString } from "../../../lib/type-guards";
 import type { CacheEntry } from "../../../lib/cache";
 
 // ============================================================================
@@ -16,14 +16,25 @@ export type CDXRow = [string, string, string, string, string, string, string];
 
 export interface AvailableResponse {
   archived_snapshots: {
-    closest?: {
-      available: boolean;
-      url?: string;
-      timestamp?: string;
-      status?: string;
-    };
+    closest?: ClosestSnapshot;
   };
 }
+
+interface ClosestSnapshotUnavailable {
+  available: false;
+  url?: never;
+  timestamp?: never;
+  status?: never;
+}
+
+interface ClosestSnapshotAvailable {
+  available: true;
+  url: string;
+  timestamp: string;
+  status: string;
+}
+
+type ClosestSnapshot = ClosestSnapshotUnavailable | ClosestSnapshotAvailable;
 
 export interface SPN2Response {
   url?: string;

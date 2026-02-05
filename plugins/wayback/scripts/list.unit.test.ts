@@ -38,7 +38,7 @@ describe("list.ts", () => {
 
 		// Mock global fetch
 		mockGlobalFetch = mock.fn();
-globalThis.fetch = mockGlobalFetch;
+		globalThis.fetch = mockGlobalFetch;
 		globalThis.fetch = mockGlobalFetch;
 
 		deps = {
@@ -86,7 +86,7 @@ globalThis.fetch = mockGlobalFetch;
 				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [["2024010112"], ["2024010113"]],
 				}));
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 				mockFetchWithCache = mock.fn(async () => [
 					["timestamp", "url", "mime", "status", "digest", "length"],
 					["20240101120000", "https://example.com", "text/html", "200", "digest", "1000"],
@@ -155,7 +155,7 @@ globalThis.fetch = mockGlobalFetch;
 					["20240101130000"],
 				],
 			}));
-globalThis.fetch = mockGlobalFetch;
+			globalThis.fetch = mockGlobalFetch;
 
 			const result = await fetchScreenshotTimestamps("https://example.com");
 
@@ -165,7 +165,7 @@ globalThis.fetch = mockGlobalFetch;
 
 		it("should return empty set on error", async () => {
 			mockGlobalFetch = mock.fn(async () => { throw new Error("Network error"); });
-globalThis.fetch = mockGlobalFetch;
+			globalThis.fetch = mockGlobalFetch;
 
 			const result = await fetchScreenshotTimestamps("https://example.com");
 

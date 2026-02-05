@@ -36,7 +36,7 @@ describe("screenshot.ts", () => {
 
 		// Mock global fetch
 		mockGlobalFetch = mock.fn();
-globalThis.fetch = mockGlobalFetch;
+		globalThis.fetch = mockGlobalFetch;
 		globalThis.fetch = mockGlobalFetch;
 
 		// Mock writeFile
@@ -67,7 +67,7 @@ globalThis.fetch = mockGlobalFetch;
 						["20240101120000", "https://example.com", "image/png", "200", "digest", "1000"],
 					],
 				}));
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--list", "https://example.com"]);
 
@@ -81,7 +81,7 @@ globalThis.fetch = mockGlobalFetch;
 				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [["timestamp"]],
 				}));
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--list", "https://example.com"]);
 
@@ -109,7 +109,7 @@ globalThis.fetch = mockGlobalFetch;
 						["20240101120000", "web.archive.org/screenshot/https://example.com", "image/png", "200", "digest", "1000"],
 					],
 				}));
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -126,7 +126,7 @@ globalThis.fetch = mockGlobalFetch;
 						["20240101120000", "web.archive.org/screenshot/https://example.com", "image/png", "200", "digest", "1000"],
 					],
 				}));
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--timestamp=20240101120000", "https://example.com"]);
 
@@ -152,7 +152,7 @@ globalThis.fetch = mockGlobalFetch;
 						["20240101120000", "web.archive.org/screenshot/https://example.com", "image/png", "200", "digest", "1000"],
 					],
 				}));
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--no-cache", "https://example.com"]);
 
@@ -211,7 +211,7 @@ globalThis.fetch = mockGlobalFetch;
 						arrayBuffer: async () => new ArrayBuffer(1024),
 					};
 				});
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
 
@@ -248,7 +248,7 @@ globalThis.fetch = mockGlobalFetch;
 						status: 404,
 					};
 				});
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
 
@@ -274,7 +274,7 @@ globalThis.fetch = mockGlobalFetch;
 						["20240101120000", "url", "image/png", "200", "digest", "1000"],
 					],
 				}));
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["https://example.com"]);
 
@@ -297,7 +297,7 @@ globalThis.fetch = mockGlobalFetch;
 				mockGlobalFetch = mock.fn(async () => ({
 					json: async () => [["timestamp"]],
 				}));
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["--timestamp=20240101120000", "https://example.com"]);
 
@@ -348,7 +348,7 @@ globalThis.fetch = mockGlobalFetch;
 						arrayBuffer: async () => new ArrayBuffer(1024),
 					};
 				});
-globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 				mockWriteFile = mock.fn(async () => { throw new Error("Write permission denied"); });
 
 				const args = parseArgs(["https://example.com", "--download=screenshot.png"]);
@@ -368,7 +368,7 @@ globalThis.fetch = mockGlobalFetch;
 					["20240101120000", "url", "image/png", "200", "digest", "1000"],
 				],
 			}));
-globalThis.fetch = mockGlobalFetch;
+			globalThis.fetch = mockGlobalFetch;
 
 			const result = await checkScreenshotAvailable("https://example.com", deps);
 
@@ -379,7 +379,7 @@ globalThis.fetch = mockGlobalFetch;
 			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [["timestamp"]],
 			}));
-globalThis.fetch = mockGlobalFetch;
+			globalThis.fetch = mockGlobalFetch;
 
 			const result = await checkScreenshotAvailable("https://example.com", deps);
 
@@ -388,7 +388,7 @@ globalThis.fetch = mockGlobalFetch;
 
 		it("should return false on error", async () => {
 			mockGlobalFetch = mock.fn(async () => { throw new Error("Network error"); });
-globalThis.fetch = mockGlobalFetch;
+			globalThis.fetch = mockGlobalFetch;
 
 			const result = await checkScreenshotAvailable("https://example.com", deps);
 
@@ -402,7 +402,7 @@ globalThis.fetch = mockGlobalFetch;
 					["20240101120000", "url", "image/png", "200", "digest", "1000"],
 				],
 			}));
-globalThis.fetch = mockGlobalFetch;
+			globalThis.fetch = mockGlobalFetch;
 
 			const result = await checkScreenshotAvailable("https://example.com", deps, "20240101120000");
 
@@ -418,7 +418,7 @@ globalThis.fetch = mockGlobalFetch;
 					["20240101120000", "https://example.com", "image/png", "200", "digest", "1000"],
 				],
 			}));
-globalThis.fetch = mockGlobalFetch;
+			globalThis.fetch = mockGlobalFetch;
 
 			await listScreenshots("https://example.com", deps);
 
@@ -430,7 +430,7 @@ globalThis.fetch = mockGlobalFetch;
 			mockGlobalFetch = mock.fn(async () => ({
 				json: async () => [["timestamp"]],
 			}));
-globalThis.fetch = mockGlobalFetch;
+			globalThis.fetch = mockGlobalFetch;
 
 			await listScreenshots("https://example.com", deps);
 

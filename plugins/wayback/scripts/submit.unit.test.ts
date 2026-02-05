@@ -238,7 +238,7 @@ describe("submit.ts", () => {
 
 			it("should handle network errors", async () => {
 				mockGlobalFetch = mock.fn(async () => { throw new Error("Network error"); });
-			globalThis.fetch = mockGlobalFetch;
+				globalThis.fetch = mockGlobalFetch;
 
 				const args = parseArgs(["https://example.com"]);
 

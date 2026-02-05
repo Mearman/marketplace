@@ -35,9 +35,9 @@ describe("frequency.ts", () => {
 			console: mockConsole,
 			process: mockProcess,
 		};
-Object.defineProperty(deps, "fetchWithCache", {
-	get() { return mockFetchWithCache; }
-});
+		Object.defineProperty(deps, "fetchWithCache", {
+			get() { return mockFetchWithCache; }
+		});
 	});
 
 	describe("main", () => {
