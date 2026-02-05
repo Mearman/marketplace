@@ -7,8 +7,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import * as fs from "fs";
 import * as path from "path";
-import { z } from "zod";
-import { fromJsonSchema } from "zod/json-schema";
+import { z, fromJSONSchema, type ZodIssue } from "zod";
 
 // Simple path accessor utilities
 interface PathResult {
@@ -644,7 +643,7 @@ class JsonToolsServer {
 
     try {
       // Convert JSON Schema to Zod schema
-      const zodSchema = fromJsonSchema(jsonSchema);
+      const zodSchema = fromJSONSchema(jsonSchema);
 
       // Validate data
       const result = zodSchema.safeParse(data);
@@ -657,7 +656,7 @@ class JsonToolsServer {
       }
 
       // Format Zod errors for readability
-      const errors = result.error.issues.map(issue => ({
+      const errors = result.error.issues.map((issue: ZodIssue) => ({
         path: issue.path.join('.'),
         message: issue.message,
         code: issue.code
